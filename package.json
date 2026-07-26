@@ -1,7 +1,7 @@
 {
   "name": "locus-maps",
   "version": "1.0.0",
-  "description": "Locus Maps - Web端Cesium 3D全球地球地图",
+  "description": "Locus Maps - Web端Cesium 3D全球地图",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
