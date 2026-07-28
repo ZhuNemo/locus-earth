@@ -1,11 +1,11 @@
-const CACHE_NAME = 'locus-maps-v1';
+const CACHE_NAME = 'locus-maps-cache-v1';
 const urlsToCache = [
-  '/locus-maps/',
-  '/locus-maps/index.html',
-  '/locus-maps/android-chrome-192x192.png',
-  '/locus-maps/android-chrome-512x512.png',
-  '/locus-maps/apple-touch-icon.png',
-  '/locus-maps/favicon.ico',
+  './',
+  './index.html',
+  './android-chrome-192x192.png',
+  './android-chrome-512x512.png',
+  './apple-touch-icon.png',
+  './favicon.ico',
 ];
 
 self.addEventListener('install', event => {

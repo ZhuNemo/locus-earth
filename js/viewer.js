@@ -1,0 +1,57 @@
+import { 
+            Viewer,
+            SceneMode, 
+            IonImageryProvider, 
+        } from 'cesium'; 
+
+export function initViewer(containerId, terrainProvider) {
+    const viewer = new Viewer(containerId, {
+        terrainProvider: terrainProvider,
+        baseLayerPicker: true,
+        infoBox: false,
+        sceneModePicker: false,
+        sceneMode: SceneMode.SCENE3D,
+        locale: 'zh-CN',
+    });
+
+    // 设置哨兵2底图
+    const viewModels = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
+        let sentinelViewModel = null;
+        for (const vm of viewModels) {
+            if (vm.name.includes('Sentinel-2')) {
+                sentinelViewModel = vm;
+                break;
+            }
+        }
+        if (sentinelViewModel) {
+            viewer.baseLayerPicker.viewModel.selectedImagery = sentinelViewModel;
+        } else {
+            console.warn('⚠️ 未找到哨兵 2 图源');
+        }
+
+        // ----- 移动端/触屏手感优化 -----
+        const controller = viewer.scene.screenSpaceCameraController;
+
+        controller.inertia = {
+            zoom: 0.75,    // 缩放惯性
+            rotate: 0.85,  // 旋转惯性
+            tilt: 0.85     // 俯仰惯性
+        };
+
+
+        controller.enableCollisionDetection = true;
+
+
+        // ----- 光照控制 -----
+        let isLightingEnabled = false;
+        viewer.scene.globe.enableLighting = false;
+        viewer.imageryLayers.enablePickFeatures = false; 
+        viewer.scene.globe.showWaterEffect = true;
+        viewer.scene.screenSpaceCameraController.minimumZoomDistance = 50;
+
+        viewer.timeline.container.style.display = 'none';
+        viewer.animation.container.style.display = 'none';
+
+        return viewer;
+        
+    }
