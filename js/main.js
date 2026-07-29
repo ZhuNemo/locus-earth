@@ -183,7 +183,7 @@ import { initUI } from './ui.js';
             // 进入覆盖区
             if (inArea && !isInHdArea) {
                 isInHdArea = true;
-                osmBuildingsWasVisible = buildingsVisible; // 记录进入前的状态
+                osmBuildingsWasVisible = state.buildingsVisible; // 记录进入前的状态
 
                 // 如果当前3D建筑是开启的，自动关闭（但按钮不禁用）
                 if (state.buildingsVisible && buildingsPrimitive) {
@@ -209,7 +209,7 @@ import { initUI } from './ui.js';
                 }
                 // 根据3D建筑状态决定高精度按钮是否可点击（互斥）
                 // 如果3D建筑开启，高精度按钮灰；否则可点
-                if (buildingsVisible) {
+                if (state.buildingsVisible) {
                     hdToggleBtn.disabled = true;
                     hdToggleBtn.style.opacity = '0.5';
                     hdToggleBtn.style.cursor = 'not-allowed';
