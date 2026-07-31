@@ -1,5 +1,10 @@
 # Locus-Maps
+<div align="left">
+  🌐 Language / 语言: 
+  <a href="README.md">简体中文</a> | <a href="README-EN.md">English</a>
+</div>
 
+---
 Locus Maps - Web端Cesium 3D全球地球地图
 
 基于Cesium、OpenStreetMap开发的轻量3D地球Web应用，拥有昼夜光照切换、高精度城市3D建模、全球卫星影像浏览等功能。兼容桌面端、移动端。支持创建为渐进式web应用。
