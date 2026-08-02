@@ -1,4 +1,4 @@
-＃locus-maps
+# Locus-Maps
 <div align="left">
   🌐 Language / 语言: 
   <a href="README.md">简体中文</a> | <a href="README-EN.md">English</a>
@@ -13,7 +13,7 @@ Current version: V3.2.
 
 Built with AI assistance.
 
-Access URL: https://zhunemo.github.io/locus-maps/
+Access URL: https://zhunemo.github.io/locus-earth/
 
 Personal project start date: 2026-07-04.
 

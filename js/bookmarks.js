@@ -103,7 +103,7 @@ function closeBookmarksPanel() {
 function renderBookmarksList() {
     if (!listContainer) return;
     if (bookmarks.length === 0) {
-        listContainer.innerHTML = '<div class="empty-message">暂无收藏标记 tips：利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
+        listContainer.innerHTML = '<div class="empty-message">暂无收藏标记</br>tips：利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
         return;
     }
 
@@ -118,8 +118,8 @@ function renderBookmarksList() {
                     <div class="coords">经度: ${lonStr}° 纬度: ${latStr}°</div>
                 </div>
                 <div class="actions">
-                    <button class="locate-btn" data-index="${index}" title="定位">📍</button>
-                    <button class="delete-btn" data-index="${index}" title="删除">🗑️</button>
+                    <button class="locate-btn" data-index="${index}" title="定位">定位</button>
+                    <button class="delete-btn" data-index="${index}" title="删除">删除</button>
                 </div>
             </div>
         `;
@@ -313,7 +313,7 @@ function toggleMarkingMode(enable) {
     const btn = document.getElementById('markModeBtn');
     if (btn) {
         if (enable) {
-            btn.textContent = '📍 标记模式 (开)';
+            btn.textContent = '📍 标记模式';
             btn.classList.add('active');
             viewerInstance.canvas.style.cursor = 'crosshair';
         } else {

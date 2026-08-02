@@ -1,4 +1,4 @@
-const CACHE_NAME = 'locus-maps-cache-v1';
+const CACHE_NAME = 'locus-earth-cache-v1';
 const urlsToCache = [
   './',
   './index.html',

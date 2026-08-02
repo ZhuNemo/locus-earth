@@ -1,23 +1,23 @@
 {
-  "name": "locus-maps",
-  "version": "1.0.0",
-  "description": "Locus Maps - Web端Cesium 3D全球地图",
+  "name": "locus-earth",
+  "version": "4.0.0",
+  "description": "Locus Earth - Web端Cesium 3D全球地图",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ZhuNemo/locus-maps.git"
+    "url": "git+https://github.com/ZhuNemo/locus-earth.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/ZhuNemo/locus-maps/issues"
+    "url": "https://github.com/ZhuNemo/locus-earth/issues"
   },
-  "homepage": "https://github.com/ZhuNemo/locus-maps#readme",
+  "homepage": "https://github.com/ZhuNemo/locus-earth#readme",
   "dependencies": {
     "cesium": "^1.143.0"
   }

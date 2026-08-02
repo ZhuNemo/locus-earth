@@ -156,7 +156,7 @@ import { initBookmarks } from './bookmarks.js';
         setHdTilesetsVisible(false);
         
         // 初始化标记功能
-        initBookmarks(viewer, '/icons/pin.png');  
+        initBookmarks(viewer, 'icons/pin.png');
 
         // ----- 覆盖区检测与联动 -----
         let lastCheckTime = 0;

@@ -13,7 +13,7 @@ Locus Maps - Web端Cesium 3D全球地球地图
 
 由人工智能辅助构建。
 
-访问地址：https://zhunemo.github.io/locus-maps/
+访问地址：https://zhunemo.github.io/locus-earth/
 
 个人项目开启时间：2026-07-04
 
