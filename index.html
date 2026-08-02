@@ -25,8 +25,8 @@
 <body>
     <header class="locus-header">
         <div class="brand">
-            <h1>🌍 Locus Maps</h1>
-            <span class="sub">3D地球 V3.2</span>
+            <h1>🌏 Locus Earth</h1>
+            <span class="sub">3D地球 V4.0</span>
             <span class="custom-message">
                 个人开发者，可以访问我的 <a href="https://github.com/ZhuNemo/" target="_blank">GitHub主页</a>
             </span>
@@ -36,6 +36,8 @@
             <button id="buildingsToggleBtn" class="mode-btn active">🏢 3D建筑</button>
             <button id="hdToggleBtn" class="hd-btn">🏙️ 高精度建模</button>
             <button id="resetViewBtn" class="reset-btn" title="重置视角">🔄</button>
+            <button id="markModeBtn" class="mode-btn">📍 标记</button>
+            <button id="bookmarksBtn" class="mode-btn">⭐ 收藏夹</button>
             <button id="infoBtn" class="info-btn" title="关于">ℹ️</button>
             <button id="exitGoogleBtn" class="mode-btn" style="display:none; background:#e74c3c; color:#fff; border-color:#c0392b;">❎ 退出Google地球</button>
             <button id="iterlogBtn" class="interlog-btn" title="迭代记录">⏺️</button>
@@ -75,16 +77,27 @@
 
     <div id="cesiumContainer"></div>
 
+    <!-- 收藏夹面板 -->
+        <div id="bookmarksPanel" class="bookmarks-panel" style="display:none;">
+            <div class="bookmarks-header">
+                <h2>📍 收藏夹</h2>
+                <button id="closeBookmarksBtn" class="close-btn">✕</button>
+            </div>
+            <div id="bookmarksList" class="bookmarks-list">
+            </div>
+        </div>
+
+
     <!-- 信息弹窗 -->
     <div id="infoModal" class="modal-overlay">
         <div class="modal-box">
             <button id="closeInfoBtn" class="close-btn">✕</button>
-            <h2>🌍 关于 Locus Maps</h2>
+            <h2>🌍 关于 Locus Earth</h2>
             <p>
-                <strong>Locus Maps</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地图”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
+                <strong>Locus Earth</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地图”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
             </p>
             <p>📍 功能包括：3D 地形、卫星影像、全球建筑、光照切换、建筑显示控制、高精度建模显示（自动触发）。</p>
-            <p>顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，开关高精度建模，重置视角及北向上，查看关于信息。</p>
+            <p>顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，开关高精度建模，重置视角及北向上，查看关于信息。目前还支持使用浏览器本地缓存保存收藏标记点。</p>
             <p>使用人工智能辅助开发。</p>
             <p>📁 开放源代码，若你想要代码文件...请访问我的 <a href="https://github.com/ZhuNemo/locus-maps" target="_blank">GitHub 仓库</a>。</p>
             <p>🏙️ 高精度建模覆盖区域(已调试完成的)： 丹佛*、华盛顿D.C.、华盛顿州（西雅图附近）、悉尼*、波士顿*、墨尔本*、旧金山*。浏览时自动检测并提示，与3D建筑互斥。建模加载速度较慢，属正常现象。</p>
@@ -149,6 +162,7 @@
             <p>07-07 V3.0：增加指南针、俯仰角控件，优化移动端体验，接入更多3D Tiles</p>
             <p>07-09 V3.1：接入Google Maps数据，并创建Google地球模式</p>
             <p>07-10 V3.2：对于Google地球模式进行优化和改进</p>
+            <p>08-02 V4.0：更改项目名称；添加收藏标记功能</p>
         </div>
     </div>
 

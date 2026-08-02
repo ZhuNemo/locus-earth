@@ -380,3 +380,115 @@
                 font-size: 14px;
             }
         }
+
+        /* 收藏夹面板样式 */
+        .bookmarks-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 320px;
+            max-height: 70vh;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bookmarks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .bookmarks-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
+        }
+
+        .bookmarks-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #888;
+            cursor: pointer;
+        }
+
+        .bookmarks-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .bookmark-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .bookmark-item:hover {
+            background: #f5f5f5;
+        }
+
+        .bookmark-item .info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .bookmark-item .info .name {
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .bookmark-item .info .coords {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .bookmark-item .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .bookmark-item .actions button {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .bookmark-item .actions .delete-btn {
+            color: #e74c3c;
+        }
+
+        .bookmark-item .actions .delete-btn:hover {
+            background: #fee;
+        }
+
+        .bookmark-item .actions .locate-btn {
+            color: #3498db;
+        }
+
+        .bookmark-item .actions .locate-btn:hover {
+            background: #eaf5fe;
+        }
+
+        .empty-message {
+            color: #999;
+            text-align: center;
+            padding: 20px 0;
+        }
