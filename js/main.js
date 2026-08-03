@@ -18,7 +18,7 @@ import { initUI } from './ui.js';
 
 import { initBookmarks } from './bookmarks.js';
 
-        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMjgxOGI5ZS1lYzQ1LTRkN2ItYWRmYy05YzllOTNhYWZjYzQiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IlpodU5lbW9fZGVmYXVsdCIsImlhdCI6MTc4MzIyMzUwOX0.HdLWoiGJw7McbyHwjra0Bx7J57pVrZGIJfNk0AZjQBU';
+        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIE1hcHMiLCJpYXQiOjE3ODUwNDE3NTB9.AS3v82gVfiQzkfgaJ-GVK_ly4RymaRyaJ9f9ol94AuU';
 
         const terrainProvider = await CesiumTerrainProvider.fromIonAssetId(1, {
             requestVertexNormals: true,
@@ -536,47 +536,28 @@ import { initBookmarks } from './bookmarks.js';
             });
             showToast('🧭 已重置为正北方向');
         });
-        // 2. 向上倾斜（平视）
-        tiltUpBtn.addEventListener('click', () => {
-            const cam = viewer.camera;
-            const heading = cam.heading;
-            const pitch = cam.pitch;
-            const roll = cam.roll;
-            // 增加俯仰角（向上），限制不能超过 -5 度（接近水平）
-            const newPitch = Math.min(pitch + 0.15, -0.08);
-            if (newPitch === pitch) {
-                showToast('⚠️ 已达到最平视角');
-                return;
-            }
-            const carto = cam.positionCartographic;
+        // 放大
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            const carto = viewer.camera.positionCartographic;
+            const newHeight = carto.height * 0.7;  // 拉近到70%
+            if (newHeight < 10) { showToast('⚠️ 已到最近距离'); return; }
             viewer.camera.flyTo({
-                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, carto.height),
-                orientation: { heading, pitch: newPitch, roll },
-                duration: 0.5
+                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
+                duration: 0.3
             });
         });
 
-        // 3. 向下倾斜（俯视）
-        tiltDownBtn.addEventListener('click', () => {
-            const cam = viewer.camera;
-            const heading = cam.heading;
-            const pitch = cam.pitch;
-            const roll = cam.roll;
-            // 减小俯仰角（向下），限制不能超过 -85 度（垂直俯视）
-            const newPitch = Math.max(pitch - 0.15, -CesiumMath.PI_OVER_TWO + 0.05);
-            if (newPitch === pitch) {
-                showToast('⚠️ 已达到最垂直视角');
-                return;
-            }
-            const carto = cam.positionCartographic;
+        // 缩小
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            const carto = viewer.camera.positionCartographic;
+            const newHeight = carto.height * 1.4;  // 拉远到140%
             viewer.camera.flyTo({
-                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, carto.height),
-                orientation: { heading, pitch: newPitch, roll },
-                duration: 0.5
+                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
+                duration: 0.3
             });
         });
 
-        // 4. 重置俯仰角（回到默认的 -45 度，保持当前方向）
+        // 4. 重置俯仰角（与地面垂直，保持当前方向）
         resetTiltBtn.addEventListener('click', () => {
             const cam = viewer.camera;
             const heading = cam.heading;
@@ -586,8 +567,8 @@ import { initBookmarks } from './bookmarks.js';
                 destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, carto.height),
                 orientation: {
                     heading: heading,
-                    pitch: CesiumMath.toRadians(-45),
-                    roll: roll
+                    pitch: -CesiumMath.PI_OVER_TWO,
+                    roll: 0
                 },
                 duration: 0.6
             });

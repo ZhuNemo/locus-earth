@@ -1,7 +1,10 @@
 import { 
             Viewer,
-            SceneMode, 
-            IonImageryProvider, 
+            SceneMode,
+            IonImageryProvider,
+            ScreenSpaceEventHandler,
+            ScreenSpaceEventType,
+            Cartesian3, 
         } from 'cesium'; 
 
 export function initViewer(containerId, terrainProvider) {
@@ -38,8 +41,29 @@ export function initViewer(containerId, terrainProvider) {
             tilt: 0.85     // 俯仰惯性
         };
 
-
         controller.enableCollisionDetection = true;
+
+
+        // 启用双击放大（自定义）
+        const handler = new ScreenSpaceEventHandler(viewer.canvas);
+        handler.setInputAction((click) => {
+            // 如果点击到标记实体，不触发放大（避免干扰）
+            const picked = viewer.scene.pick(click.position);
+            if (picked && picked.id && picked.id._isBookmark) {
+                return;
+            }
+            // 拾取地面位置
+            const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+            if (!cartesian) return;
+
+            const carto = viewer.camera.positionCartographic;
+            const newHeight = carto.height * 0.5;
+            if (newHeight < 10) return;
+            viewer.camera.flyTo({
+                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
+                duration: 0.5
+            });
+        }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
 
         // ----- 光照控制 -----
