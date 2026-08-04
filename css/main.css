@@ -1,5 +1,14 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+            --window-radius: 16px;
+            --control-radius: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; font-family: 'Inter', 'Segoe UI', sans-serif; }
+        button, input, select, textarea {
+            border-radius: var(--control-radius);
+            transition: all 0.2s ease;
+        }
         body { display: flex; flex-direction: column; background: #f5f5f5; }
         .locus-header {
             flex-shrink: 0;
@@ -62,7 +71,7 @@
             border: 1px solid #d0d0d0;
             color: #333;
             padding: 6px 16px;
-            border-radius: 30px;
+            border-radius: var(--control-radius);
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
@@ -70,6 +79,27 @@
             font-family: inherit;
             letter-spacing: 0.3px;
             white-space: nowrap;
+        }
+        .locus-header .controls .mode-btn:hover,
+        .locus-header .controls .mode-btn:focus-visible,
+        .controls .hd-btn:hover,
+        .controls .hd-btn:focus-visible,
+        .reset-btn:hover,
+        .reset-btn:focus-visible,
+        .info-btn:hover,
+        .info-btn:focus-visible,
+        .interlog-btn:hover,
+        .interlog-btn:focus-visible,
+        #camera-controls .ctrl-btn:hover,
+        #camera-controls .ctrl-btn:focus-visible,
+        .bookmark-item:hover,
+        .bookmark-item:focus-within,
+        .bookmark-item .actions button:hover,
+        .bookmark-item .actions button:focus-visible,
+        .modal-box .close-btn:hover,
+        .modal-box .close-btn:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
         .locus-header .controls .mode-btn:hover {
             background: #e0e0e0;
@@ -86,7 +116,7 @@
             color: #333;
             width: 36px;
             height: 36px;
-            border-radius: 50%;
+            border-radius: var(--control-radius);
             font-size: 18px;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -105,7 +135,7 @@
             color: #555;
             width: 28px;
             height: 28px;
-            border-radius: 50%;
+            border-radius: var(--control-radius);
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -122,7 +152,7 @@
             color: #555;
             width: 28px;
             height: 28px;
-            border-radius: 50%;
+            border-radius: var(--control-radius);
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -143,7 +173,7 @@
             border: 1px solid #d0d0d0;
             color: #333;
             padding: 6px 16px;
-            border-radius: 30px;
+            border-radius: var(--control-radius);
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
@@ -212,7 +242,7 @@
         }
         /* 信息弹窗 */
         .modal-overlay {
-            display: none;
+            display: flex;
             position: fixed;
             top: 0;
             left: 0;
@@ -223,22 +253,41 @@
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.24s ease, visibility 0.24s ease, backdrop-filter 0.24s ease;
         }
         .modal-overlay.active {
-            display: flex;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            border-radius: var(--window-radius);
         }
         .modal-box {
-            background: #ffffff;
-            border-radius: 16px;
             padding: 32px 40px;
             max-width: 480px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             position: relative;
             font-family: 'Inter', 'Segoe UI', sans-serif;
             scrollbar-width: thin;
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+            transition: opacity 0.24s ease, transform 0.24s ease, box-shadow 0.24s ease;
+        }
+        .modal-overlay.active .modal-box {
+            opacity: 1;
+            transform: translateY(0) scale(1);
         }
         /* 针对 Webkit 浏览器美化滚动条 */
         .modal-box::-webkit-scrollbar {
@@ -272,6 +321,31 @@
             color: #444;
             margin: 10px 0;
         }
+
+        .inline-action-btn {
+            background: linear-gradient(135deg, #f4f9ff 0%, #eef5ff 100%);
+            border: 1px solid #cfe2ff;
+            color: #1f6ed8;
+            padding: 8px 14px;
+            border-radius: var(--control-radius);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(31, 110, 216, 0.1);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .inline-action-btn:hover,
+        .inline-action-btn:focus-visible {
+            background: linear-gradient(135deg, #eaf4ff 0%, #dfeeff 100%);
+            border-color: #9fc5ff;
+            color: #1558b6;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(31, 110, 216, 0.16);
+        }
         .modal-box .close-btn {
             position: absolute;
             top: 14px;
@@ -282,9 +356,17 @@
             color: #888;
             cursor: pointer;
             font-family: inherit;
+            border-radius: var(--control-radius);
+            transition: all 0.2s ease;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .modal-box .close-btn:hover {
             color: #000;
+            background: rgba(0, 0, 0, 0.06);
         }
         @media (max-width: 700px) {
             .locus-header {
@@ -344,7 +426,7 @@
             color: #444;
             width: 36px;
             height: 36px;
-            border-radius: 50%;
+            border-radius: var(--control-radius);
             font-size: 16px;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -414,14 +496,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 12px;
+            padding: 12px 16px;
+            border-radius: var(--control-radius); 
             border-bottom: 1px solid #eee;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
         }
 
         .bookmark-item:hover {
-            background: #f5f5f5;
+            background: rgba(255, 255, 255, 0.6); 
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .bookmark-item .info {
@@ -451,8 +535,8 @@
             font-size: 16px;
             cursor: pointer;
             padding: 4px 8px;
-            border-radius: 4px;
-            transition: background 0.2s;
+            border-radius: var(--control-radius);
+            transition: all 0.2s ease;
         }
 
         .bookmark-item .actions .delete-btn {
@@ -484,10 +568,6 @@
             right: 40px;
             width: 320px;
             max-height: 70vh;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(8px);
-            border-radius: 16px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
             z-index: 1000;
             padding: 20px;
             overflow: hidden;
