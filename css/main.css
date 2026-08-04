@@ -381,23 +381,7 @@
             }
         }
 
-        /* 收藏夹面板样式 */
-        .bookmarks-panel {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            width: 320px;
-            max-height: 70vh;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(8px);
-            border-radius: 16px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
-            z-index: 1000;
-            padding: 20px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
+       
 
         .bookmarks-header {
             display: flex;
@@ -491,4 +475,22 @@
             color: #999;
             text-align: center;
             padding: 20px 0;
+        }
+
+         /* 收藏夹面板 - 固定在右上角 */
+        #bookmarksPanel {
+            position: fixed; 
+            top: 110px;
+            right: 40px;
+            width: 320px;
+            max-height: 70vh;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            padding: 20px;
+            overflow: hidden;
+            display: none;        /* 默认隐藏 */
+            flex-direction: column;
         }

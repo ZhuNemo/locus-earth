@@ -40,7 +40,6 @@
             <button id="bookmarksBtn" class="mode-btn">⭐ 收藏夹</button>
             <button id="infoBtn" class="info-btn" title="关于">ℹ️</button>
             <button id="exitGoogleBtn" class="mode-btn" style="display:none; background:#e74c3c; color:#fff; border-color:#c0392b;">❎ 退出Google地球</button>
-            <button id="iterlogBtn" class="interlog-btn" title="迭代记录">⏺️</button>
         </div>
         <div class="credit">
             基于 <a href="https://cesium.com/" target="_blank">Cesium</a> ·
@@ -78,14 +77,23 @@
     <div id="cesiumContainer"></div>
 
     <!-- 收藏夹面板 -->
-        <div id="bookmarksPanel" class="bookmarks-panel" style="display:none;">
-            <div class="bookmarks-header">
-                <h2>📍 收藏夹</h2>
+    <div id="bookmarksPanel" style="display:none;">
+        <div class="bookmarks-header">
+            <h2>📍 收藏夹</h2>
+            <div>
+                <button id="exportBookmarksBtn" class="mode-btn" style="font-size:12px; padding:2px 10px;">⬇️ 导出</button>
+                <button id="importBookmarksBtn" class="mode-btn" style="font-size:12px; padding:2px 10px;">⬆️ 导入</button>
                 <button id="closeBookmarksBtn" class="close-btn">✕</button>
             </div>
-            <div id="bookmarksList" class="bookmarks-list">
-            </div>
         </div>
+        <div id="bookmarksList" class="bookmarks-list">
+            <!-- 动态生成 -->
+        </div>
+    </div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="importFileInput" accept=".csv,.txt" style="display:none;" />
+
 
 
     <!-- 信息弹窗 -->
@@ -97,24 +105,33 @@
                 <strong>Locus Earth</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地图”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
             </p>
             <p>📍 功能包括：3D 地形、卫星影像、全球建筑、光照切换、建筑显示控制、高精度建模显示（自动触发）。</p>
-            <p>顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，开关高精度建模，重置视角及北向上，查看关于信息。目前还支持使用浏览器本地缓存保存收藏标记点。</p>
-            <p>使用人工智能辅助开发。</p>
-            <p>📁 开放源代码，若你想要代码文件...请访问我的 <a href="https://github.com/ZhuNemo/locus-maps" target="_blank">GitHub 仓库</a>。</p>
-            <p>🏙️ 高精度建模覆盖区域(已调试完成的)： 丹佛*、华盛顿D.C.、华盛顿州（西雅图附近）、悉尼*、波士顿*、墨尔本*、旧金山*。浏览时自动检测并提示，与3D建筑互斥。建模加载速度较慢，属正常现象。</p>
+            <p>顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，开关高精度建模，重置视角及北向上，查看关于信息。目前还支持使用浏览器本地缓存保存收藏标记点，可以通过导出/导入功能实现“跨设备同步”。</p>
+            <p>📁 开放源代码，需代码文件请访问我的 <a href="https://github.com/ZhuNemo/locus-maps" target="_blank">GitHub 仓库</a>。</p>
+            <p>🏙️ 高精度建模覆盖区域： 丹佛*、华盛顿D.C.、华盛顿州（西雅图附近）、悉尼*、波士顿*、墨尔本*、旧金山*。浏览时自动检测并提示，与3D建筑互斥。建模加载速度较慢，属正常现象。</p>
             <p>*：仅市中心小块区域有高精度建模覆盖</p>
-            <p>
-                <strong>以下为使用技巧：</strong>
+            <p>P.S.:使用人工智能辅助开发。特别鸣谢DeepSeek、VS Code Copilot。</p>
+            <p style="margin-top: 12px; display:flex; flex-wrap:wrap; gap: 12px;">
+                <button id="openTipsBtn" type="button" style="background:none; border:none; padding:0; color:#0066cc; cursor:pointer; text-decoration:underline; font: inherit;">点击查看使用技巧</button>
+                <button id="openIterlogBtn" type="button" style="background:none; border:none; padding:0; color:#0066cc; cursor:pointer; text-decoration:underline; font: inherit;">点击查看迭代记录</button>
             </p>
-            <p>右下角的控件可以手动控制俯仰角度（点击重置至45°）、恢复朝北，指南针显示当前朝向。</p>
-            <p> *️⃣ 如何快速确定高精度建模具体覆盖范围？搜索城市英文名称，自动定位并手动放大，弹出提示后点击开启高精度模型，观察突然出现色差的地块。使用无路网图层突兀感较弱。</p>
-            <p>💡tips：Bing的图源在中国大陆路网显示有误，建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"图层时不要开启3D模型，会导致严重错位。浏览非大陆地区均可。</p>
             <p style="font-size:13px; color:#999; margin-top:16px;">数据来源：Cesium ion · OpenStreetMap · Natural Earth</p>
             <p style="font-size:11px; color:#999; margin-top:16px;">为节省数据用量，默认底图为Sentinel-2（分辨率较低），适合宏观浏览。如必须查看地面高清细节，请手动切换至 Bing 地图。</p>
             
             <p style="font-size:10px; color:#aaa; margin-top:12px; border-top:1px solid #eee; padding-top:12px;">
                 ⚠ <a href="#" id="activateGoogle3D" style="color:#666; text-decoration:none; border-bottom:1px dotted #ccc;">进入Google 3D地球（实验性）</a>
-                <span style="color:#666; font-size:10px;"> · 需海外网络环境（代理或VPN），国内网络请最好不要尝试！</span>
+                <span style="color:#666; font-size:10px;"> · 需海外网络环境（代理或VPN）</span>
             </p>
+        </div>
+    </div>
+
+    <!-- 使用技巧弹窗 -->
+    <div id="tipsModal" class="modal-overlay">
+        <div class="modal-box">
+            <button id="closeTipsBtn" class="close-btn">✕</button>
+            <h2>使用技巧:</h2>
+            <p>右下角的控件可以手动控制俯仰角度（点击重置至45°）、恢复朝北，指南针显示当前朝向。</p>
+            <p> *️⃣ 如何快速确定高精度建模具体覆盖范围？搜索城市英文名称，自动定位并手动放大，弹出提示后点击开启高精度模型，观察突然出现色差的地块。使用无路网图层突兀感较弱。</p>
+            <p>💡tips：Bing的图源在中国大陆路网显示有误，建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"图层时不要开启3D模型，会导致严重错位。浏览非大陆地区均可。</p>
         </div>
     </div>
 
@@ -163,6 +180,7 @@
             <p>07-09 V3.1：接入Google Maps数据，并创建Google地球模式</p>
             <p>07-10 V3.2：对于Google地球模式进行优化和改进</p>
             <p>08-02 V4.0：更改项目名称；添加收藏标记功能</p>
+            <p>08-04 V4.1：加入导入/导出收藏夹功能</p>
         </div>
     </div>
 

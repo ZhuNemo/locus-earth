@@ -112,9 +112,19 @@ export function initUI(viewer, {
     const infoBtn = document.getElementById('infoBtn');
     const infoModal = document.getElementById('infoModal');
     const closeInfoBtn = document.getElementById('closeInfoBtn');
+    const openTipsBtn = document.getElementById('openTipsBtn');
+    const openIterlogBtn = document.getElementById('openIterlogBtn');
+    const tipsModal = document.getElementById('tipsModal');
+    const closeTipsBtn = document.getElementById('closeTipsBtn');
 
     function openInfo() {
         infoModal.classList.add('active');
+    }
+    function openTips() {
+        tipsModal.classList.add('active');
+    }
+    function closeTips() {
+        tipsModal.classList.remove('active');
     }
     // closeInfo 由外部传入（与 main.js 共享）
     infoBtn.addEventListener('click', openInfo);
@@ -122,6 +132,20 @@ export function initUI(viewer, {
     infoModal.addEventListener('click', (e) => {
         if (e.target === infoModal) closeInfo();
     });
+    if (openTipsBtn) {
+        openTipsBtn.addEventListener('click', openTips);
+    }
+    if (openIterlogBtn) {
+        openIterlogBtn.addEventListener('click', openIterlog);
+    }
+    if (closeTipsBtn) {
+        closeTipsBtn.addEventListener('click', closeTips);
+    }
+    if (tipsModal) {
+        tipsModal.addEventListener('click', (e) => {
+            if (e.target === tipsModal) closeTips();
+        });
+    }
 
     // =============================================
     // 5. 谷歌模式关于弹窗（关闭逻辑）
@@ -142,7 +166,6 @@ export function initUI(viewer, {
     // =============================================
     // 6. 迭代记录弹窗
     // =============================================
-    const iterlogBtn = document.getElementById('iterlogBtn');
     const iterlogModal = document.getElementById('iterlogModal');
     const closeIterlogBtn = document.getElementById('closeIterlogBtn');
 
@@ -150,11 +173,14 @@ export function initUI(viewer, {
         iterlogModal.classList.add('active');
     }
     // closeIterlog 由外部传入
-    iterlogBtn.addEventListener('click', openIterlog);
-    closeIterlogBtn.addEventListener('click', closeIterlog);
-    iterlogModal.addEventListener('click', (e) => {
-        if (e.target === iterlogModal) closeIterlog();
-    });
+    if (closeIterlogBtn) {
+        closeIterlogBtn.addEventListener('click', closeIterlog);
+    }
+    if (iterlogModal) {
+        iterlogModal.addEventListener('click', (e) => {
+            if (e.target === iterlogModal) closeIterlog();
+        });
+    }
 
     // 返回关闭弹窗的方法
     return { openInfo, closeInfo, openIterlog, closeIterlog };

@@ -7,7 +7,7 @@ import {
     HorizontalOrigin,
     Color,
     Cartesian2,
-    HeightReference
+    HeightReference,
 } from 'cesium';
 
 // ---------- 状态 ----------
@@ -63,6 +63,23 @@ function setupEventHandlers() {
         }
     });
 
+    // 导出按钮
+    document.getElementById('exportBookmarksBtn').addEventListener('click', exportBookmarks);
+
+    // 导入按钮 → 触发文件选择
+    document.getElementById('importBookmarksBtn').addEventListener('click', () => {
+        document.getElementById('importFileInput').click();
+    });
+
+    // 文件选择后的处理
+    document.getElementById('importFileInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        importBookmarks(file);
+        // 重置 input，以便重复选择同一文件
+        e.target.value = '';
+    });
+
     // 点击地球事件（标记模式 + Shift）
     const handler = new ScreenSpaceEventHandler(viewerInstance.canvas);
     let mouseDownPos = null;
@@ -103,7 +120,7 @@ function closeBookmarksPanel() {
 function renderBookmarksList() {
     if (!listContainer) return;
     if (bookmarks.length === 0) {
-        listContainer.innerHTML = '<div class="empty-message">暂无收藏标记</br>tips：利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
+        listContainer.innerHTML = '<div class="empty-message">暂无收藏标记<br>tips：利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
         return;
     }
 
@@ -170,7 +187,6 @@ function flyToBookmark(index) {
         destination: cartesian,
         duration: 1.5
     });
-    // 可选的：高亮该标记（暂略）
     closeBookmarksPanel(); // 定位后自动关闭面板
 }
 
@@ -181,10 +197,6 @@ function deleteBookmark(index) {
     // 从视图中移除实体
     const entities = viewerInstance.entities.values;
     // 通过自定义属性 _isBookmark 和名称/位置匹配来找到对应的实体
-    // 更可靠的方式：存储 entity id，但这里我们通过 name 和位置近似匹配（不完美，但够用）
-    // 优化：在创建时给 entity 添加一个自定义属性 bookmarkId
-    // 为了简化，我们遍历 entities 并删除匹配的（假设名称唯一）
-    // 更好的做法：在创建时记录 entity.id
     const entityToRemove = entities.find(e => e._isBookmark && e.name === item.name);
     if (entityToRemove) {
         viewerInstance.entities.remove(entityToRemove);
@@ -255,7 +267,7 @@ function createPin(cartesian, name) {
             width: 32,
             height: 32,
             verticalOrigin: VerticalOrigin.BOTTOM,
-            pixelOffset: new Cartesian2(0, 0), 
+            pixelOffset: new Cartesian2(0, 2), 
             heightReference: HeightReference.CLAMP_TO_GROUND 
         },
         label: {
@@ -338,3 +350,107 @@ function setupToolbarButton() {
 
 // 导出 toggle 函数
 export { toggleMarkingMode, isMarkingMode };
+
+// =============================================
+// 导出 / 导入 收藏夹
+// =============================================
+
+/**
+ * 导出当前所有标记为 CSV 字符串
+ */
+function exportBookmarksToCSV() {
+    if (bookmarks.length === 0) {
+        alert('没有可导出的标记');
+        return null;
+    }
+    let header = '# Locus Maps 收藏夹导出\n# 格式: 名称,经度,纬度\n';
+    const rows = bookmarks.map(b => `${b.name},${b.lon},${b.lat}`);
+    return header + rows.join('\n');
+}
+
+/**
+ * 下载 CSV 文件
+ */
+export function exportBookmarks() {
+    const csv = exportBookmarksToCSV();
+    if (!csv) return;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute('download', 'locus-maps-bookmarks.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * 解析 CSV 内容，返回标记对象数组
+ * 格式: 名称,经度,纬度
+ * 忽略空行和以 # 开头的注释行
+ */
+function parseBookmarksFromCSV(text) {
+    const lines = text.split('\n');
+    const result = [];
+    for (let line of lines) {
+        line = line.trim();
+        if (line === '' || line.startsWith('#')) continue;
+        const parts = line.split(',').map(s => s.trim());
+        if (parts.length !== 3) {
+            console.warn('跳过无效行:', line);
+            continue;
+        }
+        const name = parts[0];
+        const lon = parseFloat(parts[1]);
+        const lat = parseFloat(parts[2]);
+        if (isNaN(lon) || isNaN(lat) || lon < -180 || lon > 180 || lat < -90 || lat > 90) {
+            console.warn('跳过坐标无效的行:', line);
+            continue;
+        }
+        result.push({ name, lon, lat });
+    }
+    return result;
+}
+
+/**
+ * 导入收藏夹：从文件读取并批量添加
+ */
+export function importBookmarks(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const text = e.target.result;
+        const items = parseBookmarksFromCSV(text);
+        if (items.length === 0) {
+            alert('文件中未找到有效标记数据，请检查格式（名称,经度,纬度）');
+            return;
+        }
+        // 确认导入
+        if (!confirm(`找到 ${items.length} 个标记，确认导入？`)) return;
+
+        let addedCount = 0;
+        items.forEach(item => {
+            const cartesian = Cartesian3.fromDegrees(item.lon, item.lat, 0);
+            const entity = createPin(cartesian, item.name);
+            bookmarks.push({
+                id: Date.now() + addedCount,
+                name: item.name,
+                lon: item.lon,
+                lat: item.lat,
+                height: 0,
+                entityId: entity.id
+            });
+            addedCount++;
+        });
+        saveBookmarksToStorage();
+        // 如果收藏夹面板打开，刷新列表
+        if (panel && panel.style.display !== 'none') {
+            renderBookmarksList();
+        }
+        alert(`成功导入 ${addedCount} 个标记`);
+    };
+    reader.onerror = function() {
+        alert('读取文件失败，请重试');
+    };
+    reader.readAsText(file);
+}
