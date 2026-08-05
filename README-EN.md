@@ -5,14 +5,18 @@
 </div>
 
 ---
-Locus Maps - A Web-based 3D global map powered by Cesium.
+Locus Earth - Web-based Cesium 3D Global Map
 
-A lightweight 3D Earth web application developed with Cesium and OpenStreetMap. It features day/night lighting switching, high-precision 3D city modeling, and global satellite imagery browsing. Compatible with desktop and mobile devices. Supports installation as a Progressive Web App (PWA).
+Locus Earth is an open-source web-based 3D Earth application built on Cesium and OpenStreetMap. Inspired by Google Earth, its name means "Location Earth" and aims to provide a lightweight, fast, and interactive global map browsing experience, striving to offer users functionality similar to Google Earth.
 
-Built with AI assistance.
+Features include: 3D terrain, satellite imagery, global buildings, light switching, building display control, and high-precision modeling display (auto-triggered). It currently also supports saving favorite marker points using the browser's local cache, and you can save markers locally or import local markers via export/import functionality.
+
+The top menu bar buttons allow you to toggle Light/White and Day/Night modes, toggle 3D buildings, toggle high-precision modeling, reset the view and North-up orientation, access the marker and favorites bar, and view About information.
+
+Built with the assistance of Artificial Intelligence. The models used (in priority order): DeepSeek, VS Code Copilot, Doubao, ChatGPT, Google Gemini.
 
 Access URL: https://zhunemo.github.io/locus-earth/
 
-Personal project start date: 2026-07-04.
+Personal project start date: 2026-07-04
 
-Solo development in spare time, no team involved. Updated intermittently.
+No team, hobby development. Iterated irregularly.

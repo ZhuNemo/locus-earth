@@ -5,11 +5,15 @@
 </div>
 
 ---
-Locus Maps - Web端Cesium 3D全球地球地图
+Locus Earth - Web端Cesium 3D全球地图
+ 
+Locus Earth 是一个基于 Cesium 和 OpenStreetMap 开发的开源网页 3D 地球应用。灵感来自于Google地球，名称意为“位置地球”，旨在提供一个轻量、快速、可交互的全球地图浏览体验，努力让用户体验到与Google地球类似的功能。
 
-基于Cesium、OpenStreetMap开发的轻量3D地球Web应用，拥有昼夜光照切换、高精度城市3D建模、全球卫星影像浏览、收藏地点标记等功能。兼容桌面端、移动端。支持创建为渐进式web应用。
+功能包括：3D 地形、卫星影像、全球建筑、光照切换、建筑显示控制、高精度建模显示（自动触发）。目前还支持使用浏览器本地缓存保存收藏标记点，可以通过导出/导入功能保存标记到本地或导入本地标记。
 
-由人工智能辅助构建。
+顶部菜单栏按钮点击可切换亮白/昼夜模式，开关3D建筑，开关高精度建模，重置视角及北向上，标记和收藏夹栏，查看关于信息。
+
+由人工智能辅助构建。参与构建的模型（优先级排序）：DeepSeek、VS Code Copilot、Doubao、ChatGPT、Google Gemini。
 
 访问地址：https://zhunemo.github.io/locus-earth/
 

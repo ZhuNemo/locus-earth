@@ -108,12 +108,12 @@ function setupEventHandlers() {
 function openBookmarksPanel() {
     if (!panel) return;
     renderBookmarksList();
-    panel.style.display = 'flex';
+    panel.classList.add('active');
 }
 
 function closeBookmarksPanel() {
     if (!panel) return;
-    panel.style.display = 'none';
+    panel.classList.remove('active');
 }
 
 // ---------- 渲染列表 ----------
