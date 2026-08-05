@@ -587,27 +587,39 @@
             padding: 20px 0;
         }
 
-         /* 收藏夹面板 - 固定在右上角 */
-        #bookmarksPanel {
-            position: fixed; 
-            top: 80px;
-            right: 20px;
-            width: 350px;
-            max-height: 70vh;
-            z-index: 1000;
-            padding: 20px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-            transform: translateY(calc(-1 * var(--window-transition-offset)));
-            transition: opacity var(--window-transition-duration) var(--window-transition-timing), transform var(--window-transition-duration) var(--window-transition-timing), visibility var(--window-transition-duration) var(--window-transition-timing);
+        /* 收藏夹面板：移动端采用模态框（与关于弹窗一致），桌面仍保持右上侧边面板样式 */
+        /* 列表底部留白，避免被固定按钮遮挡 */
+        .bookmarks-list {
+            padding-bottom: 72px;
         }
-        #bookmarksPanel.active {
-            opacity: 1;
-            visibility: visible;
-            pointer-events: auto;
-            transform: translateY(0);
+        .bookmarks-footer {
+            position: sticky;
+            bottom: 12px;
+            display: flex;
+            justify-content: center;
+            padding-top: 12px;
+        }
+
+        /* 桌面：与关于窗口一致，居中显示（移除右上侧边面板行为） */
+        @media (min-width: 701px) {
+            /* 保持 modal 居中，使用 .modal-overlay.active 控制可见性 */
+            #bookmarksPanel.modal-overlay {
+                background: rgba(0,0,0,0.4);
+                backdrop-filter: blur(4px);
+                justify-content: center;
+                align-items: center;
+            }
+            #bookmarksPanel.modal-overlay .modal-box {
+                max-width: 480px;
+                width: 90%;
+                max-height: 80vh;
+                overflow: auto;
+                pointer-events: auto;
+                padding: 32px 40px;
+            }
+        }
+
+        /* 避免导出/导入按钮与右上角关闭按钮重叠 */
+        #bookmarksPanel .bookmarks-header {
+            padding-right: 56px;
         }

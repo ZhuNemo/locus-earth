@@ -15,6 +15,7 @@ let isMarkingMode = false;
 let bookmarks = [];
 let viewerInstance = null;
 let iconPath = '/icons/pin.png';
+let markersVisible = true;
 
 // ---------- DOM 引用 ----------
 let panel = null;
@@ -47,6 +48,8 @@ export function initBookmarks(viewer, iconPathParam = '/icons/pin.png') {
 
     // 设置标记模式按钮
     setupToolbarButton();
+    // 设置面板底部按钮（隐藏/显示标记）
+    setupFooterButton();
 }
 
 // ---------- 事件绑定 ----------
@@ -102,6 +105,17 @@ function setupEventHandlers() {
         mouseDownPos = null;
         mouseUpPos = null;
     }, ScreenSpaceEventType.LEFT_UP);
+}
+
+function setupFooterButton() {
+    const btn = document.getElementById('toggleMarkersBtn');
+    if (!btn) return;
+    // 初始化文本
+    btn.textContent = markersVisible ? '隐藏标记' : '显示标记';
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setMarkersVisible(!markersVisible);
+    });
 }
 
 // ---------- 打开/关闭收藏夹 ----------
@@ -248,7 +262,7 @@ function handleClick(mousePosition, shiftKey) {
     saveBookmarksToStorage();
 
     // 如果收藏夹面板打开，刷新列表
-    if (panel && panel.style.display !== 'none') {
+    if (panel && panel.classList && panel.classList.contains('active')) {
         renderBookmarksList();
     }
 
@@ -281,7 +295,24 @@ function createPin(cartesian, name) {
         },
         _isBookmark: true
     });
+    // 遵循当前显示状态
+    try { entity.show = markersVisible; } catch (e) { /* ignore */ }
     return entity;
+}
+
+// 切换书签实体的显示状态
+function setMarkersVisible(visible) {
+    markersVisible = visible;
+    // 更新所有标记实体的 show 属性
+    const entities = viewerInstance.entities.values;
+    for (const e of entities) {
+        if (e._isBookmark) {
+            try { e.show = visible; } catch (err) { /* ignore */ }
+        }
+    }
+    // 更新底部按钮文本（如果存在）
+    const btn = document.getElementById('toggleMarkersBtn');
+    if (btn) btn.textContent = visible ? '隐藏标记' : '显示标记';
 }
 
 // ---------- 存储相关 ----------
@@ -444,7 +475,7 @@ export function importBookmarks(file) {
         });
         saveBookmarksToStorage();
         // 如果收藏夹面板打开，刷新列表
-        if (panel && panel.style.display !== 'none') {
+        if (panel && panel.classList && panel.classList.contains('active')) {
             renderBookmarksList();
         }
         alert(`成功导入 ${addedCount} 个标记`);

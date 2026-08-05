@@ -35,9 +35,9 @@
             <button id="modeToggleBtn" class="mode-btn active">☀️ 亮白模式</button>
             <button id="buildingsToggleBtn" class="mode-btn active">🏢 3D建筑</button>
             <button id="hdToggleBtn" class="hd-btn">🏙️ 高精度建模</button>
-            <button id="resetViewBtn" class="reset-btn" title="重置视角">🔄</button>
             <button id="markModeBtn" class="mode-btn">📍 标记</button>
             <button id="bookmarksBtn" class="mode-btn">⭐ 收藏夹</button>
+            <button id="resetViewBtn" class="reset-btn" title="重置视角">🔄</button>
             <button id="infoBtn" class="info-btn" title="关于">ℹ️</button>
             <button id="exitGoogleBtn" class="mode-btn" style="display:none; background:#e74c3c; color:#fff; border-color:#c0392b;">❎ 退出Google地球</button>
         </div>
@@ -76,18 +76,23 @@
 
     <div id="cesiumContainer"></div>
 
-    <!-- 收藏夹面板 -->
-    <div id="bookmarksPanel" class="glass-panel">
-        <div class="bookmarks-header">
-            <h2>📍 收藏夹</h2>
-            <div>
-                <button id="exportBookmarksBtn" class="inline-action-btn">⬇️ 导出</button>
-                <button id="importBookmarksBtn" class="inline-action-btn">⬆️ 导入</button>
-                <button id="closeBookmarksBtn" class="close-btn">✕</button>
+    <!-- 收藏夹面板（与信息弹窗一致的 modal 结构，移动端显示完整） -->
+    <div id="bookmarksPanel" class="modal-overlay">
+        <div class="modal-box glass-panel">
+            <button id="closeBookmarksBtn" class="close-btn">✕</button>
+            <div class="bookmarks-header" style="margin-top:6px;">
+                <h2>📍 收藏夹</h2>
+                <div>
+                    <button id="exportBookmarksBtn" class="inline-action-btn">⬇️ 导出</button>
+                    <button id="importBookmarksBtn" class="inline-action-btn">⬆️ 导入</button>
+                </div>
             </div>
-        </div>
-        <div id="bookmarksList" class="bookmarks-list">
-            <!-- 动态生成 -->
+            <div id="bookmarksList" class="bookmarks-list">
+                <!-- 动态生成 -->
+            </div>
+            <div class="bookmarks-footer">
+                <button id="toggleMarkersBtn" class="inline-action-btn">隐藏标记</button>
+            </div>
         </div>
     </div>
 
