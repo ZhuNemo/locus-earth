@@ -627,7 +627,7 @@
         }
 
         
-        @media (max-width: 420px) {
+        @media (max-width: 385px) {
             .bookmarks-header {
                 flex-wrap: wrap;
                 gap: 4px 0;
