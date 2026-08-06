@@ -356,7 +356,7 @@ function toggleMarkingMode(enable) {
     const btn = document.getElementById('markModeBtn');
     if (btn) {
         if (enable) {
-            btn.textContent = '📍 标记模式';
+            btn.textContent = '📍 标记开';
             btn.classList.add('active');
             viewerInstance.canvas.style.cursor = 'crosshair';
         } else {
