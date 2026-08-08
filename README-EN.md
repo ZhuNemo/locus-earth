@@ -1,6 +1,6 @@
-# Locus-Maps
+# Locus Earth
 <div align="left">
-  🌐 Language / 语言: 
+  🌐 语言 / Language: 
   <a href="README.md">简体中文</a> | <a href="README-EN.md">English</a>
 </div>
 
