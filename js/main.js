@@ -28,28 +28,6 @@ import { initBookmarks } from './bookmarks.js';
 
         const viewer = initViewer('cesiumContainer', terrainProvider);
 
-        // =============================================
-        // 移动端渲染优化（修复拉远黑屏）- 无副作用版本
-        // =============================================
-        if ('ontouchstart' in window || navigator.userAgent.includes('Mobi')) {
-            // 1. 地下颜色设为浅色（拉远时显示白色而非黑色）
-            viewer.scene.globe.undergroundColor = Color.WHITE;
-            viewer.scene.globe.undergroundColorAlpha = 0.8;
-
-            // 2. 关闭地形深度测试（避免深度冲突）
-            viewer.scene.globe.depthTestAgainstTerrain = false;
-
-            // 3. 提高屏幕空间误差，降低 GPU 负载
-            viewer.scene.globe.maximumScreenSpaceError = 8;
-
-            // 4. 限制像素比率，防止过渲染
-            viewer.scene.maximumPixelRatio = Math.min(window.devicePixelRatio, 2);
-
-            // 5. 禁用动态光照（可选，移动端可减少计算）
-            // viewer.scene.globe.enableLighting = false;
-
-            console.log('📱 移动端渲染优化已启用');
-        }
 
         // ----- 覆盖区域定义 -----
         const hdAreas = [
