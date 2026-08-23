@@ -1,7 +1,8 @@
 # Locus Earth
 <div align="left">
   🌐 语言 / Language: 
-  <a href="README.md">简体中文</a> | <a href="README-EN.md">English</a>
+  <a href="README.md">简体中文</a> | <a>English</a>
+<a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
 ---
