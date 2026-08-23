@@ -26,19 +26,16 @@
     <header class="locus-header">
         <div class="brand">
             <h1>🌏 Locus Earth</h1>
-            <span class="sub">3D地球 V4.2</span>
+            <span class="sub">3D地球 V5.0</span>
             <span class="custom-message">
                 个人开发者，可以访问我的 <a href="https://github.com/ZhuNemo/" target="_blank">GitHub主页</a>
             </span>
         </div>
         <div class="controls">
-            <button id="modeToggleBtn" class="mode-btn active">☀️ 亮白模式</button>
-            <button id="buildingsToggleBtn" class="mode-btn active">🏢 3D建筑</button>
-            <button id="hdToggleBtn" class="hd-btn">🏙️ 高精度建模</button>
-            <button id="markModeBtn" class="mode-btn">📍 标记</button>
-            <button id="bookmarksBtn" class="mode-btn">⭐ 收藏夹</button>
-            <button id="resetViewBtn" class="reset-btn" title="重置视角">🔄</button>
-            <button id="infoBtn" class="info-btn" title="关于">ℹ️</button>
+            <button id="menuToggleBtn" class="menu-toggle" aria-label="打开菜单">☰</button>
+            <button id="resetViewBtn" class="top-btn" title="重置视角">↻</button>
+            <button id="infoBtn" class="top-btn" title="关于">ⓘ</button>
+
             <button id="exitGoogleBtn" class="mode-btn" style="display:none; background:#e74c3c; color:#fff; border-color:#c0392b;">❎ 退出Google地球</button>
         </div>
         <div class="credit">
@@ -46,6 +43,22 @@
             <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>
         </div>
     </header>
+
+    <!-- 侧滑菜单 -->
+    <nav id="sideMenu" class="side-menu">
+        <div class="menu-header">
+            <span class="menu-title">功能</span>
+            <button id="closeMenuBtn" class="close-btn">✕</button>
+        </div>
+        <ul class="menu-list">
+            <li><button id="modeToggleBtn" class="menu-btn active">☀️ 亮白模式</button></li>
+            <li><button id="buildingsToggleBtn" class="menu-btn active">🏢 3D建筑</button></li>
+            <li><button id="hdToggleBtn" class="menu-btn">🏙️ 高精度建模</button></li>
+            <li><button id="markModeBtn" class="menu-btn">📍 标记</button></li>
+            <li><button id="bookmarksBtn" class="menu-btn">⭐ 收藏夹</button></li>
+        </ul>
+    </nav>
+
         <!-- 右下角控制面板（指南针 + 俯仰控制） -->
         <div id="camera-controls">
             <div id="compassContainer" class="ctrl-btn" title="点击重置为正北方向">
@@ -118,7 +131,6 @@
                 <button id="openIterlogBtn" type="button" class="inline-action-btn">迭代记录</button>
             </p>
             <p style="font-size:13px; color:#666; margin-top:16px;">数据来源：Cesium ion · OpenStreetMap · Natural Earth</p>
-            <p style="font-size:11px; color:#666; margin-top:16px;">为节省数据用量，默认底图为Sentinel-2（分辨率较低），适合宏观浏览。如必须查看地面高清细节，请手动切换至 Bing 地图。</p> 
             <p style="font-size:10px; color:#aaa; margin-top:12px; border-top:1px solid #eee; padding-top:12px;">
                 ⚠ <a href="#" id="activateGoogle3D" style="color:#666; text-decoration:none; border-bottom:1px dotted #ccc;">进入Google 3D地球（实验性）</a>
                 <span style="color:#666; font-size:10px;"> · 需海外网络环境（代理或VPN）</span>
@@ -137,6 +149,7 @@
             <p>*：仅市中心小块区域有高精度建模覆盖</p>
             <p> 快速确定高精度建模具体覆盖范围的方法：搜索城市英文名称，自动定位并手动放大，弹出提示后点击开启高精度模型，观察突然出现色差的地块。无反应请稍作等待。</p>
             <p>💡tips：Bing的图源在中国大陆路网显示有误，建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"图层时不要开启3D模型，会导致严重错位。浏览非大陆地区均可。</p>
+            <p style="font-size:13px; color:#666; margin-top:16px;">为节省数据用量，默认底图为Sentinel-2（分辨率较低），适合宏观浏览。如必须查看地面高清细节，请手动切换至 Bing 地图。</p> 
             <p style="font-size:13px; color:#666; margin-top:16px;">测试发现，某些Android设备存在兼容性问题：比例尺缩小到一定程度时地图瓦片渲染失败，表现为地球整体变黑。不影响任何功能，放大比例尺后即恢复正常。由于样本数量不够无法确认具体问题原因，但目前貌似无法被修复。</p>
         </div>
     </div>
@@ -186,8 +199,9 @@
             <p>07-09 V3.1：接入Google Maps数据，并创建Google地球模式</p>
             <p>07-10 V3.2：对于Google地球模式进行优化和改进</p>
             <p>08-02 V4.0：更改项目名称，添加收藏标记功能</p>
-            <p>08-04 V4.1：加入导入/导出收藏夹功能，视觉风格换新</p>
-            <p>08-06 V4.2：修复移动端显示问题，优化用户体验</p>
+            <p>08-04 V4.1：加入导入/导出收藏夹功能，视觉风格焕新</p>
+            <p>08-06 V4.2：修复移动端显示问题</p>
+            <p>08-23 V5.0：功能按钮布局全部重构</p>
             <p>……</p>
         </div>
     </div>

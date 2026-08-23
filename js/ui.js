@@ -15,6 +15,67 @@ export function initUI(viewer, {
     closeInfo,     
     closeIterlog,  
 }) {
+
+    // ---------- 侧滑菜单控制 ----------
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+    const sideMenu = document.getElementById('sideMenu');
+    const closeMenuBtn = document.getElementById('closeMenuBtn');
+    const menuItems = sideMenu.querySelectorAll('.menu-btn');
+
+    // 创建遮罩层
+    const overlay = document.createElement('div');
+    overlay.className = 'menu-overlay';
+    document.body.appendChild(overlay);
+
+    function openMenu() {
+        sideMenu.classList.add('open');
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden'; // 禁止滚动
+    }
+
+    function closeMenu() {
+        sideMenu.classList.remove('open');
+        overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    // 汉堡按钮点击切换
+    menuToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (sideMenu.classList.contains('open')) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+
+    // 关闭按钮
+    closeMenuBtn.addEventListener('click', closeMenu);
+
+    // 点击遮罩关闭
+    overlay.addEventListener('click', closeMenu);
+
+    // 点击菜单项关闭菜单
+    menuItems.forEach(btn => {
+        btn.addEventListener('click', () => {
+            setTimeout(closeMenu, 150);
+        });
+    });
+
+    // 按 ESC 键关闭
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sideMenu.classList.contains('open')) {
+            closeMenu();
+        }
+    });
+
+    // 窗口大小变化时，保持菜单关闭
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 700 && sideMenu.classList.contains('open')) {
+            closeMenu();
+        }
+    });
+
     // =============================================
     // 1. 光照控制
     // =============================================
@@ -148,7 +209,7 @@ export function initUI(viewer, {
     }
 
     // =============================================
-    // 5. 谷歌模式关于弹窗（关闭逻辑）
+    // 5. 谷歌模式关于弹窗
     // =============================================
     const closeInfoGoogleBtn = document.getElementById('closeInfoGoogleBtn');
     const infoModalGoogle = document.getElementById('infoModalGoogle');

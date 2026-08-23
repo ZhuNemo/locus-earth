@@ -13,6 +13,11 @@
             transition: all 0.2s ease;
         }
 
+        button:hover,
+        button:focus-visible {
+            transform: translateY(-1px);
+        }
+
         * {
             -webkit-tap-highlight-color: transparent;
         }
@@ -30,6 +35,225 @@
                 sans-serif;
         }
 
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0; 
+        }
+
+        .menu-toggle,
+        .top-btn {
+            flex-shrink: 0; 
+            flex-grow: 0;
+        }
+
+        @media (max-width: 480px) {
+            .menu-toggle {
+                font-size: 24px;
+                padding: 0 4px;
+            }
+            .top-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+            .controls {
+                gap: 4px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .top-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 14px;
+            }
+            .menu-toggle {
+                font-size: 20px;
+            }
+        }
+
+        /* --- 侧滑菜单 --- */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 300px;
+            max-width: 80vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
+            z-index: 2000;
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            border-right: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .side-menu.open {
+            transform: translateX(0);
+        }
+
+        /* 菜单头部 */
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px 16px 20px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        .menu-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .menu-header .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #888;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+
+        /* 菜单列表 */
+        .menu-list {
+            list-style: none;
+            padding: 16px 12px 20px 12px;
+            margin: 0;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .menu-list li {
+            margin: 0;
+            padding: 0;
+        }
+
+        .menu-btn {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            padding: 12px 18px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            text-align: left;
+            font-family: inherit;
+        }
+        .menu-btn:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
+        .menu-btn:active {
+            transform: scale(0.97);
+        }
+        .menu-btn.active {
+            background: #d4e8ff;
+            color: #0055cc;
+        }
+        /* 高精度建模按钮在菜单中的特殊样式（默认隐藏，由JS控制显示） */
+        .menu-btn.hd-btn {
+            display: none; /* 默认隐藏，和原来一样 */
+        }
+        .menu-btn.hd-btn.visible {
+            display: flex;
+        }
+
+        /* 点击菜单外部关闭（背景遮罩） */
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .menu-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* 移动端菜单宽度适配 */
+        @media (max-width: 480px) {
+            .side-menu {
+                width: 85vw;
+            }
+        }
+
+        /* 隐藏原 controls 中的按钮，因为它们已移到菜单中 */
+        .controls .mode-btn,
+        .controls .reset-btn,
+        .controls .info-btn {
+            display: none;
+        }
+        /* 保留 exitGoogleBtn 的显示控制 */
+        .controls #exitGoogleBtn {
+            display: none; 
+        }
+        .controls #exitGoogleBtn.visible {
+            display: inline-block;
+        }
+
+        .top-btn,
+        .menu-toggle {
+            background: transparent;
+            border: 1px solid #ddd;
+            border-radius: var(--control-radius);
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0; 
+            color: #333;
+        }
+        .top-btn:hover,
+        .menu-toggle:hover {
+            background: #e0e0e0;
+        }
+
+        @media (max-width: 480px) {
+            .top-btn,
+            .menu-toggle {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+        }
+
+        .menu-btn.reset-in-menu,
+        .menu-btn.info-in-menu {
+            display: none; 
+        }
+                
+        .menu-btn.reset-in-menu,
+        .menu-btn.info-in-menu {
+            display: none;
+        }
+
+        
         .locus-header {
             flex-shrink: 0;
             width: 100%;
