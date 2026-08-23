@@ -163,6 +163,9 @@ import { initBookmarks } from './bookmarks.js';
         // ----- 覆盖区检测与联动 -----
         let lastCheckTime = 0;
         function checkCameraPosition() {
+             if (!isInHdArea) {
+                hdToggleBtn.style.display = 'none';
+            }
             if (window._isGoogleMode) return;
             const now = Date.now();
             if (now - lastCheckTime < 200) return;
@@ -341,7 +344,7 @@ import { initBookmarks } from './bookmarks.js';
                 await Promise.race([loadPromise, timeoutPromise]);
                 console.log('✅ Google 网络连通');
             } catch (error) {
-                showToast('⚠️ 无法连接 Google 服务，请检查 VPN 或代理是否开启');
+                showToast('⚠️ 无法连接 Google 服务，请检查网络环境');
                 console.warn('网络检测失败:', error);
                 return; // 直接退出，不消耗任何会话
             }
@@ -405,7 +408,7 @@ import { initBookmarks } from './bookmarks.js';
 
             } catch (error) {
                 console.error('❌ 激活谷歌3D失败:', error);
-                showToast('⚠️ 谷歌3D加载失败，请检查网络或VPN');
+                showToast('⚠️ 谷歌3D加载失败，请检查网络环境');
             }
         });
 

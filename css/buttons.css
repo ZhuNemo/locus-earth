@@ -1,0 +1,164 @@
+        .info-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #555;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--control-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .info-btn,
+        .interlog-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #555;
+            width: 28px;
+            height: 28px;
+            border-radius: var(--control-radius);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .info-btn:hover,
+        .interlog-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+        /* 高精度建模按钮 */
+        .controls .hd-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #333;
+            padding: 6px 16px;
+            border-radius: var(--control-radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            display: none;
+        }
+        .controls .hd-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+        .controls .hd-btn.active {
+            background: #d4e8ff;
+            border-color: #80b8ff;
+            color: #0055cc;
+        }
+        .controls .hd-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #e8e8e8;
+        }
+
+        .menu-toggle,
+        .top-btn {
+            flex-shrink: 0; 
+            flex-grow: 0;
+        }
+
+        @media (max-width: 480px) {
+            .menu-toggle {
+                font-size: 24px;
+                padding: 0 4px;
+            }
+            .top-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+            .controls {
+                gap: 4px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .top-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 14px;
+            }
+            .menu-toggle {
+                font-size: 20px;
+            }
+        }
+
+        .locus-header .controls .mode-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #333;
+            padding: 6px 16px;
+            border-radius: var(--control-radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+        .locus-header .controls .mode-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+        .locus-header .controls .mode-btn.active {
+            background: #d4e8ff;
+            border-color: #80b8ff;
+            color: #0055cc;
+        }
+        .locus-header .controls .reset-btn {
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            color: #333;
+            width: 36px;
+            height: 36px;
+            border-radius: var(--control-radius);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+        }
+        .locus-header .controls .reset-btn:hover {
+            background: #e0e0e0;
+            border-color: #aaa;
+        }
+        .locus-header .controls .mode-btn:hover,
+        .locus-header .controls .mode-btn:focus-visible,
+        .locus-header .controls .hd-btn:hover,
+        .locus-header .controls .hd-btn:focus-visible,
+        .locus-header .controls .reset-btn:hover,
+        .locus-header .controls .reset-btn:focus-visible,
+        .locus-header .controls .info-btn:hover,
+        .locus-header .controls .info-btn:focus-visible,
+        .locus-header .controls .interlog-btn:hover,
+        .locus-header .controls .interlog-btn:focus-visible,
+        .locus-header .controls #camera-controls .ctrl-btn:hover,
+        .locus-header .controls #camera-controls .ctrl-btn:focus-visible,
+        .locus-header .controls .bookmark-item:hover,
+        .locus-header .controls .bookmark-item:focus-within,
+        .locus-header .controls .bookmark-item .actions button:hover,
+        .locus-header .controls .bookmark-item .actions button:focus-visible,
+        .locus-header .controls .modal-box .close-btn:hover,
+        .locus-header .controls .modal-box .close-btn:focus-visible {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }

@@ -1,0 +1,33 @@
+        /* 提示浮层 */
+        .toast-message {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 400;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            white-space: nowrap;
+        }
+        .toast-message.show {
+            opacity: 1;
+        }
+
+        @media(max-width:600px){
+        .cesium-viewer-bottom {
+            left: 8px !important;
+        }
+        .cesium-credit-text {
+            display:none;
+        }
+        }
