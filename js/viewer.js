@@ -5,32 +5,25 @@ import {
             ScreenSpaceEventHandler,
             ScreenSpaceEventType,
             Cartesian3, 
+            createDefaultImageryProviderViewModels,
         } from 'cesium'; 
 
 export function initViewer(containerId, terrainProvider) {
+    const defaultImageryProviders = createDefaultImageryProviderViewModels();
+
+    const sentinelViewModel = defaultImageryProviders.find(vm => vm.name.includes('Sentinel-2'));
+
     const viewer = new Viewer(containerId, {
         terrainProvider: terrainProvider,
-        baseLayerPicker: true,
+        baseLayerPicker: true, 
+        imageryProviderViewModels: defaultImageryProviders, 
+        selectedImageryProviderViewModel: sentinelViewModel, 
+        
         infoBox: false,
         sceneModePicker: false,
         sceneMode: SceneMode.SCENE3D,
         locale: 'zh-CN',
     });
-
-    // 设置哨兵2底图
-    const viewModels = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
-        let sentinelViewModel = null;
-        for (const vm of viewModels) {
-            if (vm.name.includes('Sentinel-2')) {
-                sentinelViewModel = vm;
-                break;
-            }
-        }
-        if (sentinelViewModel) {
-            viewer.baseLayerPicker.viewModel.selectedImagery = sentinelViewModel;
-        } else {
-            console.warn('⚠️ 未找到哨兵 2 图源');
-        }
 
         // ----- 移动端/触屏手感优化 -----
         const controller = viewer.scene.screenSpaceCameraController;
@@ -44,16 +37,16 @@ export function initViewer(containerId, terrainProvider) {
         controller.enableCollisionDetection = true;
 
 
-        // 启用双击放大（自定义）
+        // 启用双击放大
         const handler = new ScreenSpaceEventHandler(viewer.canvas);
-        handler.setInputAction((click) => {
-            // 如果点击到标记实体，不触发放大（避免干扰）
-            const picked = viewer.scene.pick(click.position);
+        const zoomAtPosition = (position) => {
+            // 如果点击到标记实体，不触发放大
+            const picked = viewer.scene.pick(position);
             if (picked && picked.id && picked.id._isBookmark) {
                 return;
             }
             // 拾取地面位置
-            const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
+            const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
             if (!cartesian) return;
 
             const carto = viewer.camera.positionCartographic;
@@ -63,7 +56,40 @@ export function initViewer(containerId, terrainProvider) {
                 destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
                 duration: 0.5
             });
+        };
+
+        handler.setInputAction((click) => {
+            zoomAtPosition(click.position);
         }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+        // iOS Safari does not reliably dispatch a touch double-click to Cesium.
+        let lastTouch = null;
+        viewer.canvas.style.touchAction = 'none';
+        viewer.canvas.addEventListener('touchend', (event) => {
+            if (event.changedTouches.length !== 1 || event.touches.length !== 0) {
+                lastTouch = null;
+                return;
+            }
+
+            const touch = event.changedTouches[0];
+            const now = Date.now();
+            const bounds = viewer.canvas.getBoundingClientRect();
+            const position = {
+                x: touch.clientX - bounds.left,
+                y: touch.clientY - bounds.top
+            };
+            const isDoubleTap = lastTouch &&
+                now - lastTouch.time < 350 &&
+                Math.hypot(position.x - lastTouch.x, position.y - lastTouch.y) < 30;
+
+            if (isDoubleTap) {
+                event.preventDefault();
+                zoomAtPosition(position);
+                lastTouch = null;
+            } else {
+                lastTouch = { ...position, time: now };
+            }
+        }, { passive: false });
 
 
         // ----- 光照控制 -----
