@@ -1,15 +1,194 @@
+:root {
+    color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
-    body, #layout, #controls, #menu, #bookmarks, #buttons {
-        background-color: #1a1a1a !important;
-        color: #eeeeee !important;
-        border-color: #333 !important;
+    :root {
+        color-scheme: dark;
     }
-    #buttons button, #controls button, #menu button {
-        background-color: #333 !important;
-        color: #fff !important;
-        border-color: #555 !important;
+
+    body {
+        background: #111827;
+        color: #e5e7eb;
     }
-    .some-specific-class {
+
+    .locus-header,
+    .side-menu,
+    #camera-controls,
+    .glass-panel {
+        background-color: rgba(31, 41, 55, 0.94) !important;
+        color: #e5e7eb !important;
+        border-color: #374151 !important;
+    }
+
+    .locus-header {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .locus-header .brand h1,
+    .menu-title,
+    .bookmarks-header h2,
+    .bookmark-item .info .name,
+    .modal-box h2 {
+        color: #f9fafb !important;
+    }
+
+    .locus-header .brand .sub,
+    .locus-header .brand .custom-message,
+    .locus-header .credit,
+    .modal-box p,
+    .empty-message {
+        color: #cbd5e1 !important;
+    }
+
+    .locus-header .brand .custom-message {
+        border-left-color: #4b5563 !important;
+    }
+
+    .locus-header .brand .custom-message a,
+    .locus-header .credit a {
+        color: #93c5fd !important;
+    }
+
+    .top-btn,
+    .menu-toggle,
+    .info-btn,
+    .interlog-btn,
+    .controls .hd-btn,
+    .locus-header .controls .mode-btn,
+    .locus-header .controls .reset-btn,
+    #buttons button,
+    #controls button,
+    #menu button {
+        background-color: #374151 !important;
+        color: #f9fafb !important;
+        border-color: #4b5563 !important;
+    }
+
+    .top-btn:hover,
+    .menu-toggle:hover,
+    .info-btn:hover,
+    .interlog-btn:hover,
+    .controls .hd-btn:hover,
+    .locus-header .controls .mode-btn:hover,
+    .locus-header .controls .reset-btn:hover {
+        background-color: #4b5563 !important;
+        border-color: #6b7280 !important;
+    }
+
+    .locus-header .top-btn,
+    .locus-header .menu-toggle {
+        background: #374151 !important;
+    }
+
+    .controls .hd-btn.active,
+    .locus-header .controls .mode-btn.active,
+    .menu-btn.active {
+        background-color: #1d4ed8 !important;
+        border-color: #60a5fa !important;
+        color: #eff6ff !important;
+    }
+
+    .menu-header,
+    .menu-btn,
+    .bookmark-item {
+        border-color: #374151 !important;
+    }
+
+    .menu-title,
+    .menu-btn {
+        color: #f9fafb !important;
+    }
+
+    .menu-btn:hover,
+    .bookmark-item:hover {
+        background: rgba(75, 85, 99, 0.55) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    #camera-controls .ctrl-btn {
+        color: #e5e7eb !important;
+    }
+
+    #camera-controls .ctrl-btn:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #ffffff !important;
+    }
+
+    #camera-controls .divider {
+        background: #4b5563 !important;
+    }
+
+    .modal-box .close-btn,
+    .menu-header .close-btn,
+    .bookmarks-header .close-btn {
+        color: #cbd5e1 !important;
+    }
+
+    .modal-box .close-btn:hover {
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .inline-action-btn {
+        background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%) !important;
+        border-color: #3b82f6 !important;
+        color: #dbeafe !important;
+    }
+
+    .inline-action-btn:hover,
+    .inline-action-btn:focus-visible {
+        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
+        border-color: #93c5fd !important;
+        color: #ffffff !important;
+    }
+
+    .bookmark-item .info .coords {
+        color: #9ca3af !important;
+    }
+
+    .bookmark-item .actions .delete-btn:hover {
+        background: #451a1a !important;
+    }
+
+    .bookmark-item .actions .locate-btn:hover {
+        background: #172554 !important;
+    }
+
+    .modal-box::-webkit-scrollbar-thumb {
+        background: #6b7280 !important;
+    }
+
+    .modal-box::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af !important;
+    }
+
+    input,
+    select,
+    textarea {
+        background-color: #1f2937 !important;
+        color: #f9fafb !important;
+        border-color: #4b5563 !important;
+    }
+
+    [style*="color:#666"],
+    [style*="color: #666"],
+    [style*="color:#999"],
+    [style*="color: #999"] {
+        color: #9ca3af !important;
+    }
+
+    [style*="border-top:1px solid #eee"],
+    [style*="border-top: 1px solid #eee"] {
+        border-top-color: #374151 !important;
+    }
+
+    [style*="border-bottom:1px dotted #ccc"],
+    [style*="border-bottom: 1px dotted #ccc"] {
+        border-bottom-color: #6b7280 !important;
+    }
+
+    .menu-overlay {
         background: rgba(0, 0, 0, 0.6) !important;
     }
 }

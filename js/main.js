@@ -577,7 +577,7 @@ import { initBookmarks } from './bookmarks.js';
                 },
                 duration: 0.6
             });
-            showToast('⟲ 俯仰角已重置');
+            showToast('↺ 俯仰角已重置');
         });
 
         if ('serviceWorker' in navigator) {

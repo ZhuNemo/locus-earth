@@ -134,7 +134,7 @@ function closeBookmarksPanel() {
 function renderBookmarksList() {
     if (!listContainer) return;
     if (bookmarks.length === 0) {
-        listContainer.innerHTML = '<div class="empty-message">暂无收藏标记<br>tips：利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
+        listContainer.innerHTML = '<div class="empty-message">暂无收藏标记<br>利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
         return;
     }
 
