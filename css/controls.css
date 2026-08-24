@@ -33,6 +33,15 @@
             font-family: inherit;
             font-weight: 500;
         }
+
+        #zoomInBtn,
+        #zoomOutBtn,
+        #resetTiltBtn,
+        #compassContainer,
+        #cesiumContainer {
+            touch-action: manipulation;
+        }
+
         #camera-controls .ctrl-btn:hover {
             background: rgba(0, 0, 0, 0.08);
             color: #000;

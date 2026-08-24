@@ -1,0 +1,15 @@
+@media (prefers-color-scheme: dark) {
+    body, #layout, #controls, #menu, #bookmarks, #buttons {
+        background-color: #1a1a1a !important;
+        color: #eeeeee !important;
+        border-color: #333 !important;
+    }
+    #buttons button, #controls button, #menu button {
+        background-color: #333 !important;
+        color: #fff !important;
+        border-color: #555 !important;
+    }
+    .some-specific-class {
+        background: rgba(0, 0, 0, 0.6) !important;
+    }
+}
