@@ -1,8 +1,8 @@
 {
   "name": "Locus Earth",
   "short_name": "Locus Earth",
-  "start_url": "/locus-maps/",
-  "scope": "/locus-maps/",
+  "start_url": "./",
+  "scope": "./",
   "description": "轻量级3D地球",
   "id": "/locus-earth/",
   "display": "standalone",
