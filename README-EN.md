@@ -12,7 +12,7 @@ Locus Earth is an open-source web-based 3D Earth application built on Cesium and
 
 Features include: 3D terrain, satellite imagery, global buildings, light switching, building display control, and high-precision modeling display (auto-triggered). It currently also supports saving favorite marker points using the browser's local cache, and you can save markers locally or import local markers via export/import functionality.
 
-The top menu bar buttons allow you to toggle Light/White and Day/Night modes, toggle 3D buildings, toggle high-precision modeling, reset the view and North-up orientation, access the marker and favorites bar, and view About information.
+The top menu bar buttons allow you to toggle Light/White and Day/Night modes, toggle 3D buildings, toggle high-precision modeling, reset the view and North-up orientation, access the marker and favorites bar, and view About information. Switching between dark mode and light mode is available in the settings.
 
 Built with the assistance of Artificial Intelligence. The models used (in priority order): DeepSeek, VS Code Copilot, Doubao, ChatGPT, Google Gemini.
 

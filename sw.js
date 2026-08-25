@@ -2,6 +2,9 @@ const CACHE_NAME = 'locus-earth-cache-v1';
 const urlsToCache = [
   './',
   './index.html',
+  './settings.html',
+  './js/settings.js',
+  './css/settings.css',
   './android-chrome-192x192.png',
   './android-chrome-512x512.png',
   './apple-touch-icon.png',

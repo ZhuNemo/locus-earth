@@ -29,7 +29,7 @@
     <link rel="stylesheet" href="css/bookmarks.css" />
     <link rel="stylesheet" href="css/toast.css" />
     <link rel="stylesheet" href="css/utilities.css" />
-    <link rel="stylesheet" href="css/dark.css" />
+    <link rel="stylesheet" href="css/themes.css" /> 
 
 </head>
 <body>
@@ -66,6 +66,7 @@
             <li><button id="hdToggleBtn" class="menu-btn">🏙️ 高精度建模</button></li>
             <li><button id="markModeBtn" class="menu-btn">📍 标记</button></li>
             <li><button id="bookmarksBtn" class="menu-btn">⭐ 收藏夹</button></li>
+            <li><button id="settingsBtn" class="menu-btn">⚙️ 设置</button></li>
         </ul>
     </nav>
 
@@ -99,7 +100,7 @@
 
     <div id="cesiumContainer"></div>
 
-    <!-- 收藏夹面板（与信息弹窗一致的 modal 结构，移动端显示完整） -->
+    <!-- 收藏夹面板 -->
     <div id="bookmarksPanel" class="modal-overlay">
         <div class="modal-box glass-panel">
             <button id="closeBookmarksBtn" class="close-btn">✕</button>
@@ -111,7 +112,6 @@
                 </div>
             </div>
             <div id="bookmarksList" class="bookmarks-list">
-                <!-- 动态生成 -->
             </div>
             <div class="bookmarks-footer">
                 <button id="toggleMarkersBtn" class="inline-action-btn">隐藏标记</button>
@@ -133,7 +133,7 @@
                 <strong>Locus Earth</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地球”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
             </p>
             <p>📍 功能包括：3D 地形、卫星影像、全球建筑、光照切换、建筑显示控制、高精度建模显示（自动触发）。目前还支持使用浏览器本地缓存保存收藏标记点，可以通过导出/导入功能实现备份。</p>
-            <p>顶部菜单按钮点击展开，可切换亮白/昼夜模式、开关3D建筑、开关高精度建模、标记和收藏夹栏，重置视角及北向上、查看关于信息。</p>
+            <p>顶部：菜单点击展开可切换亮白/昼夜模式、开关3D建筑、开关高精度建模、标记和收藏夹栏、打开网站设置，重置视角及北向上、查看关于信息。</p>
             <p>📁 开放源代码，代码文件指路： <a href="https://github.com/ZhuNemo/locus-maps" target="_blank">GitHub 仓库</a>。</p>
             <p>P.S.:使用人工智能辅助开发。</p>
             <p style="margin-top: 12px; display:flex; flex-wrap:wrap; gap: 12px;">

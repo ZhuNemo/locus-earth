@@ -84,7 +84,7 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
             // 显示“退出”按钮
             document.getElementById('exitGoogleBtn').style.display = 'inline-block';
 
-                            // --- 6. 提示用户 ---
+                // --- 6. 提示用户 ---
                 showToast('🌍 谷歌3D地球已激活，并飞往香港');
 
             } catch (error) {

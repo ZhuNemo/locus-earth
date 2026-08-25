@@ -19,7 +19,7 @@
         /* 移动端菜单宽度适配 */
         @media (max-width: 480px) {
             .side-menu {
-                width: 85vw;
+                width: 60%;
             }
         }
 

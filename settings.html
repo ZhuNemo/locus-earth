@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Locus Earth - 设置</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="android-chrome-512x512.png" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="manifest" href="manifest.json" />
+
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/buttons.css" />
+    <link rel="stylesheet" href="css/settings.css" />
+    <link rel="stylesheet" href="css/themes.css" />
+</head>
+<body class="settings-body">
+
+    <header class="settings-header">
+        <button id="backBtn" class="back-btn" aria-label="返回主页面">‹</button>
+        <h1>⚙️ 设置</h1>
+    </header>
+
+    <main class="settings-container">
+        <div class="setting-group">
+
+            <!-- 跟随系统 -->
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">跟随系统</span>
+                    <span class="setting-desc">自动跟随系统深色/浅色模式</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="followSystem" checked />
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- 色彩模式 -->
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">色彩模式</span>
+                    <span class="setting-desc">手动选择深色或浅色模式</span>
+                </div>
+                <select id="colorMode" disabled>
+                    <option value="light">☀️ 浅色</option>
+                    <option value="dark">🌙 深色</option>
+                </select>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="js/settings.js"></script>
+</body>
+</html>

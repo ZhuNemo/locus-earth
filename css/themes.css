@@ -1,0 +1,219 @@
+:root {
+    --bg-primary: #f5f5f5;
+    --bg-header: #ffffff;
+    --bg-card: #ffffff;
+    --bg-select: #f0f0f0;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555;
+    --text-muted: #888;
+    --border-color: #e0e0e0;
+    --shadow-color: rgba(0,0,0,0.06);
+}
+select {
+    background-color: #ffffff;
+    color: #1a1a1a;
+    border: 1px solid #d0d0d0;
+}
+
+[data-theme="dark"] {
+    --bg-primary: #111827;
+    --bg-header: #1f2937;
+    --bg-card: #1f2937;
+    --bg-select: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #cbd5e1;
+    --text-muted: #9ca3af;
+    --border-color: #374151;
+    --shadow-color: rgba(0,0,0,0.35);
+}
+[data-theme="dark"] select {
+    background-color: #1f2937;
+    color: #f9fafb;
+    border: 1px solid #4b5563;
+}
+
+    [data-theme="dark"] body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .locus-header,
+    [data-theme="dark"] .side-menu,
+    [data-theme="dark"] #camera-controls,
+    [data-theme="dark"] .glass-panel {
+        background-color: rgba(31, 41, 55, 0.94);
+        color: #e5e7eb  ;
+        border-color: #374151  ;
+    }
+
+    [data-theme="dark"] .locus-header {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-theme="dark"] .locus-header .brand h1,
+    [data-theme="dark"] .menu-title,
+    [data-theme="dark"] .bookmarks-header h2,
+    [data-theme="dark"] .bookmark-item .info .name,
+    [data-theme="dark"] .modal-box h2 {
+        color: #f9fafb  ;
+    }
+
+    [data-theme="dark"] .locus-header .brand .sub,
+    [data-theme="dark"] .locus-header .brand .custom-message,
+    [data-theme="dark"] .locus-header .credit,
+    [data-theme="dark"] .modal-box p,
+    [data-theme="dark"] .empty-message {
+        color: #cbd5e1  ;
+    }
+
+    [data-theme="dark"] .locus-header .brand .custom-message {
+        border-left-color: #4b5563  ;
+    }
+
+    [data-theme="dark"] .locus-header .brand .custom-message a,
+    [data-theme="dark"] .locus-header .credit a {
+        color: #93c5fd  ;
+    }
+
+    [data-theme="dark"] .top-btn,
+    [data-theme="dark"] .menu-toggle,
+    [data-theme="dark"] .info-btn,
+    [data-theme="dark"] .interlog-btn,
+    [data-theme="dark"] .controls .hd-btn,
+    [data-theme="dark"] .locus-header .controls .mode-btn,
+    [data-theme="dark"] .locus-header .controls .reset-btn,
+    [data-theme="dark"] #buttons button,
+    [data-theme="dark"] #controls button,
+    [data-theme="dark"] #menu button {
+        background-color: #374151  ;
+        color: #f9fafb  ;
+        border-color: #4b5563  ;
+    }
+
+    [data-theme="dark"] .top-btn:hover,
+    [data-theme="dark"] .menu-toggle:hover,
+    [data-theme="dark"] .info-btn:hover,
+    [data-theme="dark"] .interlog-btn:hover,
+    [data-theme="dark"] .controls .hd-btn:hover,
+    [data-theme="dark"] .locus-header .controls .mode-btn:hover,
+    [data-theme="dark"] .locus-header .controls .reset-btn:hover {
+        background-color: #4b5563  ;
+        border-color: #6b7280  ;
+    }
+
+    [data-theme="dark"] .locus-header .top-btn,
+    [data-theme="dark"] .locus-header .menu-toggle {
+        background: #374151  ;
+    }
+
+    [data-theme="dark"] .controls .hd-btn.active,
+    [data-theme="dark"] .locus-header .controls .mode-btn.active,
+    [data-theme="dark"] .menu-btn.active {
+        background-color: #1d4ed8  ;
+        border-color: #60a5fa  ;
+        color: #eff6ff  ;
+    }
+
+    [data-theme="dark"] .menu-header,
+    [data-theme="dark"] .menu-btn,
+    [data-theme="dark"] .bookmark-item {
+        border-color: #374151  ;
+    }
+
+    [data-theme="dark"] .menu-title,
+    [data-theme="dark"] .menu-btn {
+        color: #f9fafb  ;
+    }
+
+    [data-theme="dark"] .menu-btn:hover,
+    [data-theme="dark"] .bookmark-item:hover {
+        background: rgba(75, 85, 99, 0.55)  ;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    [data-theme="dark"] #camera-controls .ctrl-btn {
+        color: #e5e7eb  ;
+    }
+
+    [data-theme="dark"] #camera-controls .ctrl-btn:hover {
+        background: rgba(255, 255, 255, 0.12)  ;
+        color: #ffffff  ;
+    }
+
+    [data-theme="dark"] #camera-controls .divider {
+        background: #4b5563  ;
+    }
+
+    [data-theme="dark"] .modal-box .close-btn,
+    [data-theme="dark"] .menu-header .close-btn,
+    [data-theme="dark"] .bookmarks-header .close-btn {
+        color: #cbd5e1  ;
+    }
+
+    [data-theme="dark"] .modal-box .close-btn:hover {
+        color: #ffffff  ;
+        background: rgba(255, 255, 255, 0.1)  ;
+    }
+
+    [data-theme="dark"] .inline-action-btn {
+        background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)  ;
+        border-color: #3b82f6  ;
+        color: #dbeafe  ;
+    }
+
+    [data-theme="dark"] .inline-action-btn:hover,
+    [data-theme="dark"] .inline-action-btn:focus-visible {
+        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%)  ;
+        border-color: #93c5fd  ;
+        color: #ffffff  ;
+    }
+
+    [data-theme="dark"] .bookmark-item .info .coords {
+        color: #9ca3af  ;
+    }
+
+    [data-theme="dark"] .bookmark-item .actions .delete-btn:hover {
+        background: #451a1a  ;
+    }
+
+    [data-theme="dark"] .bookmark-item .actions .locate-btn:hover {
+        background: #172554  ;
+    }
+
+    [data-theme="dark"] .modal-box::-webkit-scrollbar-thumb {
+        background: #6b7280  ;
+    }
+
+    [data-theme="dark"] .modal-box::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af  ;
+    }
+
+    input,
+    select,
+    textarea {
+        background-color: #1f2937  ;
+        color: #f9fafb  ;
+        border-color: #4b5563  ;
+    }
+
+    [style*="color:#666"],
+    [style*="color: #666"],
+    [style*="color:#999"],
+    [style*="color: #999"] {
+        color: #9ca3af  ;
+    }
+
+    [style*="border-top:1px solid #eee"],
+    [style*="border-top: 1px solid #eee"] {
+        border-top-color: #374151  ;
+    }
+
+    [style*="border-bottom:1px dotted #ccc"],
+    [style*="border-bottom: 1px dotted #ccc"] {
+        border-bottom-color: #6b7280  ;
+    }
+
+    [data-theme="dark"] .menu-overlay {
+        background: rgba(0, 0, 0, 0.6)  ;
+    }
+        

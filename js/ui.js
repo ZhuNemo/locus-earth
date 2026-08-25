@@ -1,8 +1,6 @@
-// js/ui.js
 import { Cartesian3, Math as CesiumMath } from 'cesium';
 
 export function initUI(viewer, {
-    // 从 main.js 传入的共享状态和方法
     buildingsPrimitive,
     state,
     setBuildingsVisible,
@@ -21,6 +19,7 @@ export function initUI(viewer, {
     const sideMenu = document.getElementById('sideMenu');
     const closeMenuBtn = document.getElementById('closeMenuBtn');
     const menuItems = sideMenu.querySelectorAll('.menu-btn');
+    
 
     // 创建遮罩层
     const overlay = document.createElement('div');
@@ -30,7 +29,7 @@ export function initUI(viewer, {
     function openMenu() {
         sideMenu.classList.add('open');
         overlay.classList.add('show');
-        document.body.style.overflow = 'hidden'; // 禁止滚动
+        document.body.style.overflow = 'hidden'; 
     }
 
     function closeMenu() {
@@ -97,6 +96,11 @@ export function initUI(viewer, {
             toggleBtn.classList.add('active');
         }
     }
+
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+        window.location.href = 'settings.html';
+    });
+    
     toggleBtn.addEventListener('click', () => {
         switchLighting(!isLightingEnabled);
     });

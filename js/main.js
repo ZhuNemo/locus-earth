@@ -23,6 +23,32 @@ import { initGoogleMode } from './google-mode.js';
 
         Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMjgxOGI5ZS1lYzQ1LTRkN2ItYWRmYy05YzllOTNhYWZjYzQiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IlpodU5lbW9fZGVmYXVsdCIsImlhdCI6MTc4MzIyMzUwOX0.HdLWoiGJw7McbyHwjra0Bx7J57pVrZGIJfNk0AZjQBU';
 
+
+        (function initTheme() {
+        const STORAGE_KEY = 'locus-settings';
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) {
+                meta.content = theme === 'dark' ? '#1a1a1a' : '#ffffff';
+            }
+        }
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const settings = JSON.parse(raw);
+                if (settings.followSystem !== false) {
+                    applyTheme(getSystemTheme());
+                } else {
+                    applyTheme(settings.colorMode || 'light');
+                }
+            }
+        } catch {}
+    })();
+
         const terrainProvider = await CesiumTerrainProvider.fromIonAssetId(1, {
             requestVertexNormals: true,
             requestWaterMask: true

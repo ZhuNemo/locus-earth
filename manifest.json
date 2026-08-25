@@ -1,6 +1,8 @@
 {
   "name": "Locus Earth",
   "short_name": "Locus Earth",
+  "start_url": "/locus-maps/",
+  "scope": "/locus-maps/",
   "description": "轻量级3D地球",
   "id": "/locus-earth/",
   "display": "standalone",
@@ -27,13 +29,13 @@
   ,"screenshots": [
   {
     "src": "screenshot-mobile.png",
-    "sizes": "460x818",
+    "sizes": "1080x2250",
     "type": "image/png",
     "form_factor": "narrow"
   },
   {
     "src": "screenshot-desktop.png",
-    "sizes": "1279x720",
+    "sizes": "1449x942",
     "type": "image/png",
     "form_factor": "wide"
   }
