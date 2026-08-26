@@ -21,7 +21,7 @@ import { showToast, closeInfo, closeIterlog } from './utils.js';
 import { initHdLayers } from './hd-layers.js';
 import { initGoogleMode } from './google-mode.js';
 
-        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIE1hcHMiLCJpYXQiOjE3ODUwNDE3NTB9.AS3v82gVfiQzkfgaJ-GVK_ly4RymaRyaJ9f9ol94AuU';
+        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjVCa3M3Yi1WN01PNm1PNmsiLCJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIEVhcnRoIiwiaWF0IjoxNzg3NzI2NDg2fQ.M5m1FaISKpc1rjNRTwvv5tZjvdRhVP82mYSR6wYqd_4';
 
 
         (function initTheme() {
