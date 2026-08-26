@@ -18,6 +18,8 @@ Built with the assistance of Artificial Intelligence. The models used (in priori
 
 Access URL: https://zhunemo.github.io/locus-earth/
 
+*Note: The link is for display purposes only! The Access Token has a domain whitelist set. If you decide to fork this repository for further modifications and builds, please go to https://ion.cesium.com/ to register a free account using GitHub and replace the original Access Token. Please make sure to follow Cesium's user agreement and do not misuse someone else's account. Thanks for understanding.
+
 Personal project start date: 2026-07-04
 
 No team, hobby development. Iterated irregularly.

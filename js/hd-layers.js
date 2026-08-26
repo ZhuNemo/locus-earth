@@ -137,9 +137,9 @@ export async function initHdLayers(viewer, showToast) {
             // 进入覆盖区
             if (inArea && !isInHdArea) {
                 isInHdArea = true;
-                osmBuildingsWasVisible = state.buildingsVisible; // 记录进入前的状态
+                osmBuildingsWasVisible = state.buildingsVisible; 
 
-                // 如果当前3D建筑是开启的，自动关闭（但按钮不禁用）
+                // 如果当前3D建筑是开启的，自动关闭
                 if (state.buildingsVisible && buildingsPrimitive) {
                     setBuildingsVisible(false);
                     wasOsmDisabledByHd = true;

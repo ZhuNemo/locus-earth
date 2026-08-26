@@ -39,14 +39,31 @@ export function initViewer(containerId, terrainProvider) {
 
         // 启用双击放大
         const handler = new ScreenSpaceEventHandler(viewer.canvas);
-        const zoomAtPosition = (position) => {
-            // 如果点击到标记实体，不触发放大
-            const picked = viewer.scene.pick(position);
+
+        let lastClickPosition = null; 
+
+        handler.setInputAction((event) => {
+            lastClickPosition = event.position;
+        }, ScreenSpaceEventType.LEFT_DOWN);
+
+        // 双击事件
+        handler.setInputAction((click) => {
+            if (lastClickPosition) {
+                const dx = click.position.x - lastClickPosition.x;
+                const dy = click.position.y - lastClickPosition.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 5) {
+                    console.log('忽略双击');
+                    return;
+                }
+            }
+
+            const picked = viewer.scene.pick(click.position);
             if (picked && picked.id && picked.id._isBookmark) {
                 return;
             }
-            // 拾取地面位置
-            const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
+
+            const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
             if (!cartesian) return;
 
             const carto = viewer.camera.positionCartographic;
@@ -56,10 +73,6 @@ export function initViewer(containerId, terrainProvider) {
                 destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
                 duration: 0.5
             });
-        };
-
-        handler.setInputAction((click) => {
-            zoomAtPosition(click.position);
         }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
         // iOS Safari does not reliably dispatch a touch double-click to Cesium.

@@ -22,7 +22,21 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-       
+        body *:not(input):not(textarea) {
+            -webkit-user-select: none;
+            -moz-user-select: none;    
+            -ms-user-select: none;    
+            user-select: none;
+        }
+
+        img, a, iframe {
+        -webkit-user-drag: none;
+        }
+
+        ::selection {
+        background: transparent;
+        }
+            
         body { display: flex; flex-direction: column; background: #f5f5f5; }
 
         body {

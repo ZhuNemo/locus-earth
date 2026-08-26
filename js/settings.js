@@ -135,8 +135,7 @@
 
     // 4e. 返回按钮
     backBtn.addEventListener('click', function() {
-        // 返回主页面，保留当前路径的查询参数
-        window.location.href = './';
+        history.back();
     });
 
     // =============================================

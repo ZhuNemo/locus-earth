@@ -394,7 +394,7 @@ function exportBookmarksToCSV() {
         alert('没有可导出的标记');
         return null;
     }
-    let header = '# Locus Maps 收藏夹导出\n# 格式: 名称,经度,纬度\n';
+    let header = '# Locus Earth 收藏夹导出\n# 格式: 名称,经度,纬度\n';
     const rows = bookmarks.map(b => `${b.name},${b.lon},${b.lat}`);
     return header + rows.join('\n');
 }
