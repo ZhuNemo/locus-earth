@@ -11,7 +11,7 @@
 
 ---
 
-**Locus Earth - 基于 Cesium 与 OpenStreetMap 的 Web 端 3D 全球地图应用**
+**Locus Earth - 基于 Cesium 的 Web 端 3D 全球地图应用**
 
 Locus Earth 是一个轻量、快速且高交互性的开源 3D 地球项目。灵感源自 Google Earth，旨在提供一个无需安装、开箱即用的全球地图浏览体验。
 
