@@ -148,8 +148,37 @@
         document.head.appendChild(meta);
     }
 
-    // 应用已保存的设置
     updateAll();
+
+    // =============================================
+    // 6. 地形开关
+    // =============================================
+    function showToastInternal(message) {
+        const toast = document.getElementById('toastMessage');
+        if (toast) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        } else {
+            console.log(message);
+        }
+    }
+
+    const terrainToggle = document.getElementById('terrainToggle');
+        if (terrainToggle) {
+            terrainToggle.checked = localStorage.getItem('terrainEnabled') !== 'false';
+            
+            terrainToggle.addEventListener('change', () => {
+                localStorage.setItem('terrainEnabled', terrainToggle.checked);
+                
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'terrainEnabled',
+                    newValue: JSON.stringify(terrainToggle.checked) 
+                }));
+                
+                showToastInternal(terrainToggle.checked ? '地形已开启' : '地形已关闭');
+            });
+        }
 
     console.log('⚙️ 设置页面已初始化');
 })();

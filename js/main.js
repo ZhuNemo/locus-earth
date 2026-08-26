@@ -21,7 +21,7 @@ import { showToast, closeInfo, closeIterlog } from './utils.js';
 import { initHdLayers } from './hd-layers.js';
 import { initGoogleMode } from './google-mode.js';
 
-        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjVCa3M3Yi1WN01PNm1PNmsiLCJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIEVhcnRoIiwiaWF0IjoxNzg3NzI2NDg2fQ.M5m1FaISKpc1rjNRTwvv5tZjvdRhVP82mYSR6wYqd_4';
+        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjhaYXJfQnUwc0QtUl85TXkiLCJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIEVhcnRoIiwiaWF0IjoxNzg3NzQxOTMyfQ.v2F2V2G6J2yQiV3JTGGFfzwYJxKdQJQyXxWCcSyHN7A';
 
 
         (function initTheme() {
@@ -68,8 +68,36 @@ import { initGoogleMode } from './google-mode.js';
         });
         
         // ----- 初始化 viewer 并异步加载地形 -----
+        const terrainEnabled = localStorage.getItem('terrainEnabled') !== 'false';
         const viewer = initViewer('cesiumContainer', new EllipsoidTerrainProvider());
         const loadingOverlay = document.getElementById('loadingOverlay');
+
+
+        function applyTerrainSetting(enabled) {
+            if (enabled) {
+                CesiumTerrainProvider.fromIonAssetId(1, {
+                    requestVertexNormals: true,
+                    requestWaterMask: true
+                }).then(provider => {
+                    if (localStorage.getItem('terrainEnabled') !== 'false') {
+                        viewer.terrainProvider = provider;
+                    } else {
+                        viewer.terrainProvider = new EllipsoidTerrainProvider();
+                    }
+                }).catch(e => console.warn('地形加载失败，保持平滑球体', e));
+            } else {
+                viewer.terrainProvider = new EllipsoidTerrainProvider();
+                viewer.scene.requestRender();
+            }
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'terrainEnabled') {
+                const enabled = e.newValue === 'true';
+                applyTerrainSetting(enabled);
+            }
+        });
+
 
         viewer.camera.setView({
             destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000)

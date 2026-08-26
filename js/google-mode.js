@@ -5,16 +5,12 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
         // 激活谷歌3D地球（从“关于”弹窗中触发）
         document.getElementById('activateGoogle3D').addEventListener('click', async function(e) {
             e.preventDefault();
-            
-            window._isGoogleMode = true; 
 
-                // --- 0. 网络预检：尝试访问 google.com ---
-            // --- 0. 网络预检：通过加载 Google 的 favicon 检测连通性（绕过 CORS）---
+            // --- 0. 网络预检：通过加载 Google 的 favicon 检测连通性---
             try {
                 console.log('🔍 正在检测 Google 网络连通性...');
                 const img = new Image();
                 img.src = 'https://www.google.com/favicon.ico';
-                // 超时控制：5秒未加载完成则视为失败
                 const timeoutPromise = new Promise((_, reject) => {
                     setTimeout(() => reject(new Error('加载超时')), 5000);
                 });
@@ -27,8 +23,11 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
             } catch (error) {
                 showToast('⚠️ 无法连接 Google 服务，请检查网络环境');
                 console.warn('网络检测失败:', error);
-                return; // 直接退出，不消耗任何会话
+                return;
             }
+
+            // ✅ 网络预检通过后，才正式开启谷歌模式状态
+            window._isGoogleMode = true; 
 
             try {
                 // --- 1. 清除现有底图 ---
@@ -39,17 +38,12 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 const tileset = await Cesium3DTileset.fromIonAssetId(2275207);
                 tileset.show = true;
                 viewer.scene.primitives.add(tileset);
-                // 保存引用，以便退出时移除
                 window._googleTileset = tileset;
                 console.log('✅ 谷歌3D Tiles 已加载');
 
-                const layerButton =
-                    document.querySelector(".cesium-baseLayerPicker-selected")
-                            .closest("button");
-
-                if (layerButton) {
-                    layerButton.style.display = "none";
-                }
+                // 隐藏底图选择器按钮（如果有的话）
+                const layerButton = document.querySelector(".cesium-baseLayerPicker-selected")?.closest("button");
+                if (layerButton) layerButton.style.display = "none";
 
                 window._defaultTerrainProvider = viewer.terrainProvider;
                 viewer.terrainProvider = new EllipsoidTerrainProvider();
@@ -64,40 +58,61 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 closeInfo();
 
                 // --- 5. UI 切换：隐藏无关按钮，替换“关于”按钮的行为 ---
-            // 隐藏：3D建筑、迭代记录
-            document.getElementById('buildingsToggleBtn').style.display = 'none';
-            document.getElementById('iterlogBtn').style.display = 'none';
-            // 保留“关于”按钮，但替换点击事件
-            const infoBtn = document.getElementById('infoBtn');
-            // 保存原来的点击事件（以便退出时恢复）
-            if (!window._originalInfoClick) {
-                window._originalInfoClick = infoBtn._listeners ? infoBtn._listeners['click'] : null;
-            }
-            // 移除所有 click 事件（如果有多个）
-            infoBtn.replaceWith(infoBtn.cloneNode(true));
-            // 重新获取（因为 clone 后 ID 不变）
-            const newInfoBtn = document.getElementById('infoBtn');
-            // 绑定新的点击事件：打开谷歌模式专属关于
-            newInfoBtn.addEventListener('click', function() {
-                document.getElementById('infoModalGoogle').classList.add('active');
-            });
-            // 显示“退出”按钮
-            document.getElementById('exitGoogleBtn').style.display = 'inline-block';
+                const bBtn = document.getElementById('buildingsToggleBtn');
+                if (bBtn) bBtn.style.display = 'none'; 
+
+                const iBtn = document.getElementById('iterlogBtn');
+                if (iBtn) iBtn.style.display = 'none';
+
+                const infoBtn = document.getElementById('infoBtn');
+                if (infoBtn) {
+                    if (!window._originalInfoClick) {
+                        window._originalInfoClick = infoBtn._listeners ? infoBtn._listeners['click'] : null;
+                    }
+                    infoBtn.replaceWith(infoBtn.cloneNode(true));
+                    const newInfoBtn = document.getElementById('infoBtn');
+                    if (newInfoBtn) {
+                        newInfoBtn.addEventListener('click', function() {
+                            document.getElementById('infoModalGoogle').classList.add('active');
+                        });
+                    }
+                }
+
+                // 显示“退出”按钮
+                const eBtn = document.getElementById('exitGoogleBtn');
+                if (eBtn) eBtn.style.display = 'inline-block';
 
                 // --- 6. 提示用户 ---
                 showToast('🌍 谷歌3D地球已激活，并飞往香港');
 
             } catch (error) {
-                console.error('❌ 激活谷歌3D失败:', error);
+                console.error('❌ 激活Google3D失败:', error);
                 showToast('⚠️ 谷歌3D加载失败，请检查网络环境');
+
+                const bBtn = document.getElementById('buildingsToggleBtn');
+                const iBtn = document.getElementById('iterlogBtn');
+                const eBtn = document.getElementById('exitGoogleBtn');
+                
+                if (bBtn) bBtn.style.display = 'inline-block';
+                if (iBtn) iBtn.style.display = 'inline-block';
+                if (eBtn) eBtn.style.display = 'inline-block';
             }
         });
 
         document.getElementById('exitGoogleBtn').addEventListener('click', async function() {
-              window._isGoogleMode = false;
-        document.getElementById('buildingsToggleBtn').disabled = false;
-        document.getElementById('buildingsToggleBtn').style.opacity = '1';
-        document.getElementById('buildingsToggleBtn').style.cursor = 'pointer';
+            
+            const bBtn = document.getElementById('buildingsToggleBtn');
+            const iBtn = document.getElementById('iterlogBtn');
+            const eBtn = document.getElementById('exitGoogleBtn');
+
+            if (bBtn) {
+                bBtn.disabled = false;
+                bBtn.style.opacity = '1';
+                bBtn.style.cursor = 'pointer';
+                bBtn.style.display = 'inline-block';
+            }
+            if (iBtn) iBtn.style.display = 'inline-block';
+            if (eBtn) eBtn.style.display = 'none';
 
             try {
                 // --- 1. 移除谷歌 3D Tiles ---
@@ -108,70 +123,72 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 }
 
                 // --- 2. 恢复哨兵2底图 ---
-                // 从底图选择器中重新选中哨兵2
-                const viewModels = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
-                let sentinelViewModel = null;
-                for (const vm of viewModels) {
-                    if (vm.name.includes('Sentinel-2')) {
-                        sentinelViewModel = vm;
-                        break;
+                if (viewer.baseLayerPicker) {
+                    const viewModels = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
+                    let sentinelViewModel = null;
+                    for (const vm of viewModels) {
+                        if (vm.name.includes('Sentinel-2')) {
+                            sentinelViewModel = vm;
+                            break;
+                        }
                     }
-                }
-                if (sentinelViewModel) {
-                    viewer.baseLayerPicker.viewModel.selectedImagery = sentinelViewModel;
+                    if (sentinelViewModel) {
+                        viewer.baseLayerPicker.viewModel.selectedImagery = sentinelViewModel;
+                    } else {
+                        viewer.imageryLayers.removeAll();
+                        viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 3954 }));
+                    }
                 } else {
-                    // 如果找不到哨兵2，添加默认底图
-                    viewer.imageryLayers.addImageryProvider(
-                        new IonImageryProvider({ assetId: 2 }) // 备用：Bing Aerial
-                    );
+                    viewer.imageryLayers.removeAll();
+                    viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 3954 }));
                 }
                 console.log('↻ 已恢复哨兵2底图');
 
-                const layerButton =
-                    document.querySelector(".cesium-baseLayerPicker-selected")
-                            .closest("button");
+                // 恢复底图选择器按钮
+                const layerButton = document.querySelector(".cesium-baseLayerPicker-selected")?.closest("button");
+                if (layerButton) layerButton.style.display = "";
 
-                if (layerButton) {
-                    layerButton.style.display = "";
-                }
-
+                // 恢复地形
                 if (window._defaultTerrainProvider) {
-                viewer.terrainProvider = window._defaultTerrainProvider;
+                    const userWantsTerrain = localStorage.getItem('terrainEnabled') !== 'false';
+                    if (userWantsTerrain) {
+                        viewer.terrainProvider = window._defaultTerrainProvider;
+                    } else {
+                        viewer.terrainProvider = new EllipsoidTerrainProvider();
+                    }
                 }
+
                 // --- 3. 飞回北京 ---
                 viewer.camera.flyTo({
                     destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000),
                     duration: 2
                 });
 
-                // --- 4. UI 恢复 ---
-        document.getElementById('buildingsToggleBtn').style.display = 'inline-block';
-        document.getElementById('iterlogBtn').style.display = 'inline-block';
-        document.getElementById('exitGoogleBtn').style.display = 'none';
+                // 恢复“关于”按钮的原始点击事件
+                const infoBtn = document.getElementById('infoBtn');
+                if (infoBtn) {
+                    infoBtn.replaceWith(infoBtn.cloneNode(true));
+                    const newInfoBtn = document.getElementById('infoBtn');
+                    if (newInfoBtn) {
+                        newInfoBtn.addEventListener('click', function() {
+                            document.getElementById('infoModal').classList.add('active');
+                        });
+                    }
+                }
 
-        // 恢复“关于”按钮的原始点击事件（打开普通关于）
-        const infoBtn = document.getElementById('infoBtn');
-        infoBtn.replaceWith(infoBtn.cloneNode(true));
-        const newInfoBtn = document.getElementById('infoBtn');
-        newInfoBtn.addEventListener('click', function() {
-            document.getElementById('infoModal').classList.add('active');
-        });
-
-                // --- 5. 提示用户 ---
-                showToast('✅ 已退出Google地球，恢复默认模式');
+                showToast('已退出Google地球，恢复默认模式');
 
             } catch (error) {
                 console.error('❌ 退出Google地球失败:', error);
                 showToast('⚠️ 退出失败，请刷新页面重试');
+                if (eBtn) eBtn.style.display = 'inline-block';
             }
         });
 
-        
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 if (infoModal.classList.contains('active')) closeInfo();
                 if (iterlogModal.classList.contains('active')) closeIterlog();
             }
         });
-
 }
