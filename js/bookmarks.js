@@ -48,8 +48,28 @@ export function initBookmarks(viewer, iconPathParam = '/icons/pin.png') {
 
     // 设置标记模式按钮
     setupToolbarButton();
+
     // 设置面板底部按钮（隐藏/显示标记）
     setupFooterButton();
+    
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'bookmarks') {
+            bookmarks = [];
+            
+            const entities = viewerInstance.entities.values;
+            for (let i = entities.length - 1; i >= 0; i--) {
+                if (entities[i]._isBookmark) {
+                    viewerInstance.entities.remove(entities[i]);
+                }
+            }
+        
+            if (panel && panel.classList.contains('active')) {
+                renderBookmarksList();
+            }
+            
+            console.log('📌 所有收藏标记已从内存和地图中清除');
+        }
+    });
 }
 
 // ---------- 事件绑定 ----------
@@ -409,7 +429,7 @@ export function exportBookmarks() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.href = url;
-    link.setAttribute('download', 'locus-maps-bookmarks.csv');
+    link.setAttribute('download', 'locus-earth-bookmarks.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

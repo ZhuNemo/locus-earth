@@ -220,7 +220,11 @@
 
             // 3. 清除收藏夹数据
             if (clearBookmarks && clearBookmarks.checked) {
-                localStorage.removeItem('locus-bookmarks'); 
+                localStorage.removeItem('bookmarks'); 
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'bookmarks',
+                    newValue: null
+                }));
             }
 
             // 4. 清除设置数据
