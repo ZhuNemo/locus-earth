@@ -14,7 +14,7 @@
 
 **Locus Earth - A Web-based 3D Global Map Application powered by Cesium**
 
-Locus Earth is a lightweight, fast, and highly interactive open-source 3D Earth project. Inspired by Google Earth, it aims to provide a global map browsing experience that requires no installation and works out of the box.
+Locus Earth is a relatively lightweight, fast, and highly interactive open-source 3D Earth project. Inspired by Google Earth, it aims to provide a global map browsing experience that requires no installation and works out of the box.
 
 🛰️ **Access**
 You can access the project via any of the following links:
@@ -22,7 +22,7 @@ You can access the project via any of the following links:
 - [Cloudflare Pages](https://locus-earth.pages.dev)
 
 ✨ **Key Features**
-- **3D Terrain & Satellite Imagery**: High-precision terrain based on Cesium and satellite imagery from various providers.
+- **3D Terrain & Satellite Imagery**: High-precision terrain based on Cesium and global satellite imagery from various providers.
 - **Global Buildings**: Supports loading global OpenStreetMap 3D buildings.
 - **High-Definition City Models**: Automatically activates precision city models when entering designated areas (e.g., Denver, Washington D.C., Sydney).
 - **Bookmarks & Markers**: Save, import, and export your favorite markers using browser local storage.
@@ -31,13 +31,13 @@ You can access the project via any of the following links:
 - **Interaction Optimizations**: Includes one-click shortcuts such as Solar Lighting toggle, building toggle, compass, and reset view; fully adapted for mobile touch screens.
 
 ⚙️ **Settings & Customization**
-You can enter the `/settings/` page via the top right menu button to customize the theme and terrain loading strategies.
+- You can enter the `/settings/` page via the top right menu button to customize the theme and terrain loading strategies.
 
 🤖 **Tech Stack & Credits**
-This project was assisted by Artificial Intelligence. Models involved in the build (in priority order): DeepSeek, VS Code Copilot, Doubao, ChatGPT, Google Gemini.
+- This project was assisted by Artificial Intelligence. Models involved in the build (in priority order): DeepSeek, VS Code Copilot, Doubao, ChatGPT, Google Gemini.
 
 📝 **Notes**
-> *Note: The Cesium Ion Access Token in the project has a domain whitelist and is for demonstration purposes only. If you intend to fork this repository for further modifications or use it locally in-depth, please clone the repository and visit [Cesium Ion](https://ion.cesium.com/) to register a free account via GitHub, and replace the original Access Token with your own. Please adhere to Cesium's user agreement and do not misuse others' accounts. Thank you for your understanding.*
+- > The Cesium Ion Access Token in the project has a domain whitelist and is for demonstration purposes only. If you intend to fork this repository for further modifications or use it locally in-depth, please clone the repository and visit [Cesium Ion](https://ion.cesium.com/) to register a free account via GitHub, and replace the original Access Token with your own. Please adhere to Cesium's user agreement and do not misuse others' accounts. Thank you for your understanding.
 
 ℹ️ **Project Info**
 - Personal project started: 2026-07-04

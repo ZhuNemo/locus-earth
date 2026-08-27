@@ -1,6 +1,23 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <script>
+        (function() {
+            try {
+                var settings = JSON.parse(localStorage.getItem('locus-settings'));
+                var theme = 'light';
+                if (settings && settings.followSystem === false) {
+                    theme = settings.colorMode || 'light';
+                } else {
+                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="color-scheme" content="light dark">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -70,7 +87,7 @@
         </ul>
     </nav>
 
-        <!-- 右下角控制面板（指南针 + 俯仰控制） -->
+        <!-- 右下角控制面板（指南针 + 高度控制） -->
         <div id="camera-controls">
             <div id="compassContainer" class="ctrl-btn" title="点击重置为正北方向">
                 <svg viewBox="0 0 100 100" width="32" height="32" id="compassSvg">
@@ -219,7 +236,7 @@
             <p>08-23 V5.0：功能开关布局全部重构</p>
             <p>08-24 V5.1：适配深色模式跟随系统</p>
             <p>08-25 V5.2：创建设置页，加入主题开关</p>
-            <p>08-26 V6.0：加入地形开关，修复Google地球模式问题</p>
+            <p>08-27 V6.0：加入地形开关、缓存清理，修复Google地球模式问题</p>
             <p>……</p>
         </div>
     </div>

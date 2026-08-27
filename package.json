@@ -1,6 +1,6 @@
 {
   "name": "locus-earth",
-  "version": "4.2.0",
+  "version": "6.0.0",
   "description": "Locus Earth - Web端Cesium 3D全球地图",
   "main": "index.js",
   "scripts": {

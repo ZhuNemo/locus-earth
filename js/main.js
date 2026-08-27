@@ -1,3 +1,9 @@
+const themeSettings = JSON.parse(localStorage.getItem('locus-settings') || '{}');
+const isDark = themeSettings.followSystem === false 
+    ? (themeSettings.colorMode === 'dark') 
+    : window.matchMedia('(prefers-color-scheme: dark)').matches;
+document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
 import {
             Viewer,
             createOsmBuildingsAsync,

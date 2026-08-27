@@ -157,6 +157,191 @@
     cursor: not-allowed;
 }
 
+.setting-action {
+    flex-shrink: 0;
+}
+
+/* --- 清除缓存弹窗，与主页面弹窗保持一致 --- */
+.modal {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--window-transition-duration) var(--window-transition-timing),
+        visibility var(--window-transition-duration) var(--window-transition-timing),
+        backdrop-filter var(--window-transition-duration) var(--window-transition-timing);
+}
+
+.modal.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border-radius: var(--window-radius);
+    padding: 32px 40px;
+    max-width: 480px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    scrollbar-width: thin;
+    opacity: 0;
+    transform: translateY(var(--window-transition-offset)) scale(0.98);
+    transition: opacity var(--window-transition-duration) var(--window-transition-timing),
+        transform var(--window-transition-duration) var(--window-transition-timing),
+        box-shadow var(--window-transition-duration) var(--window-transition-timing);
+}
+
+.modal.active .modal-content {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 8px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+.modal-content h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 16px;
+}
+
+.modal-content p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #444;
+    margin: 10px 0;
+}
+
+.modal-content > label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 12px 0;
+    color: #444;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.modal-content > label .setting-info {
+    display: block;
+}
+
+.modal-content > label .setting-label {
+    font-size: 14px;
+}
+
+.modal-content > label .setting-desc {
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.modal-content > label input {
+    flex-shrink: 0;
+    margin-top: 3px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.modal-buttons button,
+.setting-action {
+    background: linear-gradient(135deg, #f4f9ff 0%, #eef5ff 100%);
+    border: 1px solid #cfe2ff;
+    color: #1f6ed8;
+    padding: 8px 14px;
+    border-radius: var(--control-radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(31, 110, 216, 0.1);
+    font-family: inherit;
+}
+
+.modal-buttons button:hover,
+.modal-buttons button:focus-visible,
+.setting-action:hover,
+.setting-action:focus-visible {
+    background: linear-gradient(135deg, #eaf4ff 0%, #dfeeff 100%);
+    border-color: #9fc5ff;
+    color: #1558b6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(31, 110, 216, 0.16);
+}
+
+[data-theme="dark"] .modal-content {
+    background: rgba(31, 41, 55, 0.94);
+    color: #e5e7eb;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .modal-content h2 {
+    color: #f9fafb;
+}
+
+[data-theme="dark"] .modal-content p,
+[data-theme="dark"] .modal-content > label {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .modal-content::-webkit-scrollbar-thumb {
+    background: #6b7280;
+}
+
+[data-theme="dark"] .modal-content::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+[data-theme="dark"] .modal-buttons button,
+[data-theme="dark"] .setting-action {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+    border-color: #3b82f6;
+    color: #dbeafe;
+}
+
+[data-theme="dark"] .modal-buttons button:hover,
+[data-theme="dark"] .modal-buttons button:focus-visible,
+[data-theme="dark"] .setting-action:hover,
+[data-theme="dark"] .setting-action:focus-visible {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    border-color: #93c5fd;
+    color: #ffffff;
+}
+
 /* --- 响应式 --- */
 @media (max-width: 480px) {
     .settings-header {
@@ -179,5 +364,12 @@
         min-width: 80px;
         font-size: 13px;
         padding: 4px 10px;
+    }
+    .setting-action {
+        font-size: 13px;
+        padding: 4px 10px;
+    }
+    .modal-content {
+        padding: 24px 20px;
     }
 }

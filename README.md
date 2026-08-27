@@ -21,7 +21,7 @@ Locus Earth 是一个轻量、快速且高交互性的开源 3D 地球项目。�
 - [Cloudflare Pages](https://locus-earth.pages.dev)
 
 ✨ **核心功能**
-- **3D 地形与卫星影像**：基于 Cesium 的高精度地形与来自各个提供商的卫星影像。
+- **3D 地形与卫星影像**：基于 Cesium 的高精度地形与来自各个提供商的全球卫星影像。
 - **全球建筑**：支持加载全球 OpenStreetMap 3D 建筑。
 - **高精度建模联动**：进入丹佛、华盛顿 D.C.、悉尼等指定区域时，自动开启高精度城市模型切换。
 - **标记与收藏夹**：支持本地/浏览器缓存保存、导入、导出收藏标记点。
@@ -30,13 +30,13 @@ Locus Earth 是一个轻量、快速且高交互性的开源 3D 地球项目。�
 - **交互优化**：包含太阳光影开关、建筑开关、指南针、重置视角等一键快捷操作；已适配移动端触屏操作。
 
 ⚙️ **设置与自定义**
-您可以通过点击右上角菜单中按钮进入 `/settings/` 页面，自定义明暗主题、地形加载策略等。
+- 您可以通过点击右上角菜单中按钮进入 `/settings/` 页面，自定义明暗主题、地形加载策略等。
 
 🤖 **技术栈与致谢**
-本项目由人工智能辅助构建。参与构建的模型（按优先级排序）：DeepSeek、VS Code Copilot、Doubao、ChatGPT、Google Gemini。
+- 本项目由人工智能辅助构建。参与构建的模型（按优先级排序）：DeepSeek、VS Code Copilot、Doubao、ChatGPT、Google Gemini。
 
 📝 **注意事项**
-> *注意：项目内 Cesium Ion 的 Access Token 已设置域名白名单，仅供演示使用。如果您要基于本仓库进行二次修改和构建或意图本地深度使用，请克隆仓库并前往 [Cesium Ion](https://ion.cesium.com/) 使用GitHub注册免费账号，将原访问令牌替换为您自己的 Access Token。请务必遵守 Cesium 用户公约，切勿盗刷他人账号，谢谢理解。*
+- >项目内 Cesium Ion 的 Access Token 已设置域名白名单，仅供演示使用。如果您要基于本仓库进行二次修改和构建或意图本地深度使用，请克隆仓库并前往 [Cesium Ion](https://ion.cesium.com/signup) 使用GitHub注册免费账号，将原访问令牌替换为您自己的 Access Token。请务必遵守 Cesium 用户公约，切勿盗刷他人账号，谢谢理解。
 
 ℹ️ **项目信息**
 - 个人项目开启时间：2026-07-04

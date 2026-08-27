@@ -64,6 +64,59 @@
                 </label>
             </div>
 
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">清除缓存与数据</span>
+                    <span class="setting-desc">可清理需要清除的缓存对象</span>
+                </div>
+                <button id="clearCacheBtn" class="setting-action" type="button">进入</button>
+            </div>
+
+        </div>
+
+        <!-- 清除缓存弹窗 -->
+        <div id="clearCacheModal" class="modal">
+        <div class="modal-content">
+            <h2>清除缓存与数据</h2>
+            <p style="color: #888; font-size: 0.9rem;">请选择需要清除的项目：</p>
+            
+            <label>
+                <input type="checkbox" id="clearAppCache" checked>
+                <span class="setting-info">
+                    <span class="setting-label">清除应用缓存</span>
+                    <span class="setting-desc">(较小，含界面更新)</span>
+                </span>
+            </label>
+
+            <label>
+                <input type="checkbox" id="clearCesiumCache">
+                <span class="setting-info">
+                    <span class="setting-label">清除 Cesium 地球引擎缓存</span>
+                    <span class="setting-desc">(较大，清除后刷新需要重新下载引擎，建议仅在遇到错误时使用)</span>
+                </span>
+            </label>
+
+            <label>
+                <input type="checkbox" id="clearBookmarks">
+                <span class="setting-info">
+                    <span class="setting-label">清除收藏标记数据</span>
+                    <span class="setting-desc">(将删除保存的所有地点标记。若需删除部分标记，请前往收藏页面操作)</span>
+                </span>
+            </label>
+
+            <label>
+                <input type="checkbox" id="clearSettings">
+                <span class="setting-info">
+                    <span class="setting-label">清除设置数据</span>
+                    <span class="setting-desc">(将恢复默认主题和默认地形开关)</span>
+                </span>
+            </label>
+
+            <div class="modal-buttons">
+            <button id="confirmClearBtn">确认清除</button>
+            <button id="cancelClearBtn">取消</button>
+            </div>
+        </div>
         </div>
     </main>
 

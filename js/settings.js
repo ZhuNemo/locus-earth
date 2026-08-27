@@ -180,5 +180,72 @@
             });
         }
 
+    // --- 清除缓存弹窗 ---
+    const clearCacheBtn = document.getElementById('clearCacheBtn');
+    const clearCacheModal = document.getElementById('clearCacheModal');
+    const confirmClearBtn = document.getElementById('confirmClearBtn');
+    const cancelClearBtn = document.getElementById('cancelClearBtn');
+
+    const clearAppCache = document.getElementById('clearAppCache');
+    const clearCesiumCache = document.getElementById('clearCesiumCache');
+    const clearBookmarks = document.getElementById('clearBookmarks');
+    const clearSettings = document.getElementById('clearSettings');
+
+    // 打开弹窗
+    clearCacheBtn.addEventListener('click', () => {
+        clearCacheModal.classList.add('active');
+    });
+
+    // 取消
+    cancelClearBtn.addEventListener('click', () => {
+        clearCacheModal.classList.remove('active');
+    });
+
+    // 确认清除
+    confirmClearBtn.addEventListener('click', async () => {
+        try {
+            // 1. 清除 PWA 应用缓存
+            if (clearAppCache && clearAppCache.checked) {
+                const cacheNames = await caches.keys();
+                const appCaches = cacheNames.filter(name => name.includes('locus-earth-app'));
+                await Promise.all(appCaches.map(name => caches.delete(name)));
+            }
+
+            // 2. 清除 Cesium 地球引擎缓存
+            if (clearCesiumCache && clearCesiumCache.checked) {
+                const cacheNames = await caches.keys();
+                const cesiumCaches = cacheNames.filter(name => name.includes('locus-earth-cesium'));
+                await Promise.all(cesiumCaches.map(name => caches.delete(name)));
+            }
+
+            // 3. 清除收藏夹数据
+            if (clearBookmarks && clearBookmarks.checked) {
+                localStorage.removeItem('locus-bookmarks'); 
+            }
+
+            // 4. 清除设置数据
+            if (clearSettings && clearSettings.checked) {
+                localStorage.removeItem('locus-settings');
+                localStorage.removeItem('terrainEnabled');
+
+                applyTheme('light');
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+
+            // 5. 反馈
+            alert('清理已完成！部分资源将在刷新后重新获取。');
+            clearCacheModal.classList.remove('active');
+
+            if (clearCesiumCache && clearCesiumCache.checked) {
+                if (confirm("Cesium 引擎缓存已清除。为了彻底释放空间并重新加载最新引擎，是否立即刷新页面？")) {
+                    location.reload();
+                }
+            }
+
+        } catch (error) {
+            console.error('清除缓存失败:', error);
+            alert('发生错误：' + error.message);
+        }
+    });
     console.log('⚙️ 设置页面已初始化');
 })();
