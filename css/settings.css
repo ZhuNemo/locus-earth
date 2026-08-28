@@ -43,6 +43,11 @@
     color: var(--text-primary, #1a1a1a);
     margin: 0;
 }
+.settings-title p {
+    font-size: 12px;
+    color: var(--text-muted, #888);
+    margin: 3px 0 0;
+}
 
 /* --- 设置容器 --- */
 .settings-container {
@@ -135,22 +140,33 @@
 
 /* --- 下拉菜单 (Select) --- */
 .setting-item select {
-    background: var(--bg-select, #f0f0f0);
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--bg-select, #f0f0f0);
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-muted, #888) 50%), linear-gradient(135deg, var(--text-muted, #888) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+    background-repeat: no-repeat;
+    background-size: 5px 5px, 5px 5px;
     border: 1px solid var(--border-color, #d0d0d0);
     border-radius: var(--control-radius, 8px);
-    padding: 6px 12px;
+    padding: 8px 34px 8px 12px;
     font-size: 14px;
     font-weight: 500;
     color: var(--text-primary, #1a1a1a);
     cursor: pointer;
     font-family: inherit;
-    transition: all 0.2s;
-    min-width: 100px;
+    transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+    min-width: 112px;
     flex-shrink: 0;
 }
 .setting-item select:focus {
     outline: none;
     border-color: #007aff;
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.16);
+}
+.setting-item select:hover:not(:disabled) {
+    border-color: #007aff;
+    background-color: var(--bg-header, #ffffff);
 }
 .setting-item select:disabled {
     opacity: 0.5;

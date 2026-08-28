@@ -98,7 +98,7 @@ export function initUI(viewer, {
     }
 
     document.getElementById('settingsBtn').addEventListener('click', () => {
-        window.location.href = 'settings.html';
+        window.location.href = './settings';
     });
     
     toggleBtn.addEventListener('click', () => {
