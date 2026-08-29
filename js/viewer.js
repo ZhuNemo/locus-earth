@@ -60,30 +60,29 @@ export function initViewer(containerId, terrainProvider) {
         controller.enableCollisionDetection = true;
 
 
-        // 1. 存储相机位置
-        let lastCameraPosition = null;
+        // 只有在两次都完全静止的点击/轻触时，才允许放大。
+        // 一旦本次点击/触摸发生任何移动，就直接禁用双击放大。
+        let hasMovedSincePointerDown = false;
+        let hasMovedSinceTouchStart = false;
 
-        // 在 LEFT_DOWN 时记录相机位置
-        handler.setInputAction((event) => {
-            const carto = viewer.camera.positionCartographic;
-            lastCameraPosition = {
-                longitude: carto.longitude,
-                latitude: carto.latitude,
-                height: carto.height
-            };
-        }, ScreenSpaceEventType.LEFT_DOWN);
+        viewer.canvas.addEventListener('pointerdown', () => {
+            hasMovedSincePointerDown = false;
+        }, { passive: true });
 
-        // 2. 双击事件
+        viewer.canvas.addEventListener('pointermove', () => {
+            hasMovedSincePointerDown = true;
+        }, { passive: true });
+
+        viewer.canvas.addEventListener('pointerup', () => {
+            hasMovedSincePointerDown = false;
+        }, { passive: true });
+
+        viewer.canvas.addEventListener('pointercancel', () => {
+            hasMovedSincePointerDown = false;
+        }, { passive: true });
+
         handler.setInputAction((click) => {
-            if (!lastCameraPosition) return;
-
-            const currentCarto = viewer.camera.positionCartographic;
-            const deltaLon = (currentCarto.longitude - lastCameraPosition.longitude) * 111000;
-            const deltaLat = (currentCarto.latitude - lastCameraPosition.latitude) * 111000;
-            const deltaHeight = Math.abs(currentCarto.height - lastCameraPosition.height);
-            const distance = Math.sqrt(deltaLon * deltaLon + deltaLat * deltaLat + deltaHeight * deltaHeight);
-
-            if (distance > 10) {
+            if (hasMovedSincePointerDown) {
                 return;
             }
 
@@ -93,9 +92,25 @@ export function initViewer(containerId, terrainProvider) {
         // iOS Safari does not reliably dispatch a touch double-click to Cesium.
         let lastTouch = null;
         viewer.canvas.style.touchAction = 'none';
+
+        viewer.canvas.addEventListener('touchstart', () => {
+            hasMovedSinceTouchStart = false;
+        }, { passive: true });
+
+        viewer.canvas.addEventListener('touchmove', () => {
+            hasMovedSinceTouchStart = true;
+        }, { passive: true });
+
         viewer.canvas.addEventListener('touchend', (event) => {
             if (event.changedTouches.length !== 1 || event.touches.length !== 0) {
                 lastTouch = null;
+                hasMovedSinceTouchStart = false;
+                return;
+            }
+
+            if (hasMovedSinceTouchStart) {
+                lastTouch = null;
+                hasMovedSinceTouchStart = false;
                 return;
             }
 
@@ -114,6 +129,7 @@ export function initViewer(containerId, terrainProvider) {
                 event.preventDefault();
                 zoomAtPosition(position);
                 lastTouch = null;
+                hasMovedSinceTouchStart = false;
             } else {
                 lastTouch = { ...position, time: now };
             }
