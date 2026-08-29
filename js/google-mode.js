@@ -26,7 +26,6 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 return;
             }
 
-            // ✅ 网络预检通过后，才正式开启谷歌模式状态
             window._isGoogleMode = true; 
 
             try {
@@ -41,7 +40,7 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 window._googleTileset = tileset;
                 console.log('✅ 谷歌3D Tiles 已加载');
 
-                // 隐藏底图选择器按钮（如果有的话）
+                // 隐藏底图选择器按钮
                 const layerButton = document.querySelector(".cesium-baseLayerPicker-selected")?.closest("button");
                 if (layerButton) layerButton.style.display = "none";
 

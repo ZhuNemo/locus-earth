@@ -4,7 +4,8 @@ import {
             IonImageryProvider,
             ScreenSpaceEventHandler,
             ScreenSpaceEventType,
-            Cartesian3, 
+            Cartesian3,
+            Cartographic,
             createDefaultImageryProviderViewModels,
         } from 'cesium'; 
 
@@ -25,6 +26,28 @@ export function initViewer(containerId, terrainProvider) {
         locale: 'zh-CN',
     });
 
+        const handler = new ScreenSpaceEventHandler(viewer.canvas);
+
+        function zoomAtPosition(position) {
+            const picked = viewer.scene.pick(position);
+            if (picked && picked.id && picked.id._isBookmark) {
+                return;
+            }
+
+            const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
+            if (!cartesian) return;
+
+            const carto = Cartographic.fromCartesian(cartesian);
+            const currentCarto = viewer.camera.positionCartographic;
+            const newHeight = Math.max(currentCarto.height * 0.5, 10);
+            if (newHeight < 10) return;
+
+            viewer.camera.flyTo({
+                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
+                duration: 0.5
+            });
+        }
+
         // ----- 移动端/触屏手感优化 -----
         const controller = viewer.scene.screenSpaceCameraController;
 
@@ -37,42 +60,34 @@ export function initViewer(containerId, terrainProvider) {
         controller.enableCollisionDetection = true;
 
 
-        // 启用双击放大
-        const handler = new ScreenSpaceEventHandler(viewer.canvas);
+        // 1. 存储相机位置
+        let lastCameraPosition = null;
 
-        let lastClickPosition = null; 
-
+        // 在 LEFT_DOWN 时记录相机位置
         handler.setInputAction((event) => {
-            lastClickPosition = event.position;
+            const carto = viewer.camera.positionCartographic;
+            lastCameraPosition = {
+                longitude: carto.longitude,
+                latitude: carto.latitude,
+                height: carto.height
+            };
         }, ScreenSpaceEventType.LEFT_DOWN);
 
-        // 双击事件
+        // 2. 双击事件
         handler.setInputAction((click) => {
-            if (lastClickPosition) {
-                const dx = click.position.x - lastClickPosition.x;
-                const dy = click.position.y - lastClickPosition.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > 5) {
-                    console.log('忽略双击');
-                    return;
-                }
-            }
+            if (!lastCameraPosition) return;
 
-            const picked = viewer.scene.pick(click.position);
-            if (picked && picked.id && picked.id._isBookmark) {
+            const currentCarto = viewer.camera.positionCartographic;
+            const deltaLon = (currentCarto.longitude - lastCameraPosition.longitude) * 111000;
+            const deltaLat = (currentCarto.latitude - lastCameraPosition.latitude) * 111000;
+            const deltaHeight = Math.abs(currentCarto.height - lastCameraPosition.height);
+            const distance = Math.sqrt(deltaLon * deltaLon + deltaLat * deltaLat + deltaHeight * deltaHeight);
+
+            if (distance > 10) {
                 return;
             }
 
-            const cartesian = viewer.camera.pickEllipsoid(click.position, viewer.scene.globe.ellipsoid);
-            if (!cartesian) return;
-
-            const carto = viewer.camera.positionCartographic;
-            const newHeight = carto.height * 0.5;
-            if (newHeight < 10) return;
-            viewer.camera.flyTo({
-                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
-                duration: 0.5
-            });
+            zoomAtPosition(click.position);
         }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
         // iOS Safari does not reliably dispatch a touch double-click to Cesium.
