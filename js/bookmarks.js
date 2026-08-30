@@ -302,7 +302,6 @@ function createPin(cartesian, name) {
             verticalOrigin: VerticalOrigin.BOTTOM,
             pixelOffset: new Cartesian2(0, 2), 
             heightReference: HeightReference.CLAMP_TO_GROUND,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
         },
         label: {
             text: name,
@@ -312,7 +311,6 @@ function createPin(cartesian, name) {
             pixelOffset: new Cartesian2(0, -38),
             showBackground: true,
             horizontalOrigin: HorizontalOrigin.CENTER,
-            disableDepthTestDistance: Number.POSITIVE_INFINITY
         },
         _isBookmark: true
     });

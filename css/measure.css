@@ -1,0 +1,104 @@
+.measure-toolbar {
+    position: fixed;
+    top: 80px;
+    right: 16px; 
+    left: auto;
+    transform: none; 
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--window-radius);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: var(--text-primary, #1a1a1a);
+}
+
+.toolbar-btn {
+    background: linear-gradient(135deg, #f4f9ff 0%, #eef5ff 100%);
+    color: #1f6ed8;
+    border: 1px solid #cfe2ff;
+    border-radius: var(--control-radius);
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    box-shadow: 0 2px 8px rgba(31, 110, 216, 0.1);
+    transition: all 0.2s ease;
+    width: 100%; 
+    text-align: center;
+    margin-bottom: 6px; 
+}
+
+.toolbar-btn:hover,
+.toolbar-btn:focus-visible {
+    background: linear-gradient(135deg, #eaf4ff 0%, #dfeeff 100%);
+    border-color: #9fc5ff;
+    color: #1558b6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(31, 110, 216, 0.16);
+}
+
+/* 拖拽圆形浮动按钮样式 */
+#measureFloatingBtn {
+    position: fixed;
+    top: 80px;
+    right: 16px;
+    left: auto;
+    transform: none;
+    z-index: 9999;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: var(--text-primary, #1a1a1a);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    cursor: grab;
+    user-select: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+#measureFloatingBtn:hover {
+    transform: translateX(-50%) scale(1.02);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+#measureFloatingBtn:active {
+    cursor: grabbing;
+}
+
+[data-theme="dark"] .measure-toolbar,
+[data-theme="dark"] #measureFloatingBtn {
+    background: rgba(31, 41, 55, 0.94);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #f9fafb;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .toolbar-btn {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+    border-color: #3b82f6;
+    color: #dbeafe;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.18);
+}
+
+[data-theme="dark"] .toolbar-btn:hover,
+[data-theme="dark"] .toolbar-btn:focus-visible {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    border-color: #93c5fd;
+    color: #ffffff;
+}

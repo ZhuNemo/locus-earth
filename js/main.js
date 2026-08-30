@@ -169,6 +169,144 @@ import { initGoogleMode } from './google-mode.js';
         
         initBookmarks(viewer, 'icons/pin.png');
         
+        import { initMeasureTools } from './measure.js';
+        initMeasureTools(viewer);
+
+// 初始化测量工具，拿到控制句柄
+const measureTools = initMeasureTools(viewer);
+
+// --- 测量悬浮窗交互逻辑 ---
+const measureToolbar = document.getElementById('measureToolbar');
+const measureFloatingBtn = document.getElementById('measureFloatingBtn');
+
+// 1. 打开测量菜单
+document.getElementById('measureBtn').addEventListener('click', () => {
+    document.getElementById('sideMenu').classList.remove('active');
+    measureToolbar.style.display = 'flex';
+    measureFloatingBtn.style.display = 'none';
+    showToast('📏 选择测量方式');
+});
+
+// 2. 测面积、测距离、清除按钮
+document.getElementById('toolbarAreaBtn').addEventListener('click', () => {
+    measureTools.startArea();
+    showToast('📐 请在地图上轻触添加点');
+});
+document.getElementById('toolbarDistBtn').addEventListener('click', () => {
+    measureTools.startDistance();
+    showToast('📏 请在地图上轻触添加点');
+});
+document.getElementById('toolbarClearBtn').addEventListener('click', () => {
+    measureTools.clear();
+    showToast('🧹 已清除测量数据');
+});
+
+// 3. 收起菜单，变为浮动圆钮
+function collapseToolbar() {
+    measureToolbar.style.display = 'none';
+    measureFloatingBtn.style.display = 'flex';
+    measureFloatingBtn.style.top = '';
+    measureFloatingBtn.style.right = '';
+    measureFloatingBtn.style.left = '';
+    measureFloatingBtn.style.transform = '';
+}
+measureFloatingBtn.addEventListener('click', (e) => {
+    if (window._isDraggingMeasure) return;
+    measureFloatingBtn.style.display = 'none';
+    measureToolbar.style.display = 'flex';
+    measureToolbar.style.top = '';
+    measureToolbar.style.left = '';
+    measureToolbar.style.transform = '';
+});
+
+document.getElementById('toolbarBackBtn').addEventListener('click', collapseToolbar);
+
+document.getElementById('toolbarExitBtn').addEventListener('click', () => {
+    // 1. 清除当前的测量线段/面积
+    measureTools.clear();
+    
+    // 2. 隐藏顶部的工具栏
+    measureToolbar.style.display = 'none';
+    
+    // 3. 隐藏浮动小圆球
+    measureFloatingBtn.style.display = 'none';
+    
+    // 4. 恢复鼠标指针
+    viewer.canvas.style.cursor = 'default';
+    
+    // 5. 提示用户
+    showToast('✅ 已退出测量模式');
+});
+
+// 4. 点击浮动按钮，重新展开菜单（并回到顶部）
+measureFloatingBtn.addEventListener('click', (e) => {
+    // 如果是在拖拽后的点击，需要先排除拖拽
+    if (window._isDraggingMeasure) return;
+    measureFloatingBtn.style.display = 'none';
+    measureToolbar.style.display = 'flex';
+    // 展开时让工具栏也回到顶部
+    measureToolbar.style.top = '80px'; 
+    measureToolbar.style.left = '50%';
+    measureToolbar.style.transform = 'translateX(-50%)';
+});
+
+// 5. 浮动圆钮拖拽功能（兼容移动端和PC端）
+let isDragging = false;
+let startX, startY, initialLeft, initialTop;
+
+measureFloatingBtn.addEventListener('mousedown', startDrag);
+measureFloatingBtn.addEventListener('touchstart', startDrag, {passive: false});
+
+document.addEventListener('mousemove', drag);
+document.addEventListener('touchmove', drag, {passive: false});
+
+document.addEventListener('mouseup', endDrag);
+document.addEventListener('touchend', endDrag);
+
+function startDrag(e) {
+    isDragging = false;
+    const clientX = e.clientX || e.touches[0].clientX;
+    const clientY = e.clientY || e.touches[0].clientY;
+    startX = clientX;
+    startY = clientY;
+    initialLeft = measureFloatingBtn.offsetLeft;
+    initialTop = measureFloatingBtn.offsetTop;
+    
+    // 移除初始的居中 transform，改用 left/top 定位
+    measureFloatingBtn.style.transform = 'none';
+    measureFloatingBtn.style.left = initialLeft + 'px';
+    measureFloatingBtn.style.top = initialTop + 'px';
+
+    window._isDraggingMeasure = false;
+}
+
+function drag(e) {
+    if (!startX) return;
+    e.preventDefault();
+    const clientX = e.clientX || e.touches[0].clientX;
+    const clientY = e.clientY || e.touches[0].clientY;
+
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+
+    // 位移大于5像素才算拖拽，防止误触点击事件
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+        isDragging = true;
+        window._isDraggingMeasure = true;
+    }
+
+    measureFloatingBtn.style.left = (initialLeft + dx) + 'px';
+    measureFloatingBtn.style.top = (initialTop + dy) + 'px';
+}
+
+function endDrag() {
+    startX = null;
+    startY = null;
+    // 如果拖拽了，松开时保持原位，不触发点击事件
+    if (isDragging) {
+        setTimeout(() => { window._isDraggingMeasure = false; }, 100);
+    }
+}
         // 调用 initUI，传入所有需要的依赖
         initUI(viewer, {
             ...hdLayers,

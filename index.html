@@ -47,6 +47,7 @@
     <link rel="stylesheet" href="css/toast.css" />
     <link rel="stylesheet" href="css/utilities.css" />
     <link rel="stylesheet" href="css/themes.css" /> 
+    <link rel="stylesheet" href="css/measure.css" /> 
 
 </head>
 <body>
@@ -83,6 +84,7 @@
             <li><button id="hdToggleBtn" class="menu-btn">🏙️ 高精度建模</button></li>
             <li><button id="markModeBtn" class="menu-btn">📍 标记</button></li>
             <li><button id="bookmarksBtn" class="menu-btn">⭐ 收藏夹</button></li>
+            <li><button id="measureBtn" class="menu-btn">📏 测量</button></li>
             <li><button id="settingsBtn" class="menu-btn">⚙️ 设置</button></li>
         </ul>
     </nav>
@@ -257,6 +259,19 @@
     </script>
 
     <script type="module" src="./js/main.js"></script>
-    
+
+    <!-- 测量悬浮菜单 -->
+    <div id="measureToolbar" class="measure-toolbar" style="display: none;">
+        <button id="toolbarBackBtn" class="toolbar-btn" title="收起">‹</button>
+        <button id="toolbarAreaBtn" class="toolbar-btn">📐 测面积</button>
+        <button id="toolbarDistBtn" class="toolbar-btn">📏 测距离</button>
+        <button id="toolbarClearBtn" class="toolbar-btn">🧹 清除</button>
+        <button id="toolbarExitBtn" class="toolbar-btn">✕</button>
+    </div>
+
+    <!-- 测量悬浮圆钮 -->
+    <div id="measureFloatingBtn" style="display: none;">☰</div>
+
+
 </body>
 </html>
