@@ -27,7 +27,7 @@ import { showToast, closeInfo, closeIterlog } from './utils.js';
 import { initHdLayers } from './hd-layers.js';
 import { initGoogleMode } from './google-mode.js';
 
-        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjhaYXJfQnUwc0QtUl85TXkiLCJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIEVhcnRoIiwiaWF0IjoxNzg3NzQxOTMyfQ.v2F2V2G6J2yQiV3JTGGFfzwYJxKdQJQyXxWCcSyHN7A';
+        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJjMjgxOGI5ZS1lYzQ1LTRkN2ItYWRmYy05YzllOTNhYWZjYzQiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IlpodU5lbW9fZGVmYXVsdCIsImlhdCI6MTc4MzIyMzUwOX0.HdLWoiGJw7McbyHwjra0Bx7J57pVrZGIJfNk0AZjQBU';
 
 
         (function initTheme() {
@@ -74,7 +74,6 @@ import { initGoogleMode } from './google-mode.js';
         });
         
         // ----- 初始化 viewer 并异步加载地形 -----
-        const terrainEnabled = localStorage.getItem('terrainEnabled') !== 'false';
         const viewer = initViewer('cesiumContainer', new EllipsoidTerrainProvider());
         const loadingOverlay = document.getElementById('loadingOverlay');
 
@@ -129,14 +128,22 @@ import { initGoogleMode } from './google-mode.js';
             }
         });
 
-        CesiumTerrainProvider.fromIonAssetId(1, {
-            requestVertexNormals: true,
-            requestWaterMask: true
-        }).then(provider => {
-            viewer.terrainProvider = provider;
-        }).catch(e => {
-            console.warn('⚠️ 地形加载失败，已继续使用默认椭球体地形', e);
-        });
+        // 在初始化时读取用户设置
+        const terrainEnabled = localStorage.getItem('terrainEnabled') !== 'false';
+        if (terrainEnabled) {
+            CesiumTerrainProvider.fromIonAssetId(1, {
+                requestVertexNormals: true,
+                requestWaterMask: true
+            }).then(provider => {
+                if (localStorage.getItem('terrainEnabled') !== 'false') {
+                    viewer.terrainProvider = provider;
+                }
+            }).catch(e => {
+                console.warn('⚠️ 地形加载失败，已继续使用默认椭球体地形', e);
+            });
+        } else {
+            viewer.terrainProvider = new EllipsoidTerrainProvider();
+        }
 
         console.log('🌍 Locus Earth 启动成功！');
         console.log('💡 高精度联动已启用：进入丹佛/华盛顿DC/华盛顿州/悉尼/波士顿区域自动切换。');

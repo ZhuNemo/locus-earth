@@ -122,26 +122,14 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 }
 
                 // --- 2. 恢复哨兵2底图 ---
-                if (viewer.baseLayerPicker) {
-                    const viewModels = viewer.baseLayerPicker.viewModel.imageryProviderViewModels;
-                    let sentinelViewModel = null;
-                    for (const vm of viewModels) {
-                        if (vm.name.includes('Sentinel-2')) {
-                            sentinelViewModel = vm;
-                            break;
-                        }
-                    }
-                    if (sentinelViewModel) {
-                        viewer.baseLayerPicker.viewModel.selectedImagery = sentinelViewModel;
-                    } else {
-                        viewer.imageryLayers.removeAll();
-                        viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 3954 }));
-                    }
-                } else {
-                    viewer.imageryLayers.removeAll();
-                    viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 3954 }));
-                }
-                console.log('↻ 已恢复哨兵2底图');
+                viewer.imageryLayers.removeAll();
+                IonImageryProvider.fromAssetId(3954).then(provider => {
+                    viewer.imageryLayers.addImageryProvider(provider);
+                    viewer.scene.requestRender();
+                    console.log('↻ 已恢复哨兵2底图');
+                }).catch(e => {
+                    console.error('哨兵2底图恢复失败:', e);
+                });
 
                 // 恢复底图选择器按钮
                 const layerButton = document.querySelector(".cesium-baseLayerPicker-selected")?.closest("button");
@@ -162,6 +150,7 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                     destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000),
                     duration: 2
                 });
+setTimeout(() => viewer.scene.requestRender(), 500);
 
                 // 恢复“关于”按钮的原始点击事件
                 const infoBtn = document.getElementById('infoBtn');

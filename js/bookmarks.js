@@ -79,7 +79,7 @@ function setupEventHandlers() {
 
     // 关闭收藏夹
     closeBtn.addEventListener('click', closeBookmarksPanel);
-    // 点击面板外部关闭（可选）
+    // 点击面板外部关闭
     document.addEventListener('click', (e) => {
         if (panel && !panel.contains(e.target) && e.target !== bookmarksBtn) {
             closeBookmarksPanel();
@@ -177,7 +177,7 @@ function renderBookmarksList() {
     });
     listContainer.innerHTML = html;
 
-    // 绑定事件（委托）
+    // 绑定事件
     listContainer.querySelectorAll('.locate-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -197,7 +197,6 @@ function renderBookmarksList() {
     // 点击整行定位
     listContainer.querySelectorAll('.bookmark-item').forEach(item => {
         item.addEventListener('click', (e) => {
-            // 如果点击的是按钮，不重复触发
             if (e.target.closest('button')) return;
             const idx = parseInt(item.dataset.index);
             flyToBookmark(idx);
@@ -302,7 +301,8 @@ function createPin(cartesian, name) {
             height: 32,
             verticalOrigin: VerticalOrigin.BOTTOM,
             pixelOffset: new Cartesian2(0, 2), 
-            heightReference: HeightReference.CLAMP_TO_GROUND 
+            heightReference: HeightReference.CLAMP_TO_GROUND,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY
         },
         label: {
             text: name,
@@ -312,6 +312,7 @@ function createPin(cartesian, name) {
             pixelOffset: new Cartesian2(0, -38),
             showBackground: true,
             horizontalOrigin: HorizontalOrigin.CENTER,
+            disableDepthTestDistance: Number.POSITIVE_INFINITY
         },
         _isBookmark: true
     });
