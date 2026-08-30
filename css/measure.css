@@ -2,22 +2,20 @@
     position: fixed;
     top: 80px;
     right: 16px; 
+    width: 130px; 
     left: auto;
-    transform: none; 
-    z-index: 9999;
+    transform: none;
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 10px;
     border-radius: var(--window-radius);
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    color: var(--text-primary, #1a1a1a);
 }
 
 .toolbar-btn {
@@ -25,16 +23,14 @@
     color: #1f6ed8;
     border: 1px solid #cfe2ff;
     border-radius: var(--control-radius);
-    padding: 8px 14px;
+    width: 100%;
+    min-width: 100px; 
+    text-align: center;
+    white-space: nowrap; 
+    padding: 8px 10px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
-    font-family: inherit;
-    box-shadow: 0 2px 8px rgba(31, 110, 216, 0.1);
-    transition: all 0.2s ease;
-    width: 100%; 
-    text-align: center;
-    margin-bottom: 6px; 
 }
 
 .toolbar-btn:hover,
@@ -69,13 +65,10 @@
     cursor: grab;
     user-select: none;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    will-change: left, top; 
+    transition: none;
 }
 
-#measureFloatingBtn:hover {
-    transform: translateX(-50%) scale(1.02);
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
-}
 
 #measureFloatingBtn:active {
     cursor: grabbing;
