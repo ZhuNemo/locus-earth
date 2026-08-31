@@ -1,10 +1,9 @@
 .measure-toolbar {
     position: fixed;
     top: 80px;
-    right: 16px; 
-    width: 130px; 
-    left: auto;
-    transform: none;
+    left: 16px;
+    right: auto;
+    width: 130px;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -16,6 +15,41 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.25);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    transform-origin: left top;
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), left 0.18s ease, top 0.18s ease;
+    pointer-events: auto;
+}
+
+.measure-toolbar.is-opening {
+    animation: measureToolbarOpen 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.measure-toolbar.is-closing {
+    animation: measureToolbarClose 0.22s ease forwards;
+}
+
+@keyframes measureToolbarOpen {
+    0% {
+        opacity: 0;
+        transform: translate3d(0, -12px, 0) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes measureToolbarClose {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(0, -18px, 0) scale(0.96);
+    }
 }
 
 .toolbar-btn {
@@ -24,13 +58,28 @@
     border: 1px solid #cfe2ff;
     border-radius: var(--control-radius);
     width: 100%;
-    min-width: 100px; 
+    min-width: 100px;
     text-align: center;
-    white-space: nowrap; 
+    white-space: nowrap;
     padding: 8px 10px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
+}
+
+.toolbar-btn.toolbar-mini-btn {
+    width: 100%;
+    min-width: 100px;
+    height: 38px;
+    align-self: stretch;
+    padding: 7px 10px;
+    border-radius: 999px;
+    font-size: 18px;
+    line-height: 1;
+}
+.toolbar-btn.toolbar-mini-btn svg {
+    display: block;
+    margin-inline: auto;
 }
 
 .toolbar-btn:hover,
@@ -46,8 +95,8 @@
 #measureFloatingBtn {
     position: fixed;
     top: 80px;
-    right: 16px;
-    left: auto;
+    left: 16px;
+    right: auto;
     transform: none;
     z-index: 9999;
     width: 54px;
@@ -65,10 +114,9 @@
     cursor: grab;
     user-select: none;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    will-change: left, top; 
-    transition: none;
+    will-change: left, top;
+    transition: left 0.18s ease, top 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
 }
-
 
 #measureFloatingBtn:active {
     cursor: grabbing;

@@ -21,7 +21,11 @@
 <body class="settings-body">
 
     <header class="settings-header">
-        <button id="backBtn" class="back-btn" aria-label="返回主页面">‹</button>
+        <button id="backBtn" class="back-btn" aria-label="返回主页面">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+        </button>
         <div class="settings-title">
             <h1>⚙️ 设置</h1>
             <p>若设置项未生效，重新开关即可恢复</p>
@@ -63,6 +67,17 @@
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" id="terrainToggle" />
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">路网叠加层</span>
+                    <span class="setting-desc">来自天地图的路网和叠加层，覆盖中国路网和地名、全球边界和行政区名</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="overlayToggle" />
                     <span class="toggle-slider"></span>
                 </label>
             </div>

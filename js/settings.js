@@ -180,6 +180,18 @@
             });
         }
 
+
+        const overlayToggle = document.getElementById('overlayToggle');
+        if (overlayToggle) {
+            overlayToggle.checked = localStorage.getItem('overlayEnabled') === 'true';
+            
+            overlayToggle.addEventListener('change', () => {
+                localStorage.setItem('overlayEnabled', overlayToggle.checked);
+                showToastInternal(overlayToggle.checked ? '📍 叠加层已开启' : '📍 叠加层已关闭');
+            });
+        }
+
+
     // --- 清除缓存弹窗 ---
     const clearCacheBtn = document.getElementById('clearCacheBtn');
     const clearCacheModal = document.getElementById('clearCacheModal');

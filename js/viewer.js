@@ -1,20 +1,12 @@
-import { 
-            Viewer,
-            SceneMode,
-            IonImageryProvider,
-            ScreenSpaceEventHandler,
-            ScreenSpaceEventType,
-            Cartesian3,
-            Cartographic,
-            createDefaultImageryProviderViewModels,
-        } from 'cesium'; 
+import * as Cesium from 'cesium'; 
+
+import { initCustomImagery } from './imagery.js';
 
 export function initViewer(containerId, terrainProvider) {
-    const defaultImageryProviders = createDefaultImageryProviderViewModels();
-
+    const defaultImageryProviders = Cesium.createDefaultImageryProviderViewModels();
     const sentinelViewModel = defaultImageryProviders.find(vm => vm.name.includes('Sentinel-2'));
 
-    const viewer = new Viewer(containerId, {
+    const viewer = new Cesium.Viewer(containerId, {
         terrainProvider: terrainProvider,
         baseLayerPicker: true, 
         imageryProviderViewModels: defaultImageryProviders, 
@@ -22,31 +14,33 @@ export function initViewer(containerId, terrainProvider) {
         
         infoBox: false,
         sceneModePicker: false,
-        sceneMode: SceneMode.SCENE3D,
+        sceneMode: Cesium.SceneMode.SCENE3D,
         locale: 'zh-CN',
     });
 
-        const handler = new ScreenSpaceEventHandler(viewer.canvas);
+    initCustomImagery(viewer.baseLayerPicker.viewModel.imageryProviderViewModels, viewer);
 
-        function zoomAtPosition(position) {
-            const picked = viewer.scene.pick(position);
-            if (picked && picked.id && picked.id._isBookmark) {
-                return;
-            }
+    const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 
-            const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
-            if (!cartesian) return;
-
-            const carto = Cartographic.fromCartesian(cartesian);
-            const currentCarto = viewer.camera.positionCartographic;
-            const newHeight = Math.max(currentCarto.height * 0.5, 10);
-            if (newHeight < 10) return;
-
-            viewer.camera.flyTo({
-                destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
-                duration: 0.5
-            });
+    function zoomAtPosition(position) {
+        const picked = viewer.scene.pick(position);
+        if (picked && picked.id && picked.id._isBookmark) {
+            return;
         }
+
+        const cartesian = viewer.camera.pickEllipsoid(position, viewer.scene.globe.ellipsoid);
+        if (!cartesian) return;
+
+        const carto = Cesium.Cartographic.fromCartesian(cartesian);
+        const currentCarto = viewer.camera.positionCartographic;
+        const newHeight = Math.max(currentCarto.height * 0.5, 10);
+        if (newHeight < 10) return;
+
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, newHeight),
+            duration: 0.5
+        });
+    }
 
         // ----- 移动端/触屏手感优化 -----
         const controller = viewer.scene.screenSpaceCameraController;
@@ -60,8 +54,6 @@ export function initViewer(containerId, terrainProvider) {
         controller.enableCollisionDetection = true;
 
 
-        // 只有在两次都完全静止的点击/轻触时，才允许放大。
-        // 一旦本次点击/触摸发生任何移动，就直接禁用双击放大。
         let hasMovedSincePointerDown = false;
         let hasMovedSinceTouchStart = false;
 
@@ -87,7 +79,7 @@ export function initViewer(containerId, terrainProvider) {
             }
 
             zoomAtPosition(click.position);
-        }, ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+        }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
         // iOS Safari does not reliably dispatch a touch double-click to Cesium.
         let lastTouch = null;
@@ -146,6 +138,30 @@ export function initViewer(containerId, terrainProvider) {
         viewer.timeline.container.style.display = 'none';
         viewer.animation.container.style.display = 'none';
 
+                
+        let fpsCheckCounter = 0;
+        let lastFpsTime = performance.now();
+        let currentScale = Math.min(window.devicePixelRatio, 2);
+        viewer.resolutionScale = currentScale;
+
+        viewer.scene.postRender.addEventListener(() => {
+            fpsCheckCounter++;
+            const now = performance.now();
+            if (now - lastFpsTime >= 1000) { 
+                const fps = fpsCheckCounter;
+                fpsCheckCounter = 0;
+                lastFpsTime = now;
+
+                if (fps < 40 && currentScale > 1.0) {
+                    currentScale -= 0.1; 
+                    viewer.resolutionScale = currentScale;
+                } else if (fps > 55 && currentScale < Math.min(window.devicePixelRatio, 2)) {
+                    currentScale += 0.1;
+                    viewer.resolutionScale = currentScale;
+                }
+            }
+        });
+
         return viewer;
-        
+
     }

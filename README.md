@@ -35,8 +35,9 @@ Locus Earth 是一个轻量、快速且高交互性的开源 3D 地球项目。�
 🤖 **技术栈与致谢**
 - 本项目由人工智能辅助构建。参与构建的模型（按优先级排序）：DeepSeek、VS Code Copilot、Doubao、ChatGPT、Google Gemini。
 
-📝 **注意事项**
-- >项目内 Cesium Ion 的 Access Token 已设置域名白名单，仅供演示使用。如果您要基于本仓库进行二次修改和构建或意图本地深度使用，请克隆仓库并前往 [Cesium Ion](https://ion.cesium.com/signup) 使用GitHub注册免费账号，将原访问令牌替换为您自己的 Access Token。请务必遵守 Cesium 用户公约，切勿盗刷他人账号，谢谢理解。
+📝 **API Key相关注意事项**
+- 项目内的 Cesium、腾讯地图、天地图密钥均已设置了域名白名单（仅允许在指定域名下使用），仅供本项目演示。
+- 如果您欲 Fork 本仓库并部署到自己的域名或本地使用，请直接修改 [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js) 文件，替换为您自己申请的免费密钥（申请链接已附在文件中），并务必在控制台设置您自己的白名单，以免影响正常使用。请勿盗刷他人账号额度，谢谢理解！
 
 ℹ️ **项目信息**
 - 个人项目开启时间：2026-07-04

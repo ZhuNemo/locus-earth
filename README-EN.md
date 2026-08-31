@@ -36,8 +36,9 @@ You can access the project via any of the following links:
 🤖 **Tech Stack & Credits**
 - This project was assisted by Artificial Intelligence. Models involved in the build (in priority order): DeepSeek, VS Code Copilot, Doubao, ChatGPT, Google Gemini.
 
-📝 **Notes**
-- > The Cesium Ion Access Token in the project has a domain whitelist and is for demonstration purposes only. If you intend to fork this repository for further modifications or use it locally in-depth, please clone the repository and visit [Cesium Ion](https://ion.cesium.com/) to register a free account via GitHub, and replace the original Access Token with your own. Please adhere to Cesium's user agreement and do not misuse others' accounts. Thank you for your understanding.
+📝 **Important Notes on API Keys**
+- The Cesium, Tencent Maps, and Tianditu keys in the project have all been configured with domain whitelists (only allowed for use on designated domains), and are solely for this project's demonstration.
+- If you wish to fork this repository and deploy it to your own domain or use it locally, please directly modify the [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js) file to replace them with your own free keys (application links are attached in the file), and be sure to set your own whitelist in the console to avoid affecting normal use. Please do not misuse others' account quotas, thank you for your understanding!
 
 ℹ️ **Project Info**
 - Personal project started: 2026-07-04

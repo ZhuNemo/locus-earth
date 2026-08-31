@@ -18,16 +18,18 @@
             transition: opacity 0.4s ease;
             font-family: 'Inter', 'Segoe UI', sans-serif;
             white-space: nowrap;
+            white-space: normal; 
+            word-break: break-all; 
+            max-width: 120vw; 
+            text-align: center; 
         }
         .toast-message.show {
             opacity: 1;
         }
 
-        @media(max-width:600px){
         .cesium-viewer-bottom {
             left: 8px !important;
         }
         .cesium-credit-text {
             display:none;
-        }
         }

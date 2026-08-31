@@ -5,18 +5,10 @@ const isDark = themeSettings.followSystem === false
 document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
 
 import {
-            Viewer,
-            createOsmBuildingsAsync,
             Cartesian3,
             Ion,
             CesiumTerrainProvider,
-            SceneMode,
-            Math as CesiumMath,
-            Cesium3DTileset,
-            IonImageryProvider,
-            GeographicTilingScheme,
             EllipsoidTerrainProvider, 
-            Color, 
         } from 'cesium';
 
 import { initViewer } from './viewer.js';
@@ -27,8 +19,10 @@ import { showToast, closeInfo, closeIterlog } from './utils.js';
 import { initHdLayers } from './hd-layers.js';
 import { initGoogleMode } from './google-mode.js';
 import { initMeasureTools } from './measure.js';
+import { initMeasureUI } from './measure-ui.js'
+import { CONFIG } from './config.js';
 
-        Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjhaYXJfQnUwc0QtUl85TXkiLCJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIEVhcnRoIiwiaWF0IjoxNzg3NzQxOTMyfQ.v2F2V2G6J2yQiV3JTGGFfzwYJxKdQJQyXxWCcSyHN7A';
+        Ion.defaultAccessToken = CONFIG.cesiumToken;
 
 
         (function initTheme() {
@@ -174,140 +168,7 @@ import { initMeasureTools } from './measure.js';
         // 初始化测量工具，拿到控制句柄
         const measureTools = initMeasureTools(viewer);
 
-        // --- 测量悬浮窗交互逻辑 ---
-        const measureToolbar = document.getElementById('measureToolbar');
-        const measureFloatingBtn = document.getElementById('measureFloatingBtn');
-
-        // 1. 打开测量菜单
-        document.getElementById('measureBtn').addEventListener('click', () => {
-            document.getElementById('sideMenu').classList.remove('active');
-            measureToolbar.style.display = 'flex';
-            measureFloatingBtn.style.display = 'none';
-            showToast('📏 选择测量方式');
-        });
-
-        // 2. 测面积、测距离、清除按钮
-        document.getElementById('toolbarAreaBtn').addEventListener('click', () => {
-            measureTools.startArea();
-            showToast('📐 请在地图上轻触添加点');
-        });
-        document.getElementById('toolbarDistBtn').addEventListener('click', () => {
-            measureTools.startDistance();
-            showToast('📏 请在地图上轻触添加点');
-        });
-        document.getElementById('toolbarClearBtn').addEventListener('click', () => {
-            measureTools.clear();
-            showToast('🧹 已清除测量数据');
-        });
-
-        // 3. 收起菜单，变为浮动圆钮
-        function collapseToolbar() {
-            measureToolbar.style.display = 'none';
-            measureFloatingBtn.style.display = 'flex';
-            measureFloatingBtn.style.top = '';
-            measureFloatingBtn.style.right = '';
-            measureFloatingBtn.style.left = '';
-            measureFloatingBtn.style.transform = '';
-        }
-
-        document.getElementById('toolbarBackBtn').addEventListener('click', collapseToolbar);
-
-        document.getElementById('toolbarExitBtn').addEventListener('click', () => {
-            // 1. 清除当前的测量线段/面积
-            measureTools.clear();
-            
-            // 2. 隐藏顶部的工具栏
-            measureToolbar.style.display = 'none';
-            
-            // 3. 隐藏浮动小圆球
-            measureFloatingBtn.style.display = 'none';
-            
-            // 4. 恢复鼠标指针
-            viewer.canvas.style.cursor = 'default';
-            
-            // 5. 提示用户
-            showToast('✅ 已退出测量模式');
-        });
-
-
-        // 5. 浮动圆钮拖拽功能
-        let isDragging = false;
-        let hasDragged = false;
-        let suppressClick = false; 
-        let startX, startY, initialLeft, initialTop;
-
-        // 安全获取坐标
-        function getClientPos(e) {
-            if (e.clientX !== undefined) return { x: e.clientX, y: e.clientY };
-            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            return { x: 0, y: 0 };
-        }
-
-        function startDrag(e) {
-            isDragging = true;
-            hasDragged = false;
-            e.preventDefault(); 
-            const pos = getClientPos(e);
-            startX = pos.x;
-            startY = pos.y;
-            initialLeft = measureFloatingBtn.offsetLeft;
-            initialTop = measureFloatingBtn.offsetTop;
-            
-            measureFloatingBtn.style.transform = 'none';
-            measureFloatingBtn.style.left = initialLeft + 'px';
-            measureFloatingBtn.style.top = initialTop + 'px';
-            measureFloatingBtn.style.right = 'auto'; 
-        }
-
-        function drag(e) {
-            if (!isDragging) return;
-            e.preventDefault(); 
-            
-            const pos = getClientPos(e);
-            const dx = pos.x - startX;
-            const dy = pos.y - startY;
-
-            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-                hasDragged = true;
-                suppressClick = true; 
-            }
-
-            const btnWidth = measureFloatingBtn.offsetWidth;
-            const btnHeight = measureFloatingBtn.offsetHeight;
-            const maxLeft = window.innerWidth - btnWidth - 10; 
-            const maxTop = window.innerHeight - btnHeight - 10;
-            
-            let newLeft = initialLeft + dx;
-            let newTop = initialTop + dy;
-
-            newLeft = Math.max(10, Math.min(newLeft, maxLeft));
-            newTop = Math.max(10, Math.min(newTop, maxTop));
-
-            measureFloatingBtn.style.left = newLeft + 'px';
-            measureFloatingBtn.style.top = newTop + 'px';
-        }
-
-        function endDrag() {
-            isDragging = false;
-            startX = null;
-            startY = null;
-            setTimeout(() => { suppressClick = false; hasDragged = false; }, 100);
-        }
-
-        measureFloatingBtn.addEventListener('mousedown', startDrag);
-        measureFloatingBtn.addEventListener('touchstart', startDrag, {passive: false});
-
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('touchmove', drag, {passive: false});
-
-        document.addEventListener('mouseup', endDrag);
-        document.addEventListener('touchend', endDrag);
-
-        measureFloatingBtn.addEventListener('click', (e) => {
-            if (suppressClick || hasDragged) return;
-            measureFloatingBtn.style.display = 'none';
-            measureToolbar.style.display = 'flex';
-        });
+        initMeasureUI(viewer, measureTools);
 
         // 调用 initUI，传入所有需要的依赖
         initUI(viewer, {

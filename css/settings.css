@@ -34,6 +34,9 @@
     transition: background 0.2s;
     font-family: inherit;
 }
+.settings-header .back-btn svg {
+    display: block;
+}
 .settings-header .back-btn:hover {
     background: rgba(0,0,0,0.06);
 }

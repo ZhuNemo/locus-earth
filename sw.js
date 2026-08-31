@@ -76,5 +76,12 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  event.respondWith(fetch(event.request));
+    event.respondWith(
+    fetch(event.request).catch(() => {
+      // 尝试从缓存中拿，如果缓存也没有，就返回一个空的 Response（防止报错）
+      return caches.match(event.request).then(
+        cached => cached || new Response('', { status: 408, statusText: 'Network Error' })
+      );
+    })
+  );
 });
