@@ -12,7 +12,6 @@ export function initMeasureUI(viewer, measureTools) {
 
     // 1. 打开测量菜单
     document.getElementById('measureBtn').addEventListener('click', () => {
-        document.getElementById('sideMenu').classList.remove('active');
         measureFloatingBtn.style.display = 'none';
         showToolbarAtButtonPosition();
         showToast('📏 选择测量方式');

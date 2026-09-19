@@ -35,10 +35,8 @@ export async function initHdLayers(viewer, showToast) {
             state.buildingsVisible = visible;
             buildingsPrimitive.show = visible;
             if (visible) {
-                toggleBuildingsBtn.textContent = '🏢 3D建筑';
                 toggleBuildingsBtn.classList.add('active');
             } else {
-                toggleBuildingsBtn.textContent = '🏚️ 建筑隐藏';
                 toggleBuildingsBtn.classList.remove('active');
             }
         }
@@ -49,8 +47,8 @@ export async function initHdLayers(viewer, showToast) {
             setBuildingsVisible(false);
         } catch (e) {
             console.warn('OSM建筑加载失败', e);
-            toggleBuildingsBtn.textContent = '🚫 建筑不可用';
             toggleBuildingsBtn.disabled = true;
+            toggleBuildingsBtn.classList.remove('active');
             toggleBuildingsBtn.style.opacity = '0.5';
         }
 

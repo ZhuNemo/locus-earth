@@ -10,75 +10,58 @@ export function initUI(viewer, {
     setHdTilesetsVisible,
     hdToggleBtn,
     toggleBuildingsBtn,
-    closeInfo,     
-    closeIterlog,  
+    closeInfo,
+    closeIterlog,
 }) {
 
-    // ---------- 侧滑菜单控制 ----------
-    const menuToggleBtn = document.getElementById('menuToggleBtn');
-    const sideMenu = document.getElementById('sideMenu');
-    const closeMenuBtn = document.getElementById('closeMenuBtn');
-    const menuItems = sideMenu.querySelectorAll('.menu-btn');
-    
+    // =============================================
+    // 0. 悬浮头部 & 可展开面板控制
+    // =============================================
+    const toggleHeaderBtn = document.getElementById('toggleHeaderBtn');
+    const expandablePanel = document.getElementById('expandablePanel');
 
-    // 创建遮罩层
-    const overlay = document.createElement('div');
-    overlay.className = 'menu-overlay';
-    document.body.appendChild(overlay);
-
-    function openMenu() {
-        sideMenu.classList.add('open');
-        overlay.classList.add('show');
-        document.body.style.overflow = 'hidden'; 
+    function openPanel() {
+        expandablePanel.classList.add('expanded');
+        toggleHeaderBtn.classList.add('rotated');
     }
 
-    function closeMenu() {
-        sideMenu.classList.remove('open');
-        overlay.classList.remove('show');
-        document.body.style.overflow = '';
+    function closePanel() {
+        expandablePanel.classList.remove('expanded');
+        toggleHeaderBtn.classList.remove('rotated');
     }
 
-    // 汉堡按钮点击切换
-    menuToggleBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (sideMenu.classList.contains('open')) {
-            closeMenu();
+    function togglePanel() {
+        if (expandablePanel.classList.contains('expanded')) {
+            closePanel();
         } else {
-            openMenu();
+            openPanel();
+        }
+    }
+
+    toggleHeaderBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePanel();
+    });
+
+    // 点击面板外部自动收起
+    document.addEventListener('click', (e) => {
+        if (expandablePanel.classList.contains('expanded') &&
+            !expandablePanel.contains(e.target) &&
+            !toggleHeaderBtn.contains(e.target)) {
+            closePanel();
         }
     });
 
-    // 关闭按钮
-    closeMenuBtn.addEventListener('click', closeMenu);
-
-    // 点击遮罩关闭
-    overlay.addEventListener('click', closeMenu);
-
-    // 点击菜单项关闭菜单
-    menuItems.forEach(btn => {
-        btn.addEventListener('click', () => {
-            setTimeout(closeMenu, 150);
-        });
-    });
-
-    // 按 ESC 键关闭
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && sideMenu.classList.contains('open')) {
-            closeMenu();
-        }
-    });
-
-    // 窗口大小变化时，保持菜单关闭
-    window.addEventListener('resize', () => {
-        if (window.innerWidth > 700 && sideMenu.classList.contains('open')) {
-            closeMenu();
-        }
-    });
+    // 辅助：先收起面板，延迟后再执行回调（用于打开弹窗）
+    function closePanelThen(callback) {
+        closePanel();
+        setTimeout(callback, 220);
+    }
 
     // =============================================
-    // 1. 光照控制
+    // 1. 光照控制（开关形式）
     // =============================================
-    const toggleBtn = document.getElementById('modeToggleBtn');
+    const modeToggle = document.getElementById('modeToggleBtn');
     let isLightingEnabled = false;
 
     function switchLighting(enableLighting) {
@@ -87,26 +70,23 @@ export function initUI(viewer, {
         if (enableLighting) {
             viewer.timeline.container.style.display = 'block';
             viewer.animation.container.style.display = 'block';
-            toggleBtn.textContent = '🌍 真实光照';
-            toggleBtn.classList.remove('active');
+            modeToggle.classList.add('active');
         } else {
             viewer.timeline.container.style.display = 'none';
             viewer.animation.container.style.display = 'none';
-            toggleBtn.textContent = '☀️ 亮白模式';
-            toggleBtn.classList.add('active');
+            modeToggle.classList.remove('active');
         }
     }
 
-    document.getElementById('settingsBtn').addEventListener('click', () => {
-        window.location.href = './settings';
-    });
-    
-    toggleBtn.addEventListener('click', () => {
+    modeToggle.addEventListener('click', () => {
         switchLighting(!isLightingEnabled);
     });
 
+    // 初始化：默认关闭真实光照
+    switchLighting(false);
+
     // =============================================
-    // 2. 3D建筑切换（完整互斥逻辑）
+    // 2. 建筑白模切换（开关形式）
     // =============================================
     toggleBuildingsBtn.addEventListener('click', () => {
         if (isInHdArea && hdTilesetsVisible) {
@@ -119,7 +99,7 @@ export function initUI(viewer, {
                 hdToggleBtn.disabled = true;
                 hdToggleBtn.style.opacity = '0.5';
                 hdToggleBtn.style.cursor = 'not-allowed';
-                showToast('🏙️ 高精度已关闭，3D建筑已开启');
+                showToast('🏙️ 高精度已关闭，建筑白模已开启');
             }
             return;
         }
@@ -128,13 +108,17 @@ export function initUI(viewer, {
         const newState = !state.buildingsVisible;
         setBuildingsVisible(newState);
 
+        if (newState) {
+            toggleBuildingsBtn.classList.add('active');
+        } else {
+            toggleBuildingsBtn.classList.remove('active');
+        }
+
         if (isInHdArea) {
             if (newState) {
-                // 3D建筑开启 → 高精度按钮变灰
                 hdToggleBtn.disabled = true;
                 hdToggleBtn.style.opacity = '0.5';
                 hdToggleBtn.style.cursor = 'not-allowed';
-                // 如果高精度是开启的，强制关闭
                 if (hdTilesetsVisible) {
                     setHdTilesetsVisible(false);
                     hdTilesetsVisible = false;
@@ -142,7 +126,6 @@ export function initUI(viewer, {
                     hdToggleBtn.classList.remove('active');
                 }
             } else {
-                // 3D建筑关闭 → 高精度按钮可点击
                 hdToggleBtn.disabled = false;
                 hdToggleBtn.style.opacity = '1';
                 hdToggleBtn.style.cursor = 'pointer';
@@ -151,28 +134,17 @@ export function initUI(viewer, {
     });
 
     // =============================================
-    // 3. 重置视角
+    // 3. 设置按钮（先收起面板，再跳转）
     // =============================================
-    const resetBtn = document.getElementById('resetViewBtn');
-    resetBtn.addEventListener('click', () => {
-        const cartographic = viewer.camera.positionCartographic;
-        viewer.camera.flyTo({
-            destination: Cartesian3.fromRadians(
-                cartographic.longitude,
-                cartographic.latitude,
-                cartographic.height
-            ),
-            orientation: {
-                heading: 0,
-                pitch: -CesiumMath.PI_OVER_TWO,
-                roll: 0
-            },
-            duration: 1.2
-        });
+    document.getElementById('settingsBtn').addEventListener('click', () => {
+        closePanel();
+        setTimeout(() => {
+            window.location.href = './settings';
+        }, 220);
     });
 
     // =============================================
-    // 4. 信息弹窗（普通关于）
+    // 4. 关于弹窗
     // =============================================
     const infoBtn = document.getElementById('infoBtn');
     const infoModal = document.getElementById('infoModal');
@@ -191,8 +163,10 @@ export function initUI(viewer, {
     function closeTips() {
         tipsModal.classList.remove('active');
     }
-    // closeInfo 由外部传入（与 main.js 共享）
-    infoBtn.addEventListener('click', openInfo);
+
+    infoBtn.addEventListener('click', () => {
+        closePanelThen(openInfo);
+    });
     closeInfoBtn.addEventListener('click', closeInfo);
     infoModal.addEventListener('click', (e) => {
         if (e.target === infoModal) closeInfo();
@@ -237,7 +211,6 @@ export function initUI(viewer, {
     function openIterlog() {
         iterlogModal.classList.add('active');
     }
-    // closeIterlog 由外部传入
     if (closeIterlogBtn) {
         closeIterlogBtn.addEventListener('click', closeIterlog);
     }
@@ -250,3 +223,4 @@ export function initUI(viewer, {
     // 返回关闭弹窗的方法
     return { openInfo, closeInfo, openIterlog, closeIterlog };
 }
+

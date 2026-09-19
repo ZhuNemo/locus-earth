@@ -48,46 +48,80 @@
     <link rel="stylesheet" href="css/utilities.css" />
     <link rel="stylesheet" href="css/themes.css" /> 
     <link rel="stylesheet" href="css/measure.css" /> 
+    <link rel="stylesheet" href="css/components.css" />
 
 </head>
 <body>
-    <header class="locus-header">
-        <div class="brand">
-            <h1>🌏 Locus Earth</h1>
-            <span class="sub">3D地球 V6.2</span>
-            <span class="custom-message">
-                个人开发者， <a href="https://github.com/ZhuNemo/" target="_blank">我的GitHub主页</a>
-            </span>
+    <div class="floating-header">
+        <div class="header-brand">
+            <div class="logo-icon">🌏</div>
+            <div class="brand-text">
+                <span class="header-title">Locus Earth</span>
+                <span class="header-version">V6.2</span>
+            </div>
         </div>
-        <div class="controls">
-            <button id="menuToggleBtn" class="menu-toggle" aria-label="打开菜单">☰</button>
-            <button id="resetViewBtn" class="top-btn" title="重置视角">↻</button>
-            <button id="infoBtn" class="top-btn" title="关于">ⓘ</button>
+        <button id="toggleHeaderBtn" class="toggle-header-btn" aria-label="展开或收起菜单">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        </button>
+    </div>
 
-            <button id="exitGoogleBtn" class="mode-btn" style="display:none; background:#e74c3c; color:#fff; border-color:#c0392b;">❎ 退出Google地球</button>
+    <!-- 可展开面板 -->
+    <div id="expandablePanel" class="expandable-panel">
+        <!-- 第一行：开关控制 -->
+        <div class="panel-row switches">
+            <div class="switch-item" id="modeToggleBtn" role="button" tabindex="0">
+                <div class="toggle-switch"></div>
+                <span>真实光照</span>
+            </div>
+            <div class="switch-item active" id="buildingsToggleBtn" role="button" tabindex="0">
+                <div class="toggle-switch"></div>
+                <span>建筑白模</span>
+            </div>
         </div>
-        <div class="credit">
-            基于 <a href="https://cesium.com/" target="_blank">Cesium</a> ·
-            <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a>
-        </div>
-    </header>
 
-    <!-- 侧滑菜单 -->
-    <nav id="sideMenu" class="side-menu">
-        <div class="menu-header">
-            <span class="menu-title">功能</span>
-            <button id="closeMenuBtn" class="close-btn">✕</button>
+        <!-- 第二行：主要功能按钮 -->
+        <div class="panel-row actions">
+            <button id="markModeBtn" class="action-btn" type="button">
+                <div class="action-icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M12 2a8 8 0 00-8 8c0 5.4 7.5 11.5 7.7 11.7a1 1 0 001.4 0C13.3 21.5 20 15.4 20 10a8 8 0 00-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </div>
+                <span>标记</span>
+            </button>
+            <button id="bookmarksBtn" class="action-btn" type="button">
+                <div class="action-icon-wrap">
+                    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                </div>
+                <span>收藏</span>
+            </button>
+            <button id="measureBtn" class="action-btn" type="button">
+                <div class="action-icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M2 12h20M12 2v20"></path></svg>
+                </div>
+                <span>测量</span>
+            </button>
+            <button id="settingsBtn" class="action-btn" type="button">
+                <div class="action-icon-wrap">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+                </div>
+                <span>设置</span>
+            </button>
+            <button id="infoBtn" class="action-btn" type="button">
+                <div class="action-icon-wrap">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                </div>
+                <span>关于</span>
+            </button>
         </div>
-        <ul class="menu-list">
-            <li><button id="modeToggleBtn" class="menu-btn active">☀️ 亮白模式</button></li>
-            <li><button id="buildingsToggleBtn" class="menu-btn active">🏢 3D建筑</button></li>
-            <li><button id="hdToggleBtn" class="menu-btn">🏙️ 高精度建模</button></li>
-            <li><button id="markModeBtn" class="menu-btn">📍 标记</button></li>
-            <li><button id="bookmarksBtn" class="menu-btn">⭐ 收藏夹</button></li>
-            <li><button id="measureBtn" class="menu-btn">📏 测量</button></li>
-            <li><button id="settingsBtn" class="menu-btn">⚙️ 设置</button></li>
-        </ul>
-    </nav>
+
+        <!-- 高精度建模（动态显示） -->
+        <button id="hdToggleBtn" class="hd-btn" type="button" style="display:none;">🏙️ 高精度建模</button>
+    </div>
+
+    <!-- 退出谷歌模式按钮 -->
+    <button id="exitGoogleBtn" class="exit-google-btn" type="button" style="display:none;">❎ 退出 Google 地球</button>
+
 
         <!-- 右下角控制面板（指南针 + 高度控制） -->
         <div id="camera-controls">

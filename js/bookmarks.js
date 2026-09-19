@@ -81,7 +81,7 @@ function setupEventHandlers() {
     closeBtn.addEventListener('click', closeBookmarksPanel);
     // 点击面板外部关闭
     document.addEventListener('click', (e) => {
-        if (panel && !panel.contains(e.target) && e.target !== bookmarksBtn) {
+        if (panel && !panel.contains(e.target) && !bookmarksBtn.contains(e.target)) {
             closeBookmarksPanel();
         }
     });
@@ -374,15 +374,8 @@ function toggleMarkingMode(enable) {
     isMarkingMode = enable;
     const btn = document.getElementById('markModeBtn');
     if (btn) {
-        if (enable) {
-            btn.textContent = '📍 标记开';
-            btn.classList.add('active');
-            viewerInstance.canvas.style.cursor = 'crosshair';
-        } else {
-            btn.textContent = '📍 标记';
-            btn.classList.remove('active');
-            viewerInstance.canvas.style.cursor = 'default';
-        }
+        btn.classList.toggle('active', enable);
+        viewerInstance.canvas.style.cursor = enable ? 'crosshair' : 'default';
     }
 }
 

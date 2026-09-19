@@ -1,0 +1,422 @@
+/* ============================================
+   Locus Earth - 悬浮控件 (V6.3)
+   玻璃拟态（Glassmorphism）设计
+   ============================================ */
+
+/* ---------- 主题变量（亮色模式） ---------- */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.78);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    --glass-blur: 16px;
+    --glass-hover: rgba(128, 128, 128, 0.12);
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666;
+    --highlight-color: #3b82f6;
+}
+
+/* ---------- 主题变量（暗色模式） ---------- */
+[data-theme="dark"] {
+    --glass-bg: rgba(20, 22, 28, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glass-hover: rgba(255, 255, 255, 0.1);
+    --text-primary: #f0f0f0;
+    --text-secondary: #aaa;
+}
+
+/* ============================================
+   悬浮头部
+   ============================================ */
+.floating-header {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 1000;
+    width: calc(100% - 32px);
+    max-width: 340px;
+    height: 56px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px 0 16px;
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.logo-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.brand-text {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+
+.header-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.header-version {
+    font-size: 11px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.toggle-header-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
+}
+
+.toggle-header-btn:hover {
+    background: var(--glass-hover);
+}
+
+.toggle-header-btn:active {
+    transform: scale(0.92);
+}
+
+.toggle-header-btn svg {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-header-btn.rotated svg {
+    transform: rotate(180deg);
+}
+
+/* ============================================
+   可展开面板
+   ============================================ */
+.expandable-panel {
+    position: fixed;
+    top: 80px;
+    left: 16px;
+    z-index: 999;
+    width: calc(100% - 32px);
+    max-width: 340px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    opacity: 0;
+    transform: translateY(-12px);
+    pointer-events: none;
+    transition: opacity 0.28s ease, transform 0.28s ease, background 0.3s ease;
+}
+
+.expandable-panel.expanded {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* ---------- 开关行 ---------- */
+.panel-row.switches {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 14px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.switch-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+    flex: 1;
+    min-width: 0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.switch-item:hover {
+    background: var(--glass-hover);
+}
+
+.switch-item:active {
+    transform: scale(0.98);
+}
+
+.toggle-switch {
+    width: 36px;
+    height: 20px;
+    background: rgba(128, 128, 128, 0.35);
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.25s ease;
+    flex-shrink: 0;
+}
+
+.toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.switch-item.active .toggle-switch {
+    background: var(--highlight-color);
+}
+
+.switch-item.active .toggle-switch::after {
+    transform: translateX(16px);
+}
+
+.switch-item > span {
+    font-size: 13px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- 功能按钮行 ---------- */
+.panel-row.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px 2px;
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    transition: background 0.2s ease, transform 0.15s ease;
+    min-width: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.action-btn:hover {
+    background: var(--glass-hover);
+}
+
+.action-btn:active {
+    transform: scale(0.94);
+}
+
+.action-icon-wrap {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-hover);
+    transition: background 0.2s ease, color 0.2s ease;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+.action-btn:hover .action-icon-wrap {
+    background: rgba(59, 130, 246, 0.18);
+    color: var(--highlight-color);
+}
+
+.action-btn.active .action-icon-wrap {
+    background: rgba(59, 130, 246, 0.22);
+    color: #3b82f6;
+}
+
+.action-icon-wrap svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.action-btn > span {
+    font-size: 11px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    color: var(--text-primary);
+}
+
+/* ---------- 高精度建模按钮 ---------- */
+.hd-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--glass-border);
+    background: var(--glass-hover);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    font-family: inherit;
+}
+
+.hd-btn:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--highlight-color);
+    color: var(--highlight-color);
+}
+
+.hd-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--highlight-color);
+    color: var(--highlight-color);
+}
+
+.hd-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   退出谷歌模式按钮
+   ============================================ */
+.exit-google-btn {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1000;
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid #c0392b;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(231, 76, 60, 0.3);
+    transition: all 0.2s ease;
+}
+
+.exit-google-btn:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.exit-google-btn:active {
+    transform: translateY(0) scale(0.97);
+}
+
+/* ============================================
+   响应式适配
+   ============================================ */
+@media (max-width: 480px) {
+    .floating-header {
+        top: 12px;
+        left: 12px;
+        width: calc(100% - 24px);
+        max-width: none;
+        height: 52px;
+        padding: 0 10px 0 14px;
+    }
+
+    .expandable-panel {
+        top: 72px;
+        left: 12px;
+        width: calc(100% - 24px);
+        max-width: none;
+    }
+
+    .header-title {
+        font-size: 14px;
+    }
+
+    .header-version {
+        font-size: 10px;
+    }
+
+    .action-icon-wrap {
+        width: 40px;
+        height: 40px;
+    }
+
+    .action-icon-wrap svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .action-btn > span {
+        font-size: 10px;
+    }
+
+    .exit-google-btn {
+        top: 12px;
+        right: 12px;
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .action-icon-wrap {
+        width: 36px;
+        height: 36px;
+    }
+    .action-icon-wrap svg {
+        width: 18px;
+        height: 18px;
+    }
+    .action-btn > span {
+        font-size: 9px;
+    }
+}
+
+

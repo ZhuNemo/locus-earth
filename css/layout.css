@@ -5,44 +5,7 @@
             flex-shrink: 0; 
         }
 
-        .locus-header {
-            flex-shrink: 0;
-            width: 100%;
-            background: #ffffff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 12px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            z-index: 30;
-            min-height: 64px;
-        }
-        .locus-header .brand {
-            display: flex;
-            align-items: baseline;
-            flex-wrap: wrap;
-            gap: 10px 16px;
-        }
-        .locus-header .brand h1 {
-            font-size: 26px;
-            font-weight: 700;
-            color: #1a1a1a;
-            letter-spacing: 2px;
-            margin: 0;
-        }
-        .locus-header .controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .locus-header .credit {
-            font-size: 13px;
-            color: #888;
-            letter-spacing: 0.3px;
-        }
+
         #cesiumContainer {
             flex: 1;
             width: 100%;
