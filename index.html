@@ -20,6 +20,7 @@
 
     <meta charset="UTF-8" />
     <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#ffffff">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Locus Earth - 3D 地球</title>
     <!-- 优先使用高清 PNG -->
@@ -36,6 +37,13 @@
     <link rel="stylesheet" href="https://unpkg.com/cesium@1.118/Build/Cesium/Widgets/widgets.css" />
 
     <link rel="manifest" href="manifest.json">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
+                .then(registration => console.log('SW registered:', registration.scope))
+                .catch(error => console.error('SW registration failed:', error));
+        }
+    </script>
 
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
@@ -49,15 +57,20 @@
     <link rel="stylesheet" href="css/themes.css" /> 
     <link rel="stylesheet" href="css/measure.css" /> 
     <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/logo.css" />
 
 </head>
 <body>
     <div class="floating-header">
         <div class="header-brand">
-            <div class="logo-icon">🌏</div>
+            <div class="logo-icon">
+                <img src="android-chrome-192x192.png" alt="" aria-hidden="true">
+            </div>
             <div class="brand-text">
-                <span class="header-title">Locus Earth</span>
-                <span class="header-version">V6.2</span>
+                <svg class="logo-svg" viewBox="0 0 231 36" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Locus Earth">
+                <path d="M17.05 35.15H0.850006C0.28334 35.15 6.4224e-06 34.8667 6.4224e-06 34.3V3.84999C6.4224e-06 3.28333 0.28334 2.99999 0.850006 2.99999H4.00001C4.56667 2.99999 4.85001 3.28333 4.85001 3.84999V30.3C4.85001 30.6333 5.05001 30.8 5.45001 30.8H17.05C17.6167 30.8 17.9 31.1 17.9 31.7V34.3C17.9 34.8667 17.6167 35.15 17.05 35.15ZM33.6598 35.15H29.2598C26.7931 35.15 24.8764 34.4667 23.5098 33.1C22.1764 31.7333 21.5098 29.8333 21.5098 27.4V17.4C21.5098 14.9333 22.1764 13.0333 23.5098 11.7C24.8764 10.3333 26.7931 9.64999 29.2598 9.64999H33.6598C36.0931 9.64999 37.9931 10.3333 39.3598 11.7C40.7598 13.0333 41.4598 14.9333 41.4598 17.4V27.4C41.4598 29.8333 40.7598 31.7333 39.3598 33.1C37.9931 34.4667 36.0931 35.15 33.6598 35.15ZM29.9598 30.9H33.0098C35.4098 30.9 36.6098 29.6833 36.6098 27.25V17.55C36.6098 15.1167 35.4098 13.9 33.0098 13.9H29.9598C28.6931 13.9 27.7764 14.2 27.2098 14.8C26.6431 15.3667 26.3598 16.2833 26.3598 17.55V27.25C26.3598 28.5167 26.6431 29.45 27.2098 30.05C27.7764 30.6167 28.6931 30.9 29.9598 30.9ZM62.7051 31.75V34.35C62.7051 34.8833 62.4051 35.15 61.8051 35.15H54.4551C51.9884 35.15 50.0718 34.4667 48.7051 33.1C47.3718 31.7333 46.7051 29.8333 46.7051 27.4V17.4C46.7051 14.9333 47.3718 13.0333 48.7051 11.7C50.0718 10.3333 51.9884 9.64999 54.4551 9.64999H61.8051C62.4051 9.64999 62.7051 9.93333 62.7051 10.5V13.1C62.7051 13.6333 62.4051 13.9 61.8051 13.9H55.1551C52.7551 13.9 51.5551 15.1333 51.5551 17.6V27.2C51.5551 29.6667 52.7551 30.9 55.1551 30.9H61.8051C62.4051 30.9 62.7051 31.1833 62.7051 31.75ZM76.9188 35.15H74.6688C72.2688 35.15 70.4188 34.4833 69.1188 33.15C67.8521 31.7833 67.2188 29.8667 67.2188 27.4V10.5C67.2188 9.93333 67.5021 9.64999 68.0688 9.64999H71.2188C71.7854 9.64999 72.0688 9.93333 72.0688 10.5V27.2C72.0688 29.6667 73.2688 30.9 75.6688 30.9H78.0688C80.8021 30.9 82.1688 29.4833 82.1688 26.65V10.5C82.1688 9.93333 82.4521 9.64999 83.0188 9.64999H86.1688C86.7688 9.64999 87.0688 9.93333 87.0688 10.5V34.3C87.0688 34.8667 86.7688 35.15 86.1688 35.15H83.0188C82.4521 35.15 82.1688 34.8667 82.1688 34.3V32.5H81.9688C81.1688 34.2667 79.4854 35.15 76.9188 35.15ZM102.399 35.15H93.1988C92.6322 35.15 92.3488 34.8667 92.3488 34.3V31.85C92.3488 31.3167 92.6322 31.05 93.1988 31.05H101.599C103.766 31.05 104.849 30.3 104.849 28.8V28.2C104.849 26.8667 104.066 25.85 102.499 25.15L97.0488 22.55C95.3488 21.75 94.1155 20.8667 93.3488 19.9C92.5822 18.9333 92.1988 17.6667 92.1988 16.1C92.1988 11.8 94.5822 9.64999 99.3488 9.64999H107.649C108.182 9.64999 108.449 9.93333 108.449 10.5V12.95C108.449 13.5167 108.182 13.8 107.649 13.8H100.349C99.3488 13.8 98.5822 13.9833 98.0488 14.35C97.5155 14.6833 97.2488 15.1333 97.2488 15.7V16.25C97.2488 17.3167 98.0988 18.25 99.7988 19.05L105.299 21.85C107.032 22.6167 108.216 23.5333 108.849 24.6C109.516 25.6333 109.849 26.9833 109.849 28.65C109.849 32.9833 107.366 35.15 102.399 35.15ZM144.291 35.15H128.291C127.725 35.15 127.441 34.8667 127.441 34.3V3.84999C127.441 3.28333 127.725 2.99999 128.291 2.99999H144.291C144.825 2.99999 145.091 3.28333 145.091 3.84999V6.39999C145.091 6.96666 144.825 7.24999 144.291 7.24999H132.891C132.491 7.24999 132.291 7.41666 132.291 7.74999V16.2C132.291 16.5333 132.491 16.7 132.891 16.7H142.541C143.141 16.7 143.441 16.9833 143.441 17.55V20.1C143.441 20.6667 143.141 20.95 142.541 20.95H132.891C132.491 20.95 132.291 21.1167 132.291 21.45V30.35C132.291 30.7167 132.491 30.9 132.891 30.9H144.291C144.825 30.9 145.091 31.1833 145.091 31.75V34.3C145.091 34.8667 144.825 35.15 144.291 35.15ZM160.165 35.15H158.215C155.748 35.15 153.832 34.4667 152.465 33.1C151.132 31.7333 150.465 29.8333 150.465 27.4V17.4C150.465 14.9333 151.132 13.0333 152.465 11.7C153.832 10.3333 155.748 9.64999 158.215 9.64999H169.415C170.015 9.64999 170.315 9.93333 170.315 10.5V34.3C170.315 34.8667 170.015 35.15 169.415 35.15H166.265C165.698 35.15 165.415 34.8667 165.415 34.3V32.5H165.215C164.415 34.2667 162.732 35.15 160.165 35.15ZM165.415 26.65V14.4C165.415 14.0667 165.232 13.9 164.865 13.9H158.915C156.515 13.9 155.315 15.1333 155.315 17.6V27.2C155.315 29.6667 156.515 30.9 158.915 30.9H161.315C164.048 30.9 165.415 29.4833 165.415 26.65ZM180.551 35.15H177.401C176.834 35.15 176.551 34.8667 176.551 34.3V10.5C176.551 9.93333 176.834 9.64999 177.401 9.64999H180.551C181.117 9.64999 181.401 9.93333 181.401 10.5V12.4H181.601C181.934 11.5667 182.567 10.9 183.501 10.4C184.467 9.89999 185.534 9.64999 186.701 9.64999H188.551C189.117 9.64999 189.401 9.93333 189.401 10.5V13.1C189.401 13.7333 189.117 14 188.551 13.9H185.551C182.784 13.9 181.401 15.4167 181.401 18.45V34.3C181.401 34.8667 181.117 35.15 180.551 35.15ZM194.049 13.9H191.649C191.316 13.9 191.082 13.85 190.949 13.75C190.849 13.6167 190.799 13.4 190.799 13.1V10.5C190.799 9.93333 191.082 9.64999 191.649 9.64999H194.049C194.382 9.64999 194.549 9.48332 194.549 9.14999V4.64999C194.549 4.08333 194.849 3.79999 195.449 3.79999H198.599C199.166 3.79999 199.449 4.08333 199.449 4.64999V9.14999C199.449 9.48332 199.632 9.64999 199.999 9.64999H204.649C205.249 9.64999 205.549 9.93333 205.549 10.5V13.1C205.549 13.6333 205.249 13.9 204.649 13.9H199.999C199.632 13.9 199.449 14.0667 199.449 14.4V27.25C199.449 29.6833 200.699 30.9 203.199 30.9H205.149C205.749 30.9 206.049 31.1833 206.049 31.75V34.35C206.049 34.8833 205.749 35.15 205.149 35.15H202.449C199.982 35.15 198.049 34.4833 196.649 33.15C195.249 31.8167 194.549 29.9333 194.549 27.5V14.4C194.549 14.0667 194.382 13.9 194.049 13.9ZM214.828 35.15H211.678C211.111 35.15 210.828 34.8667 210.828 34.3V0.849991C210.828 0.283326 211.111 -6.55651e-06 211.678 -6.55651e-06H214.828C215.395 -6.55651e-06 215.678 0.283326 215.678 0.849991V12.3H215.878C216.678 10.5333 218.361 9.64999 220.928 9.64999H223.128C225.561 9.64999 227.428 10.3167 228.728 11.65C230.028 12.9833 230.678 14.9 230.678 17.4V34.3C230.678 34.8667 230.378 35.15 229.778 35.15H226.628C226.061 35.15 225.778 34.8667 225.778 34.3V17.6C225.778 15.1333 224.561 13.9 222.128 13.9H219.778C217.045 13.9 215.678 15.3167 215.678 18.15V34.3C215.678 34.8667 215.395 35.15 214.828 35.15Z" fill="currentColor"/>
+                </svg>
+                <span class="header-version">Beta</span>
             </div>
         </div>
         <button id="toggleHeaderBtn" class="toggle-header-btn" aria-label="展开或收起菜单">
@@ -69,6 +82,9 @@
 
     <!-- 可展开面板 -->
     <div id="expandablePanel" class="expandable-panel">
+        <button id="panelHandle" class="panel-handle" type="button" aria-label="展开或收起功能栏">
+            <span class="handle-line"></span>
+        </button>
         <!-- 第一行：开关控制 -->
         <div class="panel-row switches">
             <div class="switch-item" id="modeToggleBtn" role="button" tabindex="0">
@@ -145,13 +161,59 @@
                 </svg>
             </div>
             <div class="divider"></div>
-            <button id="zoomInBtn" class="ctrl-btn" title="放大">＋</button>
-            <button id="zoomOutBtn" class="ctrl-btn" title="缩小">－</button>
+            <button id="zoomInBtn" class="ctrl-btn" title="放大" aria-label="放大">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+            </button>
+            <button id="zoomOutBtn" class="ctrl-btn" title="缩小" aria-label="缩小">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                    <path d="M5 12h14"></path>
+                </svg>
+            </button>
             <div class="divider"></div>
-            <button id="resetTiltBtn" class="ctrl-btn" title="恢复默认俯仰角度">↺</button>
+            <button id="resetTiltBtn" class="ctrl-btn" title="恢复默认俯仰角度" aria-label="恢复默认俯仰角度">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+                    <path d="M3 4v6h6"></path>
+                </svg>
+            </button>
         </div>
 
     <div id="cesiumContainer"></div>
+
+    <!-- 自定义时间与光照控制，逻辑由后续模块接入 -->
+    <section id="time-control" class="time-control" aria-label="时间与光照控制">
+        <div class="time-control__header">
+            <div class="time-control__current">
+                <span class="time-control__status">Now</span>
+                <time id="current-time-label" datetime="">September 20, 13:07</time>
+            </div>
+            <button id="reset-time-btn" class="time-control__now" type="button" aria-label="回到当前时间">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+                    <path d="M3 4v6h6"></path>
+                </svg>
+                <span>Now</span>
+            </button>
+        </div>
+
+        <div class="time-control__timeline">
+            <div class="time-control__months">
+                <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
+            </div>
+            <div class="time-control__track-wrap">
+                <div class="time-control__hours">
+                    <span>06:00</span><span>07:00</span><span>08:00</span><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span><span>13:00</span>
+                </div>
+                <div class="time-control__track">
+                    <span class="time-control__cursor" aria-hidden="true"></span>
+                    <input id="time-slider" class="time-control__slider" type="range" min="0" max="100" value="50" aria-label="调整时间">
+                </div>
+            </div>
+        </div>
+    </section>
+
     <div id="loadingOverlay" style="position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 1.2rem; transition: opacity 0.8s ease;">
         <p>
             🌏正在加载地球数据...
@@ -278,6 +340,7 @@
             <p>08-27 V6.0：加入地形开关、缓存清理，修复Google地球模式问题</p>
             <p>08-30 V6.1：加入测量：测距、测面积，悬浮菜单</p>
             <p>08-31 V6.2：加入天地图、腾讯地图图源</p>
+            <p>09-22 V6.3：UI现代化改造</p>
             <p>……</p>
         </div>
     </div>

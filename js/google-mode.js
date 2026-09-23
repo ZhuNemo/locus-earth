@@ -174,9 +174,12 @@ setTimeout(() => viewer.scene.requestRender(), 500);
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (infoModal.classList.contains('active')) closeInfo();
-                if (iterlogModal.classList.contains('active')) closeIterlog();
-            }
+            if (e.key !== 'Escape') return;
+
+            const infoModal = document.getElementById('infoModal');
+            const iterlogModal = document.getElementById('iterlogModal');
+
+            if (infoModal && infoModal.classList.contains('active')) closeInfo();
+            if (iterlogModal && iterlogModal.classList.contains('active')) closeIterlog();
         });
 }

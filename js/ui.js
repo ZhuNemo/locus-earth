@@ -12,6 +12,7 @@ export function initUI(viewer, {
     toggleBuildingsBtn,
     closeInfo,
     closeIterlog,
+    timeControl,
 }) {
 
     // =============================================
@@ -19,6 +20,7 @@ export function initUI(viewer, {
     // =============================================
     const toggleHeaderBtn = document.getElementById('toggleHeaderBtn');
     const expandablePanel = document.getElementById('expandablePanel');
+    const panelHandle = document.getElementById('panelHandle');
 
     function openPanel() {
         expandablePanel.classList.add('expanded');
@@ -42,6 +44,30 @@ export function initUI(viewer, {
         e.stopPropagation();
         togglePanel();
     });
+
+    if (panelHandle) {
+        panelHandle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePanel();
+        });
+
+        let touchStartY = null;
+        panelHandle.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        panelHandle.addEventListener('touchend', (e) => {
+            if (touchStartY === null) return;
+            const deltaY = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(deltaY) > 12) {
+                if (deltaY < 0 && !expandablePanel.classList.contains('expanded')) {
+                    openPanel();
+                } else if (deltaY > 0 && expandablePanel.classList.contains('expanded')) {
+                    closePanel();
+                }
+            }
+            touchStartY = null;
+        }, { passive: true });
+    }
 
     // 点击面板外部自动收起
     document.addEventListener('click', (e) => {
@@ -67,13 +93,13 @@ export function initUI(viewer, {
     function switchLighting(enableLighting) {
         isLightingEnabled = enableLighting;
         viewer.scene.globe.enableLighting = enableLighting;
+        viewer.scene.sun.show = enableLighting;
+        viewer.scene.moon.show = enableLighting;
+        viewer.clock.shouldAnimate = enableLighting;
+        timeControl?.setVisible(enableLighting);
         if (enableLighting) {
-            viewer.timeline.container.style.display = 'block';
-            viewer.animation.container.style.display = 'block';
             modeToggle.classList.add('active');
         } else {
-            viewer.timeline.container.style.display = 'none';
-            viewer.animation.container.style.display = 'none';
             modeToggle.classList.remove('active');
         }
     }

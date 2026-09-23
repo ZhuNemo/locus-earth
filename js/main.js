@@ -20,6 +20,7 @@ import { initHdLayers } from './hd-layers.js';
 import { initGoogleMode } from './google-mode.js';
 import { initMeasureTools } from './measure.js';
 import { initMeasureUI } from './measure-ui.js'
+import { initTimeControl } from './time-control.js';
 import { CONFIG } from './config.js';
 
         Ion.defaultAccessToken = CONFIG.cesiumToken;
@@ -149,14 +150,6 @@ import { CONFIG } from './config.js';
         }
         });
 
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('SW registered:', reg))
-                .catch(err => console.log('SW registration failed:', err));
-        }
-        
-
         const hdLayers = await initHdLayers(viewer, showToast);
         const googleMode = initGoogleMode(viewer, showToast, closeInfo, closeIterlog);
         const compass = initCompass(viewer, showToast);
@@ -169,6 +162,7 @@ import { CONFIG } from './config.js';
         const measureTools = initMeasureTools(viewer);
 
         initMeasureUI(viewer, measureTools);
+        const timeControl = initTimeControl(viewer);
 
         // 调用 initUI，传入所有需要的依赖
         initUI(viewer, {
@@ -176,4 +170,5 @@ import { CONFIG } from './config.js';
             showToast,
             closeInfo,
             closeIterlog,
+            timeControl,
         });

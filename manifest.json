@@ -4,7 +4,7 @@
   "start_url": "./",
   "scope": "./",
   "description": "轻量级3D地球",
-  "id": "/locus-earth/",
+  "id": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",

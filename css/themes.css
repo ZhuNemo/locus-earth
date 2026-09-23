@@ -39,11 +39,16 @@ select {
 
     [data-theme="dark"] .locus-header,
     [data-theme="dark"] .side-menu,
-    [data-theme="dark"] #camera-controls,
     [data-theme="dark"] .glass-panel {
         background-color: rgba(31, 41, 55, 0.94);
         color: #e5e7eb  ;
         border-color: #374151  ;
+    }
+
+    [data-theme="dark"] #camera-controls {
+        background: transparent;
+        border: none;
+        box-shadow: none;
     }
 
     [data-theme="dark"] .locus-header {
@@ -133,11 +138,6 @@ select {
 
     [data-theme="dark"] #camera-controls .ctrl-btn {
         color: #e5e7eb  ;
-    }
-
-    [data-theme="dark"] #camera-controls .ctrl-btn:hover {
-        background: rgba(255, 255, 255, 0.12)  ;
-        color: #ffffff  ;
     }
 
     [data-theme="dark"] #camera-controls .divider {

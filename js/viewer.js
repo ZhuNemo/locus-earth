@@ -12,6 +12,12 @@ export function initViewer(containerId, terrainProvider) {
         imageryProviderViewModels: defaultImageryProviders, 
         selectedImageryProviderViewModel: sentinelViewModel, 
         
+        animation: false,
+        timeline: false,
+        geocoder: false,
+        homeButton: false,
+        navigationHelpButton: false,
+        fullscreenButton: false,
         infoBox: false,
         sceneModePicker: false,
         sceneMode: Cesium.SceneMode.SCENE3D,
@@ -134,9 +140,6 @@ export function initViewer(containerId, terrainProvider) {
         viewer.imageryLayers.enablePickFeatures = false; 
         viewer.scene.globe.showWaterEffect = true;
         viewer.scene.screenSpaceCameraController.minimumZoomDistance = 50;
-
-        viewer.timeline.container.style.display = 'none';
-        viewer.animation.container.style.display = 'none';
 
                 
         let fpsCheckCounter = 0;
