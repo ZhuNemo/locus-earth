@@ -30,7 +30,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 16px;
-            border-radius: var(--control-radius); 
+            border-radius: var(--radius-md);
             border-bottom: 1px solid #eee;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -38,7 +38,7 @@
 
         .bookmark-item:hover {
             background: rgba(255, 255, 255, 0.6); 
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            box-shadow: var(--shadow-sm);
         }
 
         .bookmark-item .info {
@@ -68,7 +68,7 @@
             font-size: 16px;
             cursor: pointer;
             padding: 4px 8px;
-            border-radius: var(--control-radius);
+            border-radius: var(--radius-md);
             transition: all 0.2s ease;
         }
 
@@ -109,7 +109,7 @@
         @media (min-width: 701px) {
             #bookmarksPanel.modal-overlay {
                 background: rgba(0,0,0,0.4);
-                backdrop-filter: blur(4px);
+                backdrop-filter: blur(var(--blur-sm));
                 justify-content: center;
                 align-items: center;
             }

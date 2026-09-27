@@ -18,8 +18,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    z-index: 30;
+    box-shadow: var(--shadow-sm);
+    z-index: var(--z-panel);
     min-height: 64px;
 }
 
@@ -30,7 +30,7 @@
     color: var(--text-secondary, #555);
     cursor: pointer;
     padding: 4px 8px;
-    border-radius: var(--control-radius, 8px);
+    border-radius: var(--radius-md);
     transition: background 0.2s;
     font-family: inherit;
 }
@@ -64,8 +64,8 @@
 /* --- 设置分组 --- */
 .setting-group {
     background: var(--bg-card, #ffffff);
-    border-radius: var(--window-radius, 16px);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
     border: 1px solid var(--border-color, #e8e8e8);
 }
@@ -115,7 +115,7 @@
     position: absolute;
     inset: 0;
     background: #ccc;
-    border-radius: 28px;
+    border-radius: var(--radius-full);
     transition: background 0.3s;
 }
 .toggle-slider::before {
@@ -128,7 +128,7 @@
     background: white;
     border-radius: 50%;
     transition: transform 0.3s;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-sm);
 }
 .toggle-switch input:checked + .toggle-slider {
     background: #007aff;
@@ -151,7 +151,7 @@
     background-repeat: no-repeat;
     background-size: 5px 5px, 5px 5px;
     border: 1px solid var(--border-color, #d0d0d0);
-    border-radius: var(--control-radius, 8px);
+    border-radius: var(--radius-md);
     padding: 8px 34px 8px 12px;
     font-size: 14px;
     font-weight: 500;
@@ -165,7 +165,8 @@
 .setting-item select:focus {
     outline: none;
     border-color: #007aff;
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.16);
+    outline: 3px solid rgba(0, 0, 0, 0.12);
+    outline-offset: 2px;
 }
 .setting-item select:hover:not(:disabled) {
     border-color: #007aff;
@@ -187,10 +188,10 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    z-index: 1000;
+    background: var(--bg-overlay);
+    backdrop-filter: blur(var(--blur-sm));
+    -webkit-backdrop-filter: blur(var(--blur-sm));
+    z-index: var(--z-modal);
     justify-content: center;
     align-items: center;
     opacity: 0;
@@ -208,13 +209,13 @@
 }
 
 .modal-content {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
     border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-glass);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    border-radius: var(--window-radius);
+    border-radius: var(--radius-lg);
     padding: 32px 40px;
     max-width: 480px;
     width: 90%;
@@ -241,7 +242,7 @@
 
 .modal-content::-webkit-scrollbar-thumb {
     background: #ccc;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
@@ -303,11 +304,11 @@
     border: 1px solid #cfe2ff;
     color: #1f6ed8;
     padding: 8px 14px;
-    border-radius: var(--control-radius);
+    border-radius: var(--radius-md);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(31, 110, 216, 0.1);
+    box-shadow: var(--shadow-sm);
     font-family: inherit;
 }
 
@@ -319,11 +320,11 @@
     border-color: #9fc5ff;
     color: #1558b6;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(31, 110, 216, 0.16);
+    box-shadow: var(--shadow-md);
 }
 
 [data-theme="dark"] .modal-content {
-    background: rgba(31, 41, 55, 0.94);
+    background: var(--bg-glass);
     color: #e5e7eb;
     border-color: #374151;
 }

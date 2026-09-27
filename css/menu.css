@@ -5,8 +5,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            z-index: 1999;
+            background: var(--bg-overlay);
+            z-index: calc(var(--z-menu) - 1);
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
@@ -42,13 +42,11 @@
             }
         }
 
-        /* 隐藏原 controls 中的按钮，因为它们已移到菜单中 */
         .controls .mode-btn,
         .controls .reset-btn,
         .controls .info-btn {
             display: none;
         }
-        /* 保留 exitGoogleBtn 的显示控制 */
         .controls #exitGoogleBtn {
             display: none; 
         }
@@ -60,7 +58,7 @@
         .menu-toggle {
             background: transparent;
             border: 1px solid #ddd;
-            border-radius: var(--control-radius);
+            border-radius: var(--radius-md);
             width: 36px;
             height: 36px;
             font-size: 18px;
@@ -100,11 +98,11 @@
             width: 300px;
             max-width: 80vw;
             height: 100vh;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
-            z-index: 2000;
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--blur-md));
+            -webkit-backdrop-filter: blur(var(--blur-md));
+            box-shadow: var(--shadow-glass);
+            z-index: var(--z-menu);
             transform: translateX(-100%);
             transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
             display: flex;
@@ -165,7 +163,7 @@
             padding: 12px 18px;
             background: transparent;
             border: none;
-            border-radius: var(--control-radius);
+            border-radius: var(--radius-md);
             border-bottom: 1px solid #eee;
             font-size: 16px;
             font-weight: 500;
@@ -177,7 +175,7 @@
         }
         .menu-btn:hover {
             background: rgba(255, 255, 255, 0.6);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            box-shadow: var(--shadow-sm);
         }
         .menu-btn:active {
             transform: scale(0.97);

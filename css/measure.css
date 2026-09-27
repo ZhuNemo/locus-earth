@@ -9,12 +9,12 @@
     align-items: stretch;
     gap: 6px;
     padding: 10px;
-    border-radius: var(--window-radius);
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-lg);
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
     border: 1px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-glass);
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
     transform-origin: left top;
@@ -56,7 +56,7 @@
     background: linear-gradient(135deg, #f4f9ff 0%, #eef5ff 100%);
     color: #1f6ed8;
     border: 1px solid #cfe2ff;
-    border-radius: var(--control-radius);
+    border-radius: var(--radius-md);
     width: 100%;
     min-width: 100px;
     text-align: center;
@@ -73,7 +73,7 @@
     height: 38px;
     align-self: stretch;
     padding: 7px 10px;
-    border-radius: 999px;
+    border-radius: var(--radius-full);
     font-size: 18px;
     line-height: 1;
 }
@@ -88,7 +88,7 @@
     border-color: #9fc5ff;
     color: #1558b6;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(31, 110, 216, 0.16);
+    box-shadow: var(--shadow-sm);
 }
 
 /* 拖拽圆形浮动按钮样式 */
@@ -98,13 +98,13 @@
     left: 16px;
     right: auto;
     transform: none;
-    z-index: 9999;
+    z-index: var(--z-panel);
     width: 54px;
     height: 54px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--bg-glass);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
     border: 1px solid rgba(255, 255, 255, 0.25);
     color: var(--text-primary, #1a1a1a);
     display: flex;
@@ -113,7 +113,7 @@
     font-size: 22px;
     cursor: grab;
     user-select: none;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-glass);
     will-change: left, top;
     transition: left 0.18s ease, top 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
 }
@@ -124,17 +124,17 @@
 
 [data-theme="dark"] .measure-toolbar,
 [data-theme="dark"] #measureFloatingBtn {
-    background: rgba(31, 41, 55, 0.94);
+    background: var(--bg-glass);
     border-color: rgba(255, 255, 255, 0.08);
     color: #f9fafb;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--shadow-glass);
 }
 
 [data-theme="dark"] .toolbar-btn {
     background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
     border-color: #3b82f6;
     color: #dbeafe;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.18);
+    box-shadow: var(--shadow-sm);
 }
 
 [data-theme="dark"] .toolbar-btn:hover,

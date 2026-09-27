@@ -6,9 +6,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
+            background: var(--bg-overlay);
+            backdrop-filter: blur(var(--blur-sm));
+            z-index: var(--z-modal);
             justify-content: center;
             align-items: center;
             opacity: 0;
@@ -22,13 +22,13 @@
             pointer-events: auto;
         }
         .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--blur-md));
+            -webkit-backdrop-filter: blur(var(--blur-md));
             border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-glass);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-            border-radius: var(--window-radius);
+            border-radius: var(--radius-lg);
         }
         .modal-box {
             padding: 32px 40px;
@@ -53,16 +53,16 @@
         }
         .modal-box::-webkit-scrollbar-thumb {
             background: #ccc;
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
         }
         .modal-box::-webkit-scrollbar-thumb:hover {
             background: #aaa;
             background: #ffffff;
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             padding: 32px 40px;
             max-width: 480px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: var(--shadow-md);
             position: relative;
             font-family: 'Inter', 'Segoe UI', sans-serif;
         }
@@ -85,11 +85,11 @@
             border: 1px solid #cfe2ff;
             color: #1f6ed8;
             padding: 8px 14px;
-            border-radius: var(--control-radius);
+            border-radius: var(--radius-md);
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(31, 110, 216, 0.1);
+            box-shadow: var(--shadow-sm);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
@@ -102,7 +102,7 @@
             border-color: #9fc5ff;
             color: #1558b6;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(31, 110, 216, 0.16);
+            box-shadow: var(--shadow-md);
         }
         .modal-box .close-btn {
             position: absolute;
@@ -114,7 +114,7 @@
             color: #888;
             cursor: pointer;
             font-family: inherit;
-            border-radius: var(--control-radius);
+            border-radius: var(--radius-md);
             transition: all 0.2s ease;
             width: 36px;
             height: 36px;
