@@ -1,7 +1,7 @@
         .info-btn {
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            color: #555;
+            background: var(--glass-bg-subtle);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
             width: 28px;
             height: 28px;
             border-radius: var(--radius-md);
@@ -16,9 +16,9 @@
         }
         .info-btn,
         .interlog-btn {
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            color: #555;
+            background: var(--glass-bg-subtle);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
             width: 28px;
             height: 28px;
             border-radius: var(--radius-md);
@@ -33,39 +33,12 @@
         }
         .info-btn:hover,
         .interlog-btn:hover {
-            background: #e0e0e0;
-            border-color: #aaa;
+            background: var(--glass-hover);
+            border-color: var(--glass-border);
         }
-        /* 高精度建模按钮 */
-        .controls .hd-btn {
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            color: #333;
-            padding: 6px 16px;
-            border-radius: var(--radius-md);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
-            letter-spacing: 0.3px;
-            white-space: nowrap;
-            display: none;
-        }
-        .controls .hd-btn:hover {
-            background: #e0e0e0;
-            border-color: #aaa;
-        }
-        .controls .hd-btn.active {
-            background: #d4e8ff;
-            border-color: #80b8ff;
-            color: #0055cc;
-        }
-        .controls .hd-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #e8e8e8;
-        }
+        /* 高精度建模按钮原有的 .hd-btn 样式已移除：
+           该按钮现与其余五个功能按钮同为 .action-btn，位于可展开面板的
+           .panel-row.actions 中（见 css/components.css 与 index.html）。 */
 
         .menu-toggle,
         .top-btn {
@@ -100,9 +73,9 @@
         }
 
         .locus-header .controls .mode-btn {
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            color: #333;
+            background: var(--glass-bg-subtle);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
             padding: 6px 16px;
             border-radius: var(--radius-md);
             font-size: 14px;
@@ -114,18 +87,18 @@
             white-space: nowrap;
         }
         .locus-header .controls .mode-btn:hover {
-            background: #e0e0e0;
-            border-color: #aaa;
+            background: var(--glass-hover);
+            border-color: var(--glass-border);
         }
         .locus-header .controls .mode-btn.active {
-            background: #d4e8ff;
-            border-color: #80b8ff;
-            color: #0055cc;
+            background: var(--accent-soft);
+            border-color: var(--accent-border);
+            color: var(--accent-text);
         }
         .locus-header .controls .reset-btn {
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            color: #333;
+            background: var(--glass-bg-subtle);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
             width: 36px;
             height: 36px;
             border-radius: var(--radius-md);
@@ -138,13 +111,11 @@
             font-family: inherit;
         }
         .locus-header .controls .reset-btn:hover {
-            background: #e0e0e0;
-            border-color: #aaa;
+            background: var(--glass-hover);
+            border-color: var(--glass-border);
         }
         .locus-header .controls .mode-btn:hover,
         .locus-header .controls .mode-btn:focus-visible,
-        .locus-header .controls .hd-btn:hover,
-        .locus-header .controls .hd-btn:focus-visible,
         .locus-header .controls .reset-btn:hover,
         .locus-header .controls .reset-btn:focus-visible,
         .locus-header .controls .info-btn:hover,

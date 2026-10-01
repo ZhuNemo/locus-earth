@@ -23,11 +23,10 @@
         }
         .glass-panel {
             background: var(--bg-glass);
-            backdrop-filter: blur(var(--blur-md));
-            -webkit-backdrop-filter: blur(var(--blur-md));
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: var(--shadow-glass);
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(var(--blur-md)) saturate(150%);
+            -webkit-backdrop-filter: blur(var(--blur-md)) saturate(150%);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-glass), var(--glass-highlight);
             border-radius: var(--radius-lg);
         }
         .modal-box {
@@ -52,38 +51,35 @@
             width: 6px;
         }
         .modal-box::-webkit-scrollbar-thumb {
-            background: #ccc;
+            background: var(--control-track);
             border-radius: var(--radius-sm);
         }
+        /* 修复：原先这里后面跟着一串本属于 .modal-box 的声明
+           （border-radius / padding / max-width / width / box-shadow /
+           position / font-family），它们被误并入这条伪元素规则；
+           再加上 background 被声明两次，最终生效的是近乎透明的玻璃色，
+           导致滚动条滑块悬停时几乎看不见。已清掉这些无效声明。 */
         .modal-box::-webkit-scrollbar-thumb:hover {
-            background: #aaa;
-            background: #ffffff;
-            border-radius: var(--radius-lg);
-            padding: 32px 40px;
-            max-width: 480px;
-            width: 90%;
-            box-shadow: var(--shadow-md);
-            position: relative;
-            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: var(--text-muted);
         }
         .modal-box h2 {
             font-size: 20px;
             font-weight: 600;
-            color: #1a1a1a;
+            color: var(--text-primary);
             margin-top: 0;
             margin-bottom: 16px;
         }
         .modal-box p {
             font-size: 15px;
             line-height: 1.7;
-            color: #444;
+            color: var(--text-secondary);
             margin: 10px 0;
         }
 
         .inline-action-btn {
-            background: linear-gradient(135deg, #f4f9ff 0%, #eef5ff 100%);
-            border: 1px solid #cfe2ff;
-            color: #1f6ed8;
+            background: var(--accent-soft);
+            border: 1px solid var(--accent-border);
+            color: var(--accent-text);
             padding: 8px 14px;
             border-radius: var(--radius-md);
             font-size: 13px;
@@ -98,9 +94,9 @@
 
         .inline-action-btn:hover,
         .inline-action-btn:focus-visible {
-            background: linear-gradient(135deg, #eaf4ff 0%, #dfeeff 100%);
-            border-color: #9fc5ff;
-            color: #1558b6;
+            background: var(--accent-soft);
+            border-color: var(--accent-border);
+            color: var(--accent-text);
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
         }
@@ -111,7 +107,7 @@
             background: none;
             border: none;
             font-size: 24px;
-            color: #888;
+            color: var(--text-muted);
             cursor: pointer;
             font-family: inherit;
             border-radius: var(--radius-md);
@@ -123,8 +119,8 @@
             justify-content: center;
         }
         .modal-box .close-btn:hover {
-            color: #000;
-            background: rgba(0, 0, 0, 0.06);
+            color: var(--text-primary);
+            background: var(--glass-hover);
         }
         @media (max-width: 700px) {
             .locus-header {
@@ -142,7 +138,7 @@
                 border-left: none;
                 white-space: normal;
                 width: 100%;
-                color: #777;
+                color: var(--text-secondary);
             }
             .locus-header .controls {
                 justify-content: space-between;

@@ -158,8 +158,8 @@ export async function initHdLayers(viewer, showToast) {
                 }
 
                 // 显示高精度按钮，默认状态为关闭（不开启）
-                hdToggleBtn.style.display = 'inline-block';
-                hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
+                // 空字符串表示撤掉内联覆盖，让 .action-btn 的 display:flex 生效
+                hdToggleBtn.style.display = '';
                 hdToggleBtn.classList.remove('active');
                 // 确保3D建筑按钮可用（不禁用）
                 setBuildingsBtnEnabled(true);
@@ -207,11 +207,12 @@ export async function initHdLayers(viewer, showToast) {
             }
 
             if (isInHdArea) {
+                // 开/关状态只通过 .active 表达，与同排其余五个按钮一致。
+                // 不要再写 hdToggleBtn.textContent —— 该按钮内部是
+                // .action-icon-wrap + 内联 SVG 的结构，写入文本会把图标抹掉。
                 if (hdTilesetsVisible) {
-                    hdToggleBtn.textContent = '🏙️ 高精度建模（开启）';
                     hdToggleBtn.classList.add('active');
                 } else {
-                    hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
                     hdToggleBtn.classList.remove('active');
                 }
             }
@@ -243,7 +244,6 @@ export async function initHdLayers(viewer, showToast) {
 
             if (newState) {
                 // 高精度开启
-                hdToggleBtn.textContent = '🏙️ 高精度建模（开启）';
                 hdToggleBtn.classList.add('active');
                 // 高精度开启期间禁止点击3D建筑按钮：
                 // 必须先关闭高精度建模，才能再开启建筑白模
@@ -251,7 +251,6 @@ export async function initHdLayers(viewer, showToast) {
                 showToast('🏙️ 高精度建模已开启，3D建筑自动关闭');
             } else {
                 // 高精度关闭
-                hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
                 hdToggleBtn.classList.remove('active');
                 // 高精度已关闭，3D建筑按钮恢复可点击
                 setBuildingsBtnEnabled(true);

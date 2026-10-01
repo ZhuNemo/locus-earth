@@ -8,7 +8,7 @@
         .bookmarks-header h2 {
             font-size: 18px;
             font-weight: 600;
-            color: #1a1a1a;
+            color: var(--text-primary);
             margin: 0;
         }
 
@@ -16,7 +16,7 @@
             background: none;
             border: none;
             font-size: 24px;
-            color: #888;
+            color: var(--text-muted);
             cursor: pointer;
         }
 
@@ -31,13 +31,13 @@
             align-items: center;
             padding: 12px 16px;
             border-radius: var(--radius-md);
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--glass-border);
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
         .bookmark-item:hover {
-            background: rgba(255, 255, 255, 0.6); 
+            background: var(--glass-hover); 
             box-shadow: var(--shadow-sm);
         }
 
@@ -48,12 +48,12 @@
 
         .bookmark-item .info .name {
             font-weight: 500;
-            color: #1a1a1a;
+            color: var(--text-primary);
         }
 
         .bookmark-item .info .coords {
             font-size: 12px;
-            color: #888;
+            color: var(--text-muted);
             margin-top: 2px;
         }
 
@@ -73,23 +73,23 @@
         }
 
         .bookmark-item .actions .delete-btn {
-            color: #e74c3c;
+            color: var(--danger);
         }
 
         .bookmark-item .actions .delete-btn:hover {
-            background: #fee;
+            background: var(--danger-soft);
         }
 
         .bookmark-item .actions .locate-btn {
-            color: #3498db;
+            color: var(--accent-text);
         }
 
         .bookmark-item .actions .locate-btn:hover {
-            background: #eaf5fe;
+            background: var(--accent-soft);
         }
 
         .empty-message {
-            color: #999;
+            color: var(--text-muted);
             text-align: center;
             padding: 20px 0;
         }
@@ -108,7 +108,7 @@
 
         @media (min-width: 701px) {
             #bookmarksPanel.modal-overlay {
-                background: rgba(0,0,0,0.4);
+                background: var(--bg-overlay);
                 backdrop-filter: blur(var(--blur-sm));
                 justify-content: center;
                 align-items: center;

@@ -53,7 +53,6 @@
     <link rel="stylesheet" href="css/modals.css" />
     <link rel="stylesheet" href="css/bookmarks.css" />
     <link rel="stylesheet" href="css/toast.css" />
-    <link rel="stylesheet" href="css/utilities.css" />
     <link rel="stylesheet" href="css/themes.css" /> 
     <link rel="stylesheet" href="css/measure.css" /> 
     <link rel="stylesheet" href="css/components.css" />
@@ -117,6 +116,15 @@
                 </div>
                 <span>测量</span>
             </button>
+            <!-- 高精度建模：默认隐藏，进入覆盖区时显示在这一排的「测量」与「设置」之间，
+                 结构与其余五个按钮完全一致（同一 .action-btn + 内联 SVG） -->
+            <button id="hdToggleBtn" class="action-btn" type="button" style="display:none;"
+                    title="高精度建模" aria-label="高精度建模">
+                <div class="action-icon-wrap">
+                    <svg viewBox="0 0 24 24"><path d="M2 21h20"></path><path d="M4 21V9l5-3 5 3v12"></path><path d="M14 21V12l5-2v11"></path><path d="M7 12h1M7 15h1M7 18h1M17 14h1M17 17h1"></path></svg>
+                </div>
+                <span>建模</span>
+            </button>
             <button id="settingsBtn" class="action-btn" type="button">
                 <div class="action-icon-wrap">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
@@ -131,8 +139,8 @@
             </button>
         </div>
 
-        <!-- 高精度建模（动态显示） -->
-        <button id="hdToggleBtn" class="hd-btn" type="button" style="display:none;">🏙️ 高精度建模</button>
+        <!-- 高精度建模按钮已移入上方 .panel-row.actions，
+             位于「测量」与「设置」之间，进入覆盖区时显示、离开时隐藏 -->
     </div>
 
     <!-- 退出谷歌模式按钮 -->

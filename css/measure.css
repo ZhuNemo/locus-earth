@@ -13,7 +13,7 @@
     background: var(--bg-glass);
     backdrop-filter: blur(var(--blur-md));
     -webkit-backdrop-filter: blur(var(--blur-md));
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-glass);
     opacity: 1;
     transform: translate3d(0, 0, 0) scale(1);
@@ -53,9 +53,9 @@
 }
 
 .toolbar-btn {
-    background: linear-gradient(135deg, #f4f9ff 0%, #eef5ff 100%);
-    color: #1f6ed8;
-    border: 1px solid #cfe2ff;
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    border: 1px solid var(--accent-border);
     border-radius: var(--radius-md);
     width: 100%;
     min-width: 100px;
@@ -84,9 +84,9 @@
 
 .toolbar-btn:hover,
 .toolbar-btn:focus-visible {
-    background: linear-gradient(135deg, #eaf4ff 0%, #dfeeff 100%);
-    border-color: #9fc5ff;
-    color: #1558b6;
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+    color: var(--accent-text);
     transform: translateY(-1px);
     box-shadow: var(--shadow-sm);
 }
@@ -105,8 +105,8 @@
     background: var(--bg-glass);
     backdrop-filter: blur(var(--blur-md));
     -webkit-backdrop-filter: blur(var(--blur-md));
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: var(--text-primary, #1a1a1a);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -125,21 +125,21 @@
 [data-theme="dark"] .measure-toolbar,
 [data-theme="dark"] #measureFloatingBtn {
     background: var(--bg-glass);
-    border-color: rgba(255, 255, 255, 0.08);
-    color: #f9fafb;
+    border-color: var(--glass-border);
+    color: var(--text-primary);
     box-shadow: var(--shadow-glass);
 }
 
 [data-theme="dark"] .toolbar-btn {
-    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
-    border-color: #3b82f6;
-    color: #dbeafe;
+    background: var(--accent-medium);
+    border-color: var(--accent-border);
+    color: var(--accent-text);
     box-shadow: var(--shadow-sm);
 }
 
 [data-theme="dark"] .toolbar-btn:hover,
 [data-theme="dark"] .toolbar-btn:focus-visible {
-    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-    border-color: #93c5fd;
-    color: #ffffff;
+    background: var(--accent-medium);
+    border-color: var(--accent-border);
+    color: var(--text-primary);
 }

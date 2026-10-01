@@ -129,7 +129,8 @@ export function initUI(viewer, {
 
         if (hd.isInHdArea && hd.hdTilesetsVisible) {
             setHdTilesetsVisible(false);
-            hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
+            // 状态只改 .active；该按钮内部是内联 SVG + 文本的结构，
+            // 写 textContent 会把图标抹掉（同排其余五个按钮同理）。
             hdToggleBtn.classList.remove('active');
             if (!state.buildingsVisible && buildingsPrimitive) {
                 setBuildingsVisible(true);
@@ -158,7 +159,6 @@ export function initUI(viewer, {
                 hdToggleBtn.style.cursor = 'not-allowed';
                 if (hd.hdTilesetsVisible) {
                     setHdTilesetsVisible(false);
-                    hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
                     hdToggleBtn.classList.remove('active');
                 }
             } else {

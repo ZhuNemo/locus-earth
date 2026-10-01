@@ -6,7 +6,9 @@
             transform: translateX(-50%);
             background: var(--bg-overlay);
             backdrop-filter: blur(var(--blur-md));
-            color: #fff;
+            /* 提示层底色是深色遮罩，文字必须用「深色背景上的浅色」令牌，
+               否则浅色主题下会变成深字压深底，对比度不足 */
+            color: var(--text-on-dark);
             padding: 10px 24px;
             border-radius: var(--radius-full);
             font-size: 14px;

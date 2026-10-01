@@ -1,9 +1,9 @@
 .logo-svg {
   height: 24px;   
   width: auto;     
-  color: #333333; 
+  color: var(--text-primary); 
 }
 
 [data-theme="dark"] .logo-svg {
-  color: #ffffff; 
+  color: var(--text-primary); 
 }

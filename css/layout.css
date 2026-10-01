@@ -15,20 +15,20 @@
 
         .locus-header .brand .sub {
             font-size: 14px;
-            color: #666;
+            color: var(--text-secondary);
             font-weight: 400;
         }
         .locus-header .brand .custom-message {
             font-size: 14px;
-            color: #555;
+            color: var(--text-secondary);
             font-weight: 400;
             padding-left: 14px;
-            border-left: 2px solid #d0d0d0;
+            border-left: 2px solid var(--glass-border);
             font-style: italic;
             white-space: nowrap;
         }
         .locus-header .brand .custom-message a {
-            color: #0066cc;
+            color: var(--accent-text);
             text-decoration: none;
             font-style: normal;
             font-weight: 500;
@@ -37,10 +37,10 @@
             text-decoration: underline;
         }
         .locus-header .credit a {
-            color: #555;
+            color: var(--text-secondary);
             text-decoration: none;
             transition: color 0.2s;
         }
         .locus-header .credit a:hover {
-            color: #000;
+            color: var(--text-primary);
         }

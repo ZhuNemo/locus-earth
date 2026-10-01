@@ -1,253 +1,180 @@
+/* ============================================================================
+   Locus Earth —— 设计令牌（唯一的颜色 / 玻璃 / 层级来源）
+   ----------------------------------------------------------------------------
+   本文件同时被 index.html 与 settings.html 加载，因此这里定义的令牌
+   对两个页面都生效，是「一整套色彩应用到所有地方」的落点。
+
+   改造要点：
+     · 玻璃表面改为「真半透明 + 较大模糊」，取代原先接近不透明的深色实底，
+       解决操作菜单显得深蓝、厚重的问题（移动端尤其明显）。
+     · 强调色统一为一个色相（--accent 系列），取代散落各处的
+       #007aff / #0055cc / #1f6ed8 / #d4e8ff / #3498db 等蓝色。
+     · 新增 --z-floating 悬浮界面层，使底部托盘位于地图工具（右下角控件、
+       时间轴）之上，不再被覆盖。
+     · 新增 --mobile-bar-h，底部托盘的收缩高度集中到一处。
+   ============================================================================ */
+
 :root {
+    /* ---------- 层叠顺序 ---------- */
     --z-base: 1;
-    --z-panel: 100;
+    --z-panel: 100;      /* 地图工具层：右下角相机控件、时间轴、量测浮层 */
+    --z-floating: 300;   /* 悬浮界面层：头部、可展开面板、退出按钮 */
     --z-modal: 1000;
     --z-toast: 1100;
     --z-menu: 1200;
 
+    /* ---------- 圆角 ---------- */
     --radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 16px;
     --radius-full: 999px;
 
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.14);
-    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.12);
+    /* ---------- 阴影 ---------- */
+    --shadow-sm: 0 2px 8px rgba(16, 24, 40, 0.06);
+    --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.12);
+    --shadow-glass: 0 10px 34px rgba(16, 24, 40, 0.14);
 
-    --bg-glass-light: rgba(255, 255, 255, 0.82);
-    --bg-glass-dark: rgba(31, 41, 55, 0.94);
-    --bg-glass: var(--bg-glass-light);
+    /* ---------- 毛玻璃表面（浅色） ---------- */
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-bg-strong: rgba(255, 255, 255, 0.72);
+    --glass-bg-subtle: rgba(255, 255, 255, 0.32);
+    --glass-border: rgba(16, 24, 40, 0.10);
+    --glass-hover: rgba(16, 24, 40, 0.06);
+    --glass-active: rgba(16, 24, 40, 0.10);
+    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+    --blur-sm: 6px;
+    --blur-md: 20px;
+    --blur-lg: 34px;
+
+    /* ---------- 深色玻璃（不随主题变化，用于压在卫星影像上的控件） ---------- */
+    --glass-dark-bg: rgba(18, 22, 31, 0.60);
+    --glass-dark-border: rgba(255, 255, 255, 0.14);
+    --glass-dark-hover: rgba(255, 255, 255, 0.12);
+    --text-on-dark: #f5f7fa;
+    --text-on-dark-muted: rgba(245, 247, 250, 0.55);
+
+    /* ---------- 强调色（统一色相） ---------- */
+    --accent: #3b82f6;
+    --accent-strong: #2563eb;
+    --accent-text: #1d4ed8;
+    --accent-soft: rgba(59, 130, 246, 0.12);
+    --accent-medium: rgba(59, 130, 246, 0.20);
+    --accent-border: rgba(59, 130, 246, 0.38);
+
+    /* ---------- 危险色 ---------- */
+    --danger: #e5484d;
+    --danger-strong: #c62a2f;
+    --danger-soft: rgba(229, 72, 77, 0.12);
+
+    /* ---------- 控件轨道与滑块 ---------- */
+    --control-track: rgba(120, 130, 145, 0.35);
+    --control-track-active: var(--accent);
+    --control-thumb: #ffffff;
+
+    /* ---------- 文本 ---------- */
+    --text-primary: #101828;
+    --text-secondary: #475467;
+    --text-muted: #98a2b3;
+
+    /* ---------- 背景与边框 ---------- */
+    --bg-primary: #eef1f6;
+    --bg-header: var(--glass-bg);
+    --bg-card: var(--glass-bg);
+    --bg-select: rgba(255, 255, 255, 0.66);
     --bg-solid: #ffffff;
-    --bg-overlay: rgba(0, 0, 0, 0.4);
+    --bg-overlay: rgba(16, 24, 40, 0.34);
+    --border-color: rgba(16, 24, 40, 0.12);
 
-    --blur-sm: 4px;
-    --blur-md: 12px;
-    --blur-lg: 20px;
+    /* ---------- 兼容别名（既有的 var() 引用继续可用） ---------- */
+    --bg-glass: var(--glass-bg);
+    --bg-glass-light: var(--glass-bg);
+    --bg-glass-dark: var(--glass-bg-strong);
+    --highlight-color: var(--accent);
 
-    --bg-primary: #f5f5f5;
-    --bg-header: #ffffff;
-    --bg-card: #ffffff;
-    --bg-select: #f0f0f0;
-    --text-primary: #1a1a1a;
-    --text-secondary: #555;
-    --text-muted: #888;
-    --border-color: #e0e0e0;
-    --glass-border: rgba(0, 0, 0, 0.08);
-    --glass-hover: rgba(128, 128, 128, 0.12);
-}
-select {
-    background-color: var(--bg-solid);
-    color: #1a1a1a;
-    border: 1px solid #d0d0d0;
+    /* ---------- 移动端底部托盘 ---------- */
+    --mobile-bar-h: 44px;
 }
 
 [data-theme="dark"] {
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.28);
-    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.32);
-    --bg-glass: var(--bg-glass-dark);
-    --bg-solid: #1f2937;
-    --bg-overlay: rgba(0, 0, 0, 0.6);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-hover: rgba(255, 255, 255, 0.1);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.30);
+    --shadow-md: 0 10px 28px rgba(0, 0, 0, 0.44);
+    --shadow-glass: 0 12px 38px rgba(0, 0, 0, 0.50);
 
-    --bg-primary: #111827;
-    --bg-header: #1f2937;
-    --bg-card: #1f2937;
-    --bg-select: #374151;
-    --text-primary: #f9fafb;
-    --text-secondary: #cbd5e1;
-    --text-muted: #9ca3af;
-    --border-color: #374151;
+    /* 关键改动：由原先 rgba(31, 41, 55, 0.94) 的近实底改为真半透明 */
+    --glass-bg: rgba(19, 24, 35, 0.52);
+    --glass-bg-strong: rgba(19, 24, 35, 0.70);
+    --glass-bg-subtle: rgba(255, 255, 255, 0.06);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-hover: rgba(255, 255, 255, 0.08);
+    --glass-active: rgba(255, 255, 255, 0.14);
+    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+    --accent: #60a5fa;
+    --accent-strong: #3b82f6;
+    --accent-text: #bfdbfe;
+    --accent-soft: rgba(96, 165, 250, 0.16);
+    --accent-medium: rgba(96, 165, 250, 0.26);
+    --accent-border: rgba(96, 165, 250, 0.44);
+
+    --danger: #f2555a;
+    --danger-strong: #d13b40;
+    --danger-soft: rgba(242, 85, 90, 0.16);
+
+    --control-track: rgba(255, 255, 255, 0.22);
+    --control-thumb: #f8fafc;
+
+    --text-primary: #f2f4f7;
+    --text-secondary: #c6cfda;
+    --text-muted: #94a3b8;
+
+    --bg-primary: #0e1320;
+    --bg-header: var(--glass-bg);
+    --bg-card: var(--glass-bg);
+    --bg-select: rgba(255, 255, 255, 0.08);
+    --bg-solid: rgba(19, 24, 35, 0.92);
+    --bg-overlay: rgba(0, 0, 0, 0.52);
+    --border-color: rgba(255, 255, 255, 0.12);
 }
-[data-theme="dark"] select {
+
+/* 不支持 backdrop-filter 的浏览器：提高不透明度以保证可读性 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.94);
+        --glass-bg-strong: rgba(255, 255, 255, 0.97);
+    }
+    [data-theme="dark"] {
+        --glass-bg: rgba(19, 24, 35, 0.95);
+        --glass-bg-strong: rgba(19, 24, 35, 0.98);
+    }
+}
+
+/* ============================================================================
+   表单控件（两个页面共用）
+   ============================================================================ */
+select {
+    background-color: var(--bg-select);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+input,
+textarea {
+    background-color: var(--bg-select);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+option {
     background-color: var(--bg-solid);
-    color: #f9fafb;
-    border: 1px solid #4b5563;
+    color: var(--text-primary);
 }
 
-    [data-theme="dark"] body {
-        background: var(--bg-primary);
-        color: var(--text-primary);
-    }
-
-    [data-theme="dark"] .locus-header,
-    [data-theme="dark"] .side-menu,
-    [data-theme="dark"] .glass-panel {
-        background-color: var(--bg-glass);
-        color: #e5e7eb  ;
-        border-color: #374151  ;
-    }
-
-    [data-theme="dark"] #camera-controls {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-    }
-
-    [data-theme="dark"] .locus-header {
-        box-shadow: var(--shadow-sm);
-    }
-
-    [data-theme="dark"] .locus-header .brand h1,
-    [data-theme="dark"] .menu-title,
-    [data-theme="dark"] .bookmarks-header h2,
-    [data-theme="dark"] .bookmark-item .info .name,
-    [data-theme="dark"] .modal-box h2 {
-        color: #f9fafb  ;
-    }
-
-    [data-theme="dark"] .locus-header .brand .sub,
-    [data-theme="dark"] .locus-header .brand .custom-message,
-    [data-theme="dark"] .locus-header .credit,
-    [data-theme="dark"] .modal-box p,
-    [data-theme="dark"] .empty-message {
-        color: #cbd5e1  ;
-    }
-
-    [data-theme="dark"] .locus-header .brand .custom-message {
-        border-left-color: #4b5563  ;
-    }
-
-    [data-theme="dark"] .locus-header .brand .custom-message a,
-    [data-theme="dark"] .locus-header .credit a {
-        color: #93c5fd  ;
-    }
-
-    [data-theme="dark"] .top-btn,
-    [data-theme="dark"] .menu-toggle,
-    [data-theme="dark"] .info-btn,
-    [data-theme="dark"] .interlog-btn,
-    [data-theme="dark"] .controls .hd-btn,
-    [data-theme="dark"] .locus-header .controls .mode-btn,
-    [data-theme="dark"] .locus-header .controls .reset-btn,
-    [data-theme="dark"] #buttons button,
-    [data-theme="dark"] #controls button,
-    [data-theme="dark"] #menu button {
-        background-color: #374151  ;
-        color: #f9fafb  ;
-        border-color: #4b5563  ;
-    }
-
-    [data-theme="dark"] .top-btn:hover,
-    [data-theme="dark"] .menu-toggle:hover,
-    [data-theme="dark"] .info-btn:hover,
-    [data-theme="dark"] .interlog-btn:hover,
-    [data-theme="dark"] .controls .hd-btn:hover,
-    [data-theme="dark"] .locus-header .controls .mode-btn:hover,
-    [data-theme="dark"] .locus-header .controls .reset-btn:hover {
-        background-color: #4b5563  ;
-        border-color: #6b7280  ;
-    }
-
-    [data-theme="dark"] .locus-header .top-btn,
-    [data-theme="dark"] .locus-header .menu-toggle {
-        background: #374151  ;
-    }
-
-    [data-theme="dark"] .controls .hd-btn.active,
-    [data-theme="dark"] .locus-header .controls .mode-btn.active,
-    [data-theme="dark"] .menu-btn.active {
-        background-color: #1d4ed8  ;
-        border-color: #60a5fa  ;
-        color: #eff6ff  ;
-    }
-
-    [data-theme="dark"] .menu-header,
-    [data-theme="dark"] .menu-btn,
-    [data-theme="dark"] .bookmark-item {
-        border-color: #374151  ;
-    }
-
-    [data-theme="dark"] .menu-title,
-    [data-theme="dark"] .menu-btn {
-        color: #f9fafb  ;
-    }
-
-    [data-theme="dark"] .menu-btn:hover,
-    [data-theme="dark"] .bookmark-item:hover {
-        background: rgba(75, 85, 99, 0.55)  ;
-        box-shadow: var(--shadow-sm);
-    }
-
-    [data-theme="dark"] #camera-controls .ctrl-btn {
-        color: #e5e7eb  ;
-    }
-
-    [data-theme="dark"] #camera-controls .divider {
-        background: #4b5563  ;
-    }
-
-    [data-theme="dark"] .modal-box .close-btn,
-    [data-theme="dark"] .menu-header .close-btn,
-    [data-theme="dark"] .bookmarks-header .close-btn {
-        color: #cbd5e1  ;
-    }
-
-    [data-theme="dark"] .modal-box .close-btn:hover {
-        color: #ffffff  ;
-        background: rgba(255, 255, 255, 0.1)  ;
-    }
-
-    [data-theme="dark"] .inline-action-btn {
-        background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)  ;
-        border-color: #3b82f6  ;
-        color: #dbeafe  ;
-    }
-
-    [data-theme="dark"] .inline-action-btn:hover,
-    [data-theme="dark"] .inline-action-btn:focus-visible {
-        background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%)  ;
-        border-color: #93c5fd  ;
-        color: #ffffff  ;
-    }
-
-    [data-theme="dark"] .bookmark-item .info .coords {
-        color: #9ca3af  ;
-    }
-
-    [data-theme="dark"] .bookmark-item .actions .delete-btn:hover {
-        background: #451a1a  ;
-    }
-
-    [data-theme="dark"] .bookmark-item .actions .locate-btn:hover {
-        background: #172554  ;
-    }
-
-    [data-theme="dark"] .modal-box::-webkit-scrollbar-thumb {
-        background: #6b7280  ;
-    }
-
-    [data-theme="dark"] .modal-box::-webkit-scrollbar-thumb:hover {
-        background: #9ca3af  ;
-    }
-
-    input,
-    select,
-    textarea {
-        background-color: #1f2937  ;
-        color: #f9fafb  ;
-        border-color: #4b5563  ;
-    }
-
-    [style*="color:#666"],
-    [style*="color: #666"],
-    [style*="color:#999"],
-    [style*="color: #999"] {
-        color: #9ca3af  ;
-    }
-
-    [style*="border-top:1px solid #eee"],
-    [style*="border-top: 1px solid #eee"] {
-        border-top-color: #374151  ;
-    }
-
-    [style*="border-bottom:1px dotted #ccc"],
-    [style*="border-bottom: 1px dotted #ccc"] {
-        border-bottom-color: #6b7280  ;
-    }
-
-    [data-theme="dark"] .menu-overlay {
-        background: var(--bg-overlay);
-    }
-        
+/* ============================================================================
+   说明：毛玻璃的 backdrop-filter 不在这里集中声明。
+   themes.css 在两个页面中的加载位置不同（settings.html 里是最后一个，
+   index.html 里早于 components.css / measure.css），集中声明会导致
+   设置页被反向覆盖、主页面又被组件文件覆盖。因此模糊一律由各组件的
+   归属文件（components / modals / menu / controls / measure / settings）
+   自行声明，本文件只负责令牌与表单控件的统一。
+   ============================================================================ */

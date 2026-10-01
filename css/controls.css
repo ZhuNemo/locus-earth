@@ -6,9 +6,9 @@
     z-index: var(--z-panel);
     width: min(760px, calc(100% - 48px));
     padding: 16px 20px 14px;
-    color: #f5f5f5;
-    background: rgba(20, 20, 20, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-on-dark);
+    background: var(--glass-dark-bg);
+    border: 1px solid var(--glass-dark-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     backdrop-filter: blur(var(--blur-md));
@@ -43,7 +43,7 @@
 .time-control__status {
     padding: 4px 8px;
     color: #fff;
-    background: #e5484d;
+    background: var(--danger);
     border-radius: var(--radius-full);
     font-size: 11px;
     font-weight: 700;
@@ -62,9 +62,9 @@
     gap: 6px;
     flex: 0 0 auto;
     padding: 7px 11px;
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--text-on-dark);
+    background: var(--glass-dark-hover);
+    border: 1px solid var(--glass-dark-border);
     border-radius: var(--radius-full);
     cursor: pointer;
     pointer-events: auto;
@@ -73,7 +73,7 @@
 }
 
 .time-control__now:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--glass-dark-hover);
 }
 
 .time-control__timeline {
@@ -84,7 +84,7 @@
 .time-control__hours {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    color: rgba(255, 255, 255, 0.52);
+    color: var(--text-on-dark-muted);
     font-size: 10px;
 }
 
@@ -116,7 +116,7 @@
 .time-control__track {
     position: relative;
     height: 18px;
-    border-top: 1px solid rgba(255, 255, 255, 0.28);
+    border-top: 1px solid var(--glass-dark-border);
 }
 
 .time-control__cursor {
@@ -125,7 +125,7 @@
     left: 50%;
     width: 2px;
     height: 25px;
-    background: #e5484d;
+    background: var(--danger);
     box-shadow: var(--shadow-sm);
     pointer-events: none;
 }
@@ -177,9 +177,9 @@
 }
 
 #camera-controls .ctrl-btn {
-    background: var(--bg-glass);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    color: #444;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
     width: 48px;
     height: 48px;
     border-radius: var(--radius-md);
@@ -236,27 +236,17 @@
     height: 48px;
     padding: 2px;
     border-radius: var(--radius-md);
-    background: var(--bg-glass);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-glass);
     backdrop-filter: blur(var(--blur-md));
     -webkit-backdrop-filter: blur(var(--blur-md));
 }
 
-[data-theme="dark"] .cesium-viewer-toolbar .cesium-baseLayerPicker-dropDown-button {
-    background: var(--bg-glass);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] #camera-controls .ctrl-btn {
-    background: var(--bg-glass);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #e5e7eb;
-}
-
 @media (max-width: 700px) {
     #camera-controls {
-        bottom: 104px;
+        /* 底部托盘收缩后露出的高度 + 间距，托盘变薄时这里自动跟随 */
+        bottom: calc(var(--mobile-bar-h) + 52px);
         right: 16px;
         gap: 12px;
     }

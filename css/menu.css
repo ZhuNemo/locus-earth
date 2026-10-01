@@ -57,7 +57,7 @@
         .top-btn,
         .menu-toggle {
             background: transparent;
-            border: 1px solid #ddd;
+            border: 1px solid var(--glass-border);
             border-radius: var(--radius-md);
             width: 36px;
             height: 36px;
@@ -68,11 +68,11 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0; 
-            color: #333;
+            color: var(--text-primary);
         }
         .top-btn:hover,
         .menu-toggle:hover {
-            background: #e0e0e0;
+            background: var(--glass-hover);
         }
 
         @media (max-width: 480px) {
@@ -108,7 +108,7 @@
             display: flex;
             flex-direction: column;
             padding: 20px 0;
-            border-right: 1px solid rgba(255,255,255,0.3);
+            border-right: 1px solid var(--glass-border);
         }
 
         .side-menu.open {
@@ -121,19 +121,19 @@
             justify-content: space-between;
             align-items: center;
             padding: 0 20px 16px 20px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--glass-border);
             flex-shrink: 0;
         }
         .menu-title {
             font-size: 20px;
             font-weight: 600;
-            color: #1a1a1a;
+            color: var(--text-primary);
         }
         .menu-header .close-btn {
             background: none;
             border: none;
             font-size: 28px;
-            color: #888;
+            color: var(--text-muted);
             cursor: pointer;
             padding: 0 4px;
         }
@@ -164,30 +164,25 @@
             background: transparent;
             border: none;
             border-radius: var(--radius-md);
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--glass-border);
             font-size: 16px;
             font-weight: 500;
-            color: #333;
+            color: var(--text-primary);
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: left;
             font-family: inherit;
         }
         .menu-btn:hover {
-            background: rgba(255, 255, 255, 0.6);
+            background: var(--glass-hover);
             box-shadow: var(--shadow-sm);
         }
         .menu-btn:active {
             transform: scale(0.97);
         }
         .menu-btn.active {
-            background: #d4e8ff;
-            color: #0055cc;
+            background: var(--accent-soft);
+            color: var(--accent-text);
         }
-        /* 高精度建模按钮在菜单中的特殊样式 */
-        .menu-btn.hd-btn {
-            display: none; 
-        }
-        .menu-btn.hd-btn.visible {
-            display: flex;
-        }
+        /* 原先这里还有 .menu-btn.hd-btn / .visible 两条规则，
+           但侧滑菜单中并不存在带 hd-btn 类的元素，属遗留死规则，已移除。 */

@@ -2,18 +2,9 @@
     Locus Earth - 悬浮控件 (V6.3)
     玻璃拟态（Glassmorphism）设计
     ============================================ */
-/* ---------- 主题变量（亮色模式） ---------- */
-:root {
-    --text-primary: #1a1a1a;
-    --text-secondary: #666;
-    --highlight-color: #3b82f6;
-}
-
-/* ---------- 主题变量（暗色模式） ---------- */
-[data-theme="dark"] {
-    --text-primary: #f0f0f0;
-    --text-secondary: #aaa;
-}
+/* ---------- 主题变量已统一由 themes.css 提供 ----------
+   本文件在 themes.css 之后加载，若在此重复声明 :root 令牌会覆盖全局值
+   （包括暗色模式），因此这里不再声明。 */
 
 /* ============================================
    悬浮头部
@@ -22,15 +13,15 @@
     position: fixed;
     top: 16px;
     left: 16px;
-    z-index: var(--z-panel);
+    z-index: var(--z-floating);
     width: calc(100% - 32px);
     max-width: 340px;
     height: 56px;
     background: var(--bg-glass);
-    backdrop-filter: blur(var(--blur-md));
-    -webkit-backdrop-filter: blur(var(--blur-md));
+    backdrop-filter: blur(var(--blur-md)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--blur-md)) saturate(150%);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-glass);
+    box-shadow: var(--shadow-glass), var(--glass-highlight);
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
@@ -118,14 +109,16 @@
     position: fixed;
     top: 80px;
     left: 16px;
-    z-index: var(--z-panel);
+    /* 悬浮界面层：高于地图工具层（右下角控件、时间轴），
+       否则移动端底部托盘展开后会被相机控件盖住 */
+    z-index: var(--z-floating);
     width: calc(100% - 32px);
     max-width: 340px;
     background: var(--bg-glass);
-    backdrop-filter: blur(var(--blur-md));
-    -webkit-backdrop-filter: blur(var(--blur-md));
+    backdrop-filter: blur(var(--blur-lg)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(150%);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-glass);
+    box-shadow: var(--shadow-glass), var(--glass-highlight);
     border-radius: var(--radius-md);
     padding: 14px;
     opacity: 0;
@@ -178,7 +171,7 @@
 .toggle-switch {
     width: 36px;
     height: 20px;
-    background: rgba(128, 128, 128, 0.35);
+    background: var(--control-track);
     border-radius: var(--radius-sm);
     position: relative;
     transition: background 0.25s ease;
@@ -192,7 +185,7 @@
     left: 2px;
     width: 16px;
     height: 16px;
-    background: #fff;
+    background: var(--control-thumb);
     border-radius: 50%;
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-sm);
@@ -261,13 +254,13 @@
 }
 
 .action-btn:hover .action-icon-wrap {
-    background: rgba(59, 130, 246, 0.18);
-    color: var(--highlight-color);
+    background: var(--accent-soft);
+    color: var(--accent);
 }
 
 .action-btn.active .action-icon-wrap {
-    background: rgba(59, 130, 246, 0.22);
-    color: #3b82f6;
+    background: var(--accent-medium);
+    color: var(--accent);
 }
 
 .action-icon-wrap svg {
@@ -290,38 +283,10 @@
     color: var(--text-primary);
 }
 
-/* ---------- 高精度建模按钮 ---------- */
-.hd-btn {
-    width: 100%;
-    margin-top: 10px;
-    padding: 9px 12px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--glass-border);
-    background: var(--glass-hover);
-    color: var(--text-primary);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    font-family: inherit;
-}
-
-.hd-btn:hover {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: var(--highlight-color);
-    color: var(--highlight-color);
-}
-
-.hd-btn.active {
-    background: rgba(59, 130, 246, 0.2);
-    border-color: var(--highlight-color);
-    color: var(--highlight-color);
-}
-
-.hd-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
+/* ---------- 高精度建模按钮 ----------
+   原先它是一个独立的整行 .hd-btn。现已改为与上面五个功能按钮完全相同的
+   .action-btn 结构（见 index.html），并在进入覆盖区时插入到「测量」与
+   「设置」之间，因此这里不再需要单独的样式。 */
 
 /* ============================================
    退出谷歌模式按钮
@@ -330,11 +295,11 @@
     position: fixed;
     top: 16px;
     right: 16px;
-    z-index: var(--z-panel);
+    z-index: var(--z-floating);
     padding: 8px 14px;
     border-radius: var(--radius-md);
-    border: 1px solid #c0392b;
-    background: #e74c3c;
+    border: 1px solid var(--danger-strong);
+    background: var(--danger);
     color: #fff;
     font-size: 13px;
     font-weight: 500;
@@ -345,7 +310,7 @@
 }
 
 .exit-google-btn:hover {
-    background: #c0392b;
+    background: var(--danger-strong);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
 }
@@ -448,7 +413,10 @@
         max-width: none;
         padding: 0 16px 24px;
         border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        transform: translateY(calc(100% - 52px));
+        /* 移动端托盘是全宽面板，直接压在卫星影像上，
+           用略强一点的玻璃底以保证按钮文字的对比度 */
+        background: var(--glass-bg-strong);
+        transform: translateY(calc(100% - var(--mobile-bar-h)));
         opacity: 1;
         pointer-events: auto;
         transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
@@ -456,7 +424,7 @@
 
     .panel-handle {
         width: 100%;
-        height: 52px;
+        height: var(--mobile-bar-h);
         padding: 0;
         border: 0;
         background: transparent;
@@ -471,7 +439,7 @@
         width: 40px;
         height: 4px;
         border-radius: var(--radius-full);
-        background: rgba(128, 128, 128, 0.45);
+        background: var(--control-track);
     }
 
     .expandable-panel.expanded {

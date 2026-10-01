@@ -111,7 +111,10 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 const iBtn = document.getElementById('iterlogBtn');
                 const eBtn = document.getElementById('exitGoogleBtn');
                 
-                if (bBtn) bBtn.style.display = 'inline-block';
+                // 用空字符串撤掉内联覆盖：#buildingsToggleBtn 是 .switch-item，
+                // 靠样式表里的 display:flex 布局，强制 inline-block 会让
+                // 开关与文字错位。
+                if (bBtn) bBtn.style.display = '';
                 if (iBtn) iBtn.style.display = 'inline-block';
                 if (eBtn) eBtn.style.display = 'inline-block';
             }
@@ -127,7 +130,7 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 bBtn.disabled = false;
                 bBtn.style.opacity = '1';
                 bBtn.style.cursor = 'pointer';
-                bBtn.style.display = 'inline-block';
+                bBtn.style.display = '';
             }
             if (iBtn) iBtn.style.display = 'inline-block';
             if (eBtn) eBtn.style.display = 'none';

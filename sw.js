@@ -45,7 +45,6 @@ const SHELL_URLS = [
   './css/modals.css',
   './css/bookmarks.css',
   './css/toast.css',
-  './css/utilities.css',
   './css/themes.css',
   './css/measure.css',
   './css/components.css',
