@@ -213,14 +213,37 @@
         clearCacheModal.classList.remove('active');
     });
 
+    // 请求 Service Worker 重新预热应用外壳缓存。
+    // Service Worker 已安装时不会重跑 install，缓存被删除后若不主动重建，
+    // 离线能力会一直缺失到 sw.js 下次变更为止。
+    // 用 getRegistration() 而不是 navigator.serviceWorker.ready：
+    // 后者在尚未注册 Service Worker 时会永远挂起，把整个流程卡住。
+    async function requestShellRepopulation() {
+        if (!('serviceWorker' in navigator)) return false;
+        try {
+            const registration = await navigator.serviceWorker.getRegistration();
+            const target = navigator.serviceWorker.controller || (registration && registration.active);
+            if (!target) return false;
+            target.postMessage({ type: 'REPOPULATE_SHELL' });
+            return true;
+        } catch (error) {
+            console.warn('请求重新预热应用缓存失败:', error);
+            return false;
+        }
+    }
+
     // 确认清除
     confirmClearBtn.addEventListener('click', async () => {
         try {
+            let shellRepopulated = true;
+
             // 1. 清除 PWA 应用缓存
             if (clearAppCache && clearAppCache.checked) {
                 const cacheNames = await caches.keys();
                 const appCaches = cacheNames.filter(name => name.includes('locus-earth-app'));
                 await Promise.all(appCaches.map(name => caches.delete(name)));
+                // 立即重建，避免离线能力永久丧失
+                shellRepopulated = await requestShellRepopulation();
             }
 
             // 2. 清除 Cesium 地球引擎缓存
@@ -249,7 +272,9 @@
             }
 
             // 5. 反馈
-            alert('清理已完成！部分资源将在刷新后重新获取。');
+            alert(shellRepopulated
+                ? '清理已完成！部分资源将在刷新后重新获取。'
+                : '清理已完成！离线缓存未能自动重建，请刷新页面后重试。');
             clearCacheModal.classList.remove('active');
 
             if (clearCesiumCache && clearCesiumCache.checked) {

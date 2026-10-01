@@ -1,7 +1,23 @@
 import { Cartesian3, EllipsoidTerrainProvider, IonImageryProvider, Cesium3DTileset } from 'cesium';
 
 export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
-       
+
+        // 恢复默认底图（哨兵2，Ion 资产 3954）。
+        // 进入谷歌模式时会清空全部影像图层，因此无论是正常退出
+        // 还是加载失败降级，都必须把底图放回来，否则会留下一个全黑的球。
+        function restoreDefaultBasemap() {
+            viewer.imageryLayers.removeAll();
+            return IonImageryProvider.fromAssetId(3954)
+                .then(provider => {
+                    viewer.imageryLayers.addImageryProvider(provider);
+                    viewer.scene.requestRender();
+                    console.log('↻ 已恢复哨兵2底图');
+                })
+                .catch(e => {
+                    console.error('哨兵2底图恢复失败:', e);
+                });
+        }
+
         // 激活谷歌3D地球（从“关于”弹窗中触发）
         document.getElementById('activateGoogle3D').addEventListener('click', async function(e) {
             e.preventDefault();
@@ -34,7 +50,20 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 console.log('🗑️ 已清除默认影像图层');
 
                 // --- 2. 加载谷歌 3D Tiles ---
-                const tileset = await Cesium3DTileset.fromIonAssetId(2275207);
+                // 2275207 是 Cesium 的演示资产，可能被限流或下架，
+                // 因此单独捕获并就地降级，而不是让外层 catch 只报一句“请检查网络环境”。
+                let tileset;
+                try {
+                    tileset = await Cesium3DTileset.fromIonAssetId(2275207);
+                } catch (assetError) {
+                    console.error('❌ 谷歌3D资产加载失败（可能被限流或已下架）:', assetError);
+                    // 关键：底图已在第 1 步被清空，不回滚就会留下一个全黑的球。
+                    // 此时按钮显隐尚未被改动（那是后面第 5 步才做的），无需还原按钮。
+                    await restoreDefaultBasemap();
+                    window._isGoogleMode = false;
+                    showToast('⚠️ 谷歌3D地球暂时不可用（资产加载失败），已恢复默认底图');
+                    return;
+                }
                 tileset.show = true;
                 viewer.scene.primitives.add(tileset);
                 window._googleTileset = tileset;
@@ -63,19 +92,9 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 const iBtn = document.getElementById('iterlogBtn');
                 if (iBtn) iBtn.style.display = 'none';
 
-                const infoBtn = document.getElementById('infoBtn');
-                if (infoBtn) {
-                    if (!window._originalInfoClick) {
-                        window._originalInfoClick = infoBtn._listeners ? infoBtn._listeners['click'] : null;
-                    }
-                    infoBtn.replaceWith(infoBtn.cloneNode(true));
-                    const newInfoBtn = document.getElementById('infoBtn');
-                    if (newInfoBtn) {
-                        newInfoBtn.addEventListener('click', function() {
-                            document.getElementById('infoModalGoogle').classList.add('active');
-                        });
-                    }
-                }
+                // “关于”按钮不再通过替换 DOM 节点来改行为：
+                // ui.js 的处理器会读取 window._isGoogleMode（本函数开头已置为 true）
+                // 并自动指向谷歌模式的弹窗。替换节点会丢失元素上已注册的监听器。
 
                 // 显示“退出”按钮
                 const eBtn = document.getElementById('exitGoogleBtn');
@@ -122,14 +141,7 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 }
 
                 // --- 2. 恢复哨兵2底图 ---
-                viewer.imageryLayers.removeAll();
-                IonImageryProvider.fromAssetId(3954).then(provider => {
-                    viewer.imageryLayers.addImageryProvider(provider);
-                    viewer.scene.requestRender();
-                    console.log('↻ 已恢复哨兵2底图');
-                }).catch(e => {
-                    console.error('哨兵2底图恢复失败:', e);
-                });
+                restoreDefaultBasemap();
 
                 // 恢复底图选择器按钮
                 const layerButton = document.querySelector(".cesium-baseLayerPicker-selected")?.closest("button");
@@ -152,17 +164,11 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
                 });
 setTimeout(() => viewer.scene.requestRender(), 500);
 
-                // 恢复“关于”按钮的原始点击事件
-                const infoBtn = document.getElementById('infoBtn');
-                if (infoBtn) {
-                    infoBtn.replaceWith(infoBtn.cloneNode(true));
-                    const newInfoBtn = document.getElementById('infoBtn');
-                    if (newInfoBtn) {
-                        newInfoBtn.addEventListener('click', function() {
-                            document.getElementById('infoModal').classList.add('active');
-                        });
-                    }
-                }
+                // 复位谷歌模式标志：ui.js 的“关于”处理器据此回到默认弹窗。
+                // 这一步是必须的 —— 除了按钮行为，hd-layers.js 的 checkCameraPosition
+                // 在 window._isGoogleMode 为真时会直接 return；若不复位，
+                // 高精度建模的区域自动联动会在退出后永久失效。
+                window._isGoogleMode = false;
 
                 showToast('已退出Google地球，恢复默认模式');
 

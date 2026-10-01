@@ -98,6 +98,16 @@ export function initCustomImagery(imageryProviders, viewer) {
         }
     }
 
+    // 任何原因导致叠加层离开图层集合时（例如谷歌模式里的
+    // viewer.imageryLayers.removeAll()），必须把引用置空。
+    // 否则下面的 updateOverlay() 会以为叠加层仍然存在，
+    // 于是既不会重新添加也不会清理，路网叠加层就此永久失效。
+    viewer.imageryLayers.layerRemoved.addEventListener(() => {
+        if (overlayLayer && !viewer.imageryLayers.contains(overlayLayer)) {
+            overlayLayer = null;
+        }
+    });
+
     if (viewer.baseLayerPicker && viewer.baseLayerPicker.viewModel) {
         const pickerViewModel = viewer.baseLayerPicker.viewModel;
 

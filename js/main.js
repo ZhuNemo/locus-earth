@@ -165,8 +165,11 @@ import { CONFIG } from './config.js';
         const timeControl = initTimeControl(viewer);
 
         // 调用 initUI，传入所有需要的依赖
+        // 注意：hdLayers 必须以整体对象传入，不能写成 { ...hdLayers }：
+        // 展开运算符会立即求值 hdLayers 上的 getter（isInHdArea / hdTilesetsVisible），
+        // 把它们拍平回静态快照，UI 层就再也读不到实时状态了。
         initUI(viewer, {
-            ...hdLayers,
+            hd: hdLayers,
             showToast,
             closeInfo,
             closeIterlog,

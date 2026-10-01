@@ -142,26 +142,50 @@ export function initViewer(containerId, terrainProvider) {
         viewer.scene.screenSpaceCameraController.minimumZoomDistance = 50;
 
                 
+        // ----- 动态分辨率：按帧率调整渲染缩放 -----
+        // 两处防抖，避免在阈值附近反复抖动：
+        //  1) 迟滞：只有明显偏低（<35）才降档，明显偏高（>58）才升档。
+        //     原先 40/55 的窄死区会让画面在相邻两档之间来回变糊/变清晰。
+        //  2) 冷却：切换 resolutionScale 会重建帧缓冲、拉低当帧帧率，
+        //     若立刻继续采样，就会把这次开销误判成“帧率不足”而继续降档。
+        const MIN_SCALE = 1.0;
+        const LOW_FPS = 35;
+        const HIGH_FPS = 58;
+        const SCALE_STEP = 0.1;
+        const COOLDOWN_SAMPLES = 2;
+        const maxScale = () => Math.min(window.devicePixelRatio, 2);
+
         let fpsCheckCounter = 0;
         let lastFpsTime = performance.now();
         let currentScale = Math.min(window.devicePixelRatio, 2);
+        let fpsCooldown = 0;
+
         viewer.resolutionScale = currentScale;
 
         viewer.scene.postRender.addEventListener(() => {
             fpsCheckCounter++;
             const now = performance.now();
-            if (now - lastFpsTime >= 1000) { 
-                const fps = fpsCheckCounter;
-                fpsCheckCounter = 0;
-                lastFpsTime = now;
+            if (now - lastFpsTime < 1000) return;
 
-                if (fps < 40 && currentScale > 1.0) {
-                    currentScale -= 0.1; 
-                    viewer.resolutionScale = currentScale;
-                } else if (fps > 55 && currentScale < Math.min(window.devicePixelRatio, 2)) {
-                    currentScale += 0.1;
-                    viewer.resolutionScale = currentScale;
-                }
+            const fps = fpsCheckCounter;
+            fpsCheckCounter = 0;
+            lastFpsTime = now;
+
+            // 调档后的冷却期内只丢弃采样，不再改档
+            if (fpsCooldown > 0) {
+                fpsCooldown--;
+                return;
+            }
+
+            // 取整到 0.1，避免浮点累加漂移（如 1.5000000000000002）
+            if (fps < LOW_FPS && currentScale > MIN_SCALE) {
+                currentScale = Math.round(Math.max(MIN_SCALE, currentScale - SCALE_STEP) * 10) / 10;
+                viewer.resolutionScale = currentScale;
+                fpsCooldown = COOLDOWN_SAMPLES;
+            } else if (fps > HIGH_FPS && currentScale < maxScale()) {
+                currentScale = Math.round(Math.min(maxScale(), currentScale + SCALE_STEP) * 10) / 10;
+                viewer.resolutionScale = currentScale;
+                fpsCooldown = COOLDOWN_SAMPLES;
             }
         });
 

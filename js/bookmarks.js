@@ -52,23 +52,28 @@ export function initBookmarks(viewer, iconPathParam = '/icons/pin.png') {
     // 设置面板底部按钮（隐藏/显示标记）
     setupFooterButton();
     
+    // 跨标签页同步：其他标签页（或设置页）改动了 bookmarks 键。
+    // 注意：正常保存与「清除收藏夹」都会触发本事件，
+    // 必须用 e.newValue 区分二者，否则一次正常保存就会清空本页数据。
     window.addEventListener('storage', (e) => {
-        if (e.key === 'bookmarks') {
-            bookmarks = [];
-            
-            const entities = viewerInstance.entities.values;
-            for (let i = entities.length - 1; i >= 0; i--) {
-                if (entities[i]._isBookmark) {
-                    viewerInstance.entities.remove(entities[i]);
-                }
-            }
-        
-            if (panel && panel.classList.contains('active')) {
-                renderBookmarksList();
-            }
-            
-            console.log('📌 所有收藏标记已从内存和地图中清除');
+        if (e.key !== 'bookmarks') return;
+
+        removeAllBookmarkEntities();
+        bookmarks = [];
+
+        // e.newValue 为 null（removeItem）才是真正的清除指令；
+        // 其余情况是别处保存了新数据，必须重新加载而不是丢弃。
+        if (e.newValue !== null && e.newValue !== undefined) {
+            loadBookmarksFromStorage();
         }
+
+        if (panel && panel.classList.contains('active')) {
+            renderBookmarksList();
+        }
+
+        console.log(e.newValue === null
+            ? '📌 所有收藏标记已从内存和地图中清除'
+            : '📌 收藏标记已从其他标签页同步');
     });
 }
 
@@ -227,12 +232,13 @@ function flyToBookmark(index) {
 function deleteBookmark(index) {
     if (!confirm(`确定要删除标记“${bookmarks[index].name}”吗？`)) return;
     const item = bookmarks[index];
-    // 从视图中移除实体
-    const entities = viewerInstance.entities.values;
-    // 通过自定义属性 _isBookmark 和名称/位置匹配来找到对应的实体
-    const entityToRemove = entities.find(e => e._isBookmark && e.name === item.name);
+    // 从视图中移除实体：用 entityId 精确定位。
+    // 旧实现按 name 匹配，遇到同名标记会删错实体并在图上留下孤儿图钉。
+    const entityToRemove = viewerInstance.entities.getById(item.entityId);
     if (entityToRemove) {
         viewerInstance.entities.remove(entityToRemove);
+    } else {
+        console.warn('未找到对应的标记实体，可能已被移除:', item.name);
     }
 
     // 从数组中移除
@@ -270,7 +276,7 @@ function handleClick(mousePosition, shiftKey) {
 
     // 保存数据
     const newBookmark = {
-        id: Date.now(),
+        id: newBookmarkId(),
         name: name,
         lon: lon,
         lat: lat,
@@ -332,6 +338,24 @@ function setMarkersVisible(visible) {
     // 更新底部按钮文本（如果存在）
     const btn = document.getElementById('toggleMarkersBtn');
     if (btn) btn.textContent = visible ? '隐藏标记' : '显示标记';
+}
+
+// ---------- 工具：生成唯一 id ----------
+function newBookmarkId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+// ---------- 工具：移除地图上所有标记实体 ----------
+function removeAllBookmarkEntities() {
+    const entities = viewerInstance.entities.values;
+    for (let i = entities.length - 1; i >= 0; i--) {
+        if (entities[i]._isBookmark) {
+            viewerInstance.entities.remove(entities[i]);
+        }
+    }
 }
 
 // ---------- 存储相关 ----------
@@ -399,6 +423,15 @@ export { toggleMarkingMode, isMarkingMode };
 // =============================================
 
 /**
+ * CSV 字段转义：含逗号、双引号或换行的字段用双引号包裹，内部双引号翻倍。
+ * 不加转义时，名称里带逗号的标记导出后会多出一列，再导入时被静默跳过。
+ */
+function csvEscape(value) {
+    const s = String(value ?? '');
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+/**
  * 导出当前所有标记为 CSV 字符串
  */
 function exportBookmarksToCSV() {
@@ -407,7 +440,7 @@ function exportBookmarksToCSV() {
         return null;
     }
     let header = '# Locus Earth 收藏夹导出\n# 格式: 名称,经度,纬度\n';
-    const rows = bookmarks.map(b => `${b.name},${b.lon},${b.lat}`);
+    const rows = bookmarks.map(b => `${csvEscape(b.name)},${b.lon},${b.lat}`);
     return header + rows.join('\n');
 }
 
@@ -417,7 +450,8 @@ function exportBookmarksToCSV() {
 export function exportBookmarks() {
     const csv = exportBookmarksToCSV();
     if (!csv) return;
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // 前置 UTF-8 BOM，避免 Excel 打开时中文名称乱码
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.href = url;
@@ -429,29 +463,90 @@ export function exportBookmarks() {
 }
 
 /**
+ * 解析 CSV 文本为二维数组。
+ * 支持双引号包裹的字段，字段内可含逗号、换行，以及转义的双引号（""）。
+ * 不能用 split(',') / split('\n')：那样会切断被引号包裹的字段。
+ */
+function parseCsvRows(text) {
+    const rows = [];
+    let row = [];
+    let field = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+
+        if (inQuotes) {
+            if (ch === '"') {
+                if (text[i + 1] === '"') {
+                    field += '"';
+                    i++;
+                } else {
+                    inQuotes = false;
+                }
+            } else {
+                field += ch;
+            }
+            continue;
+        }
+
+        if (ch === '"') {
+            inQuotes = true;
+        } else if (ch === ',') {
+            row.push(field);
+            field = '';
+        } else if (ch === '\n' || ch === '\r') {
+            if (ch === '\r' && text[i + 1] === '\n') i++;
+            row.push(field);
+            rows.push(row);
+            row = [];
+            field = '';
+        } else {
+            field += ch;
+        }
+    }
+
+    if (field !== '' || row.length > 0) {
+        row.push(field);
+        rows.push(row);
+    }
+
+    return rows;
+}
+
+/**
  * 解析 CSV 内容，返回标记对象数组
  * 格式: 名称,经度,纬度
  * 忽略空行和以 # 开头的注释行
  */
 function parseBookmarksFromCSV(text) {
-    const lines = text.split('\n');
+    // 去掉导出时写入的 UTF-8 BOM
+    if (text.charCodeAt(0) === 0xfeff) {
+        text = text.slice(1);
+    }
+
     const result = [];
-    for (let line of lines) {
-        line = line.trim();
-        if (line === '' || line.startsWith('#')) continue;
-        const parts = line.split(',').map(s => s.trim());
-        if (parts.length !== 3) {
-            console.warn('跳过无效行:', line);
+    for (const row of parseCsvRows(text)) {
+        if (row.length === 1 && row[0].trim() === '') continue;  // 空行
+        if (row[0].trimStart().startsWith('#')) continue;        // 注释行
+
+        if (row.length !== 3) {
+            console.warn('跳过无效行:', row.join(','));
             continue;
         }
-        const name = parts[0];
-        const lon = parseFloat(parts[1]);
-        const lat = parseFloat(parts[2]);
-        if (isNaN(lon) || isNaN(lat) || lon < -180 || lon > 180 || lat < -90 || lat > 90) {
-            console.warn('跳过坐标无效的行:', line);
+
+        const name = row[0].trim();
+        const lon = parseFloat(row[1].trim());
+        const lat = parseFloat(row[2].trim());
+
+        // Number.isFinite 同时排除 NaN 与 Infinity
+        if (!Number.isFinite(lon) || !Number.isFinite(lat) ||
+            lon < -180 || lon > 180 || lat < -90 || lat > 90) {
+            console.warn('跳过坐标无效的行:', row.join(','));
             continue;
         }
-        result.push({ name, lon, lat });
+
+        result.push({ name: name || '未命名标记', lon, lat });
     }
     return result;
 }
@@ -476,7 +571,7 @@ export function importBookmarks(file) {
             const cartesian = Cartesian3.fromDegrees(item.lon, item.lat, 0);
             const entity = createPin(cartesian, item.name);
             bookmarks.push({
-                id: Date.now() + addedCount,
+                id: newBookmarkId(),
                 name: item.name,
                 lon: item.lon,
                 lat: item.lat,
@@ -495,5 +590,5 @@ export function importBookmarks(file) {
     reader.onerror = function() {
         alert('读取文件失败，请重试');
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
 }

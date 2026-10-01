@@ -1,19 +1,24 @@
 import { Cartesian3, Math as CesiumMath } from 'cesium';
 
 export function initUI(viewer, {
-    buildingsPrimitive,
-    state,
-    setBuildingsVisible,
+    hd,
     showToast,
-    isInHdArea,
-    hdTilesetsVisible,
-    setHdTilesetsVisible,
-    hdToggleBtn,
-    toggleBuildingsBtn,
     closeInfo,
     closeIterlog,
     timeControl,
 }) {
+
+    // hd 是 hd-layers.js 返回的整个对象：稳定的引用在这里解构一次，
+    // 而 isInHdArea / hdTilesetsVisible 必须每次通过 hd.xxx 读取。
+    // 它们是用 getter 暴露的实时值，一旦解构就会退化成一次性快照。
+    const {
+        buildingsPrimitive,
+        state,
+        setBuildingsVisible,
+        setHdTilesetsVisible,
+        hdToggleBtn,
+        toggleBuildingsBtn,
+    } = hd;
 
     // =============================================
     // 0. 悬浮头部 & 可展开面板控制
@@ -115,9 +120,15 @@ export function initUI(viewer, {
     // 2. 建筑白模切换（开关形式）
     // =============================================
     toggleBuildingsBtn.addEventListener('click', () => {
-        if (isInHdArea && hdTilesetsVisible) {
+        // #buildingsToggleBtn 是 <div>，不具备原生 disabled 语义：
+        // 给它赋 .disabled 只是挂了个普通属性，浏览器不会拦截点击，
+        // :disabled 选择器也匹配不到它，所以灰化只是视觉效果。
+        // 高精度建模开启期间必须在这里真正拦住。
+        // 该标志由 hd-layers.js 的 setBuildingsBtnEnabled() 统一维护。
+        if (toggleBuildingsBtn.disabled) return;
+
+        if (hd.isInHdArea && hd.hdTilesetsVisible) {
             setHdTilesetsVisible(false);
-            hdTilesetsVisible = false;
             hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
             hdToggleBtn.classList.remove('active');
             if (!state.buildingsVisible && buildingsPrimitive) {
@@ -140,14 +151,13 @@ export function initUI(viewer, {
             toggleBuildingsBtn.classList.remove('active');
         }
 
-        if (isInHdArea) {
+        if (hd.isInHdArea) {
             if (newState) {
                 hdToggleBtn.disabled = true;
                 hdToggleBtn.style.opacity = '0.5';
                 hdToggleBtn.style.cursor = 'not-allowed';
-                if (hdTilesetsVisible) {
+                if (hd.hdTilesetsVisible) {
                     setHdTilesetsVisible(false);
-                    hdTilesetsVisible = false;
                     hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
                     hdToggleBtn.classList.remove('active');
                 }
@@ -165,7 +175,10 @@ export function initUI(viewer, {
     document.getElementById('settingsBtn').addEventListener('click', () => {
         closePanel();
         setTimeout(() => {
-            window.location.href = './settings';
+            // 用带扩展名的真实文件路径：Service Worker 预缓存的正是
+            // './settings.html'，无扩展名的 './settings' 是另一个缓存键，
+            // 离线时会未命中（虽然 GitHub Pages 在线时会 200 重定向到它）。
+            window.location.href = './settings.html';
         }, 220);
     });
 
@@ -174,6 +187,8 @@ export function initUI(viewer, {
     // =============================================
     const infoBtn = document.getElementById('infoBtn');
     const infoModal = document.getElementById('infoModal');
+    // 谷歌模式下的“关于”弹窗：提前取引用，供下面的点击处理器判断当前模式。
+    const infoModalGoogle = document.getElementById('infoModalGoogle');
     const closeInfoBtn = document.getElementById('closeInfoBtn');
     const openTipsBtn = document.getElementById('openTipsBtn');
     const openIterlogBtn = document.getElementById('openIterlogBtn');
@@ -190,8 +205,16 @@ export function initUI(viewer, {
         tipsModal.classList.remove('active');
     }
 
+    // 谷歌模式下“关于”按钮指向另一个弹窗。
+    // 这里用单一处理器读取当前模式，而不是替换 DOM 节点：
+    // 替换节点（cloneNode + replaceWith）会丢掉该元素上已注册的监听器，
+    // 并且会绕过 closePanelThen，导致面板不收起来。
     infoBtn.addEventListener('click', () => {
-        closePanelThen(openInfo);
+        if (window._isGoogleMode && infoModalGoogle) {
+            infoModalGoogle.classList.add('active');
+        } else {
+            closePanelThen(openInfo);
+        }
     });
     closeInfoBtn.addEventListener('click', closeInfo);
     infoModal.addEventListener('click', (e) => {
@@ -216,7 +239,6 @@ export function initUI(viewer, {
     // 5. 谷歌模式关于弹窗
     // =============================================
     const closeInfoGoogleBtn = document.getElementById('closeInfoGoogleBtn');
-    const infoModalGoogle = document.getElementById('infoModalGoogle');
     if (closeInfoGoogleBtn && infoModalGoogle) {
         closeInfoGoogleBtn.addEventListener('click', function() {
             infoModalGoogle.classList.remove('active');

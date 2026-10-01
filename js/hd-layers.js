@@ -41,15 +41,26 @@ export async function initHdLayers(viewer, showToast) {
             }
         }
 
+        // #buildingsToggleBtn 是 <div>（index.html 中 role="button"），不是表单控件。
+        // 因此给它赋 .disabled 没有任何原生效果：浏览器不会拦截点击，
+        // :disabled 选择器也永远匹配不到它 —— 灰化只是 opacity/cursor 的视觉效果。
+        // 这里把「可点击标志 + aria-disabled + 视觉」集中到一处维护，
+        // 点击侧由 ui.js 读取该标志来真正拦截。
+        function setBuildingsBtnEnabled(enabled) {
+            toggleBuildingsBtn.disabled = !enabled;
+            toggleBuildingsBtn.setAttribute('aria-disabled', String(!enabled));
+            toggleBuildingsBtn.style.opacity = enabled ? '1' : '0.5';
+            toggleBuildingsBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+        }
+
         try {
             buildingsPrimitive = await createOsmBuildingsAsync();
             viewer.scene.primitives.add(buildingsPrimitive);
             setBuildingsVisible(false);
         } catch (e) {
             console.warn('OSM建筑加载失败', e);
-            toggleBuildingsBtn.disabled = true;
+            setBuildingsBtnEnabled(false);
             toggleBuildingsBtn.classList.remove('active');
-            toggleBuildingsBtn.style.opacity = '0.5';
         }
 
         
@@ -151,9 +162,7 @@ export async function initHdLayers(viewer, showToast) {
                 hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
                 hdToggleBtn.classList.remove('active');
                 // 确保3D建筑按钮可用（不禁用）
-                toggleBuildingsBtn.disabled = false;
-                toggleBuildingsBtn.style.opacity = '1';
-                toggleBuildingsBtn.style.cursor = 'pointer';
+                setBuildingsBtnEnabled(true);
                 // 如果高精度模型是开启的（可能残留），强制关闭
                 if (hdTilesetsVisible) {
                     setHdTilesetsVisible(false);
@@ -186,9 +195,7 @@ export async function initHdLayers(viewer, showToast) {
                 // 隐藏高精度按钮
                 hdToggleBtn.style.display = 'none';
                 // 恢复3D建筑按钮可用
-                toggleBuildingsBtn.disabled = false;
-                toggleBuildingsBtn.style.opacity = '1';
-                toggleBuildingsBtn.style.cursor = 'pointer';
+                setBuildingsBtnEnabled(true);
 
                 // 如果高精度模型是开启的，自动关闭
                 if (hdTilesetsVisible) {
@@ -238,20 +245,17 @@ export async function initHdLayers(viewer, showToast) {
                 // 高精度开启
                 hdToggleBtn.textContent = '🏙️ 高精度建模（开启）';
                 hdToggleBtn.classList.add('active');
-                // 3D建筑按钮变灰
-                toggleBuildingsBtn.disabled = true;
-                toggleBuildingsBtn.style.opacity = '0.5';
-                toggleBuildingsBtn.style.cursor = 'not-allowed';
+                // 高精度开启期间禁止点击3D建筑按钮：
+                // 必须先关闭高精度建模，才能再开启建筑白模
+                setBuildingsBtnEnabled(false);
                 showToast('🏙️ 高精度建模已开启，3D建筑自动关闭');
             } else {
                 // 高精度关闭
                 hdToggleBtn.textContent = '🏙️ 高精度建模（关闭）';
                 hdToggleBtn.classList.remove('active');
-                // 3D建筑按钮恢复可用，并自动开启3D建筑（如果之前是因为高精度而关闭）
-                toggleBuildingsBtn.disabled = false;
-                toggleBuildingsBtn.style.opacity = '1';
-                toggleBuildingsBtn.style.cursor = 'pointer';
-                if (wasOsmDisabledByHd && !buildingsVisible && buildingsPrimitive) {
+                // 高精度已关闭，3D建筑按钮恢复可点击
+                setBuildingsBtnEnabled(true);
+                if (wasOsmDisabledByHd && !state.buildingsVisible && buildingsPrimitive) {
                     setBuildingsVisible(true);
                     showToast('🏙️ 高精度已关闭，3D建筑已恢复');
                 }
@@ -266,8 +270,13 @@ export async function initHdLayers(viewer, showToast) {
             buildingsPrimitive,
             state,
             setBuildingsVisible,
-            isInHdArea,
-            hdTilesetsVisible,
+            // 这两个布尔量会在相机移动（checkCameraPosition）与按钮点击时被改写。
+            // 若作为普通属性返回，调用方拿到的只是返回那一刻的快照，之后永远不变，
+            // 因此改用 getter 暴露实时值。
+            // 注意：调用方必须直接持有本对象引用，不能在传入前做展开（{ ...hdLayers }），
+            // 因为展开运算符会立即求值 getter，又把它拍平回快照。
+            get isInHdArea() { return isInHdArea; },
+            get hdTilesetsVisible() { return hdTilesetsVisible; },
             setHdTilesetsVisible,
             hdToggleBtn,
             toggleBuildingsBtn
