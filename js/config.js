@@ -5,7 +5,7 @@
 
 export const CONFIG = {
      // Cesium Ion Access Token，申请入口：https://ion.cesium.com/tokens
-    cesiumToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Ikl0a3M4cGw1TFpZNzE1VzYiLCJqdGkiOiJkN2JkYmI2YS0yZTA1LTQxNjItOTdhNS0zN2E1NjZkMzA2YWEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IlpodU5lbW9fZGVmYXVsdCIsImlhdCI6MTc5MDQ5MDgyMH0.TlEgEMPza7YlJc4OuZ03eYYAc_Vsg9mO-Y1s1jg37aM',
+    cesiumToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6Im9ENGdWd1llb25HbktObmsiLCJqdGkiOiI3MGY5OGU2Yy1lZTcxLTRhNDUtOTJlNC1hZjNkNzQ3M2VlZGEiLCJpZCI6NDUyMzc2LCJzdWIiOiJaaHVOZW1vIiwiaXNzIjoiaHR0cHM6Ly9hcGkuY2VzaXVtLmNvbSIsImF1ZCI6IkxvY3VzIEVhcnRoIiwiaWF0IjoxNzkwODM5NTA5fQ.AVTm2-qmnL3cNemThwn-PPJ5_og7BIURHpNZbQDyYbo',
     // 腾讯地图API，申请入口：https://lbs.qq.com/dev/console/application/mine
     qqKey: 'P65BZ-SZOLL-7K2P5-ENAOH-3K4Z3-QGBTJ',
     // 天地图API，申请入口：https://cloudcenter.tianditu.gov.cn/center/development/myApp

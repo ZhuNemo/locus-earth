@@ -6,6 +6,13 @@
 
 ---
 <div align="left">
+  <img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="80" height="80">
+  
+  <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="200">
+</div>
+
+---
+<div align="left">
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
