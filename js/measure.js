@@ -126,7 +126,7 @@ export function initMeasureTools(viewer) {
                 backgroundColor: new Color(0, 0, 0, 0.7),
                 verticalOrigin: VerticalOrigin.BOTTOM,
                 pixelOffset: new Cartesian2(0, -20),
-                disableDepthTestDistance: Number.POSITIVE_INFINITY
+                disableDepthTestDistance: 50000
             }
         });
     }

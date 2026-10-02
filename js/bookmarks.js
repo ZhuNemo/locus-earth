@@ -2,6 +2,9 @@ import {
     ScreenSpaceEventHandler,
     ScreenSpaceEventType,
     Cartesian3,
+    Cartographic,
+    ConstantPositionProperty,
+    sampleTerrainMostDetailed,
     Math as CesiumMath,
     VerticalOrigin,
     HorizontalOrigin,
@@ -14,7 +17,6 @@ import {
 let isMarkingMode = false;
 let bookmarks = [];
 let viewerInstance = null;
-let iconPath = '/icons/pin.png';
 let markersVisible = true;
 
 // ---------- DOM 引用 ----------
@@ -24,9 +26,9 @@ let closeBtn = null;
 let bookmarksBtn = null;
 
 // ---------- 初始化 ----------
-export function initBookmarks(viewer, iconPathParam = '/icons/pin.png') {
+// 图钉由 getPinCanvas() 运行时用 Canvas 绘制，不再依赖图标文件。
+export function initBookmarks(viewer) {
     viewerInstance = viewer;
-    iconPath = iconPathParam;
 
     // 获取 DOM 元素
     panel = document.getElementById('bookmarksPanel');
@@ -51,6 +53,15 @@ export function initBookmarks(viewer, iconPathParam = '/icons/pin.png') {
 
     // 设置面板底部按钮（隐藏/显示标记）
     setupFooterButton();
+
+    // 地形开关切换后重新锁定所有图钉高度（椭球 ↔ 地形，锚点需要重算）
+    viewerInstance.scene.terrainProviderChanged.addEventListener(() => reanchorAllBookmarks());
+
+    // 明暗主题切换后同步标签配色。
+    // main.js / settings.js 都通过改 html 的 data-theme 生效（含系统主题变化、
+    // 设置页改动、其他标签页同步），监听属性即可覆盖全部入口。
+    new MutationObserver(refreshBookmarkLabelTheme)
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     
     // 跨标签页同步：其他标签页（或设置页）改动了 bookmarks 键。
     // 注意：正常保存与「清除收藏夹」都会触发本事件，
@@ -251,12 +262,45 @@ function deleteBookmark(index) {
     renderBookmarksList();
 }
 
+// ---------- 拾取地表点 ----------
+/**
+ * 取「当前渲染出来的地表」与视线的交点。
+ *
+ * 不能用 camera.pickEllipsoid()：它算的是视线与椭球面（高度恒为 0）的交点，
+ * 完全无视地形。倾斜视角下，该交点与用户眼睛看到的地面点相差约
+ * 「地形高程 / tan(视线俯角)」—— 山区可达数公里，图钉会落到别的山头上。
+ *
+ * globe.pick() 与真实渲染的地形网格求交，返回的就是屏幕上那个点；
+ * 地形关闭时它自动退化成椭球面交点，因此两种模式下都正确。
+ *
+ * @returns {{cartesian: Cartesian3, onSurface: boolean}|null}
+ *          onSurface=false 表示退化成了椭球面（该处地形瓦片尚未加载）
+ */
+function pickSurfacePoint(windowPosition) {
+    const scene = viewerInstance.scene;
+    const camera = viewerInstance.camera;
+
+    try {
+        const ray = camera.getPickRay(windowPosition);
+        if (ray) {
+            const hit = scene.globe.pick(ray, scene);
+            if (hit) return { cartesian: hit, onSurface: true };
+        }
+    } catch (e) {
+        // 个别场景模式下求交会抛错，走下面的兜底
+    }
+
+    const fallback = camera.pickEllipsoid(windowPosition, scene.globe.ellipsoid);
+    return fallback ? { cartesian: fallback, onSurface: false } : null;
+}
+
 // ---------- 处理点击事件（标记模式 + Shift） ----------
 function handleClick(mousePosition, shiftKey) {
     if (!isMarkingMode && !shiftKey) return;
 
-    const cartesian = viewerInstance.camera.pickEllipsoid(mousePosition, viewerInstance.scene.globe.ellipsoid);
-    if (!cartesian) return;
+    const picked = pickSurfacePoint(mousePosition);
+    if (!picked) return;
+    const cartesian = picked.cartesian;
 
     const cartographic = viewerInstance.scene.globe.ellipsoid.cartesianToCartographic(cartesian);
     const lon = CesiumMath.toDegrees(cartographic.longitude);
@@ -271,8 +315,8 @@ function handleClick(mousePosition, shiftKey) {
         return;
     }
 
-    // 创建图钉实体
-    const entity = createPin(cartesian, name);
+    // 创建图钉实体（拾取到的是真实地表点时直接锁定，不再去查高程）
+    const entity = createPin(cartesian, name, picked.onSurface);
 
     // 保存数据
     const newBookmark = {
@@ -297,31 +341,260 @@ function handleClick(mousePosition, shiftKey) {
 }
 
 // ---------- 创建图钉实体 ----------
-function createPin(cartesian, name) {
+
+/**
+ * 用 Canvas 绘制 Google Maps 风格的标准图钉（只绘制一次并缓存）。
+ * 画布仍是 2x 的 80x100、billboard 显示 40x50，只调整内部图形比例：
+ *   · 圆头直径 28（正圆，宽高比 1:1，无椭圆拉伸）
+ *   · 尾巴长度 11 ≈ 圆头直径的 39%（短尾，平滑收束，无细长尖刺）
+ *   · 圆头直径 : 总高 = 28 : 39 ≈ 1 : 1.39（落在 1.3~1.4 区间）
+ * 圆头到尾巴用贝塞尔曲线过渡，且在圆的两侧切点处与圆弧相切（G1 连续）。
+ * 尖端即锚点，压缩高度不会让它脱离地表。
+ */
+let pinCanvas = null;
+function getPinCanvas() {
+    if (pinCanvas) return pinCanvas;
+
+    const c = document.createElement('canvas');
+    c.width = 80;
+    c.height = 100;
+    const ctx = c.getContext('2d');
+    ctx.scale(2, 2); // 之后全部按 1x 坐标绘制
+
+    const cx = 20;
+    const headY = 16;   // 钉头圆心
+    const headR = 14;   // 钉头半径（直径 28）
+    const tipY = 41;    // 尖端（对齐锚点；尾巴 = 41 - 30 = 11）
+
+    // 由尖端向圆作切线，求两侧切点：贝塞尔在这里与圆弧相切，过渡无折角
+    const dist = tipY - headY;                                        // 圆心到尖端的距离
+    const offY = headR * headR / dist;                                // 切点相对圆心的纵向偏移
+    const offX = headR * Math.sqrt(1 - (headR / dist) * (headR / dist)); // 横向偏移
+    const leftX = cx - offX, rightX = cx + offX, tangentY = headY + offY;
+
+    // 控制点沿切线方向内缩，保证与圆弧平滑相接
+    const ease = 0.3;
+    const leftCpX = leftX + (cx - leftX) * ease;
+    const leftCpY = tangentY + (tipY - tangentY) * ease;
+    const rightCpX = rightX + (cx - rightX) * ease;
+    const rightCpY = tangentY + (tipY - tangentY) * ease;
+
+    ctx.beginPath();
+    // 尖端 → 左切点（贝塞尔，尖端附近略微外扩，避免形成细长尖刺）
+    ctx.moveTo(cx, tipY);
+    ctx.bezierCurveTo(cx - 0.7, tipY - 5.5, leftCpX, leftCpY, leftX, tangentY);
+    // 左切点 → 右切点：绕钉头上半圈（正圆）
+    ctx.arc(cx, headY, headR, Math.atan2(offY, -offX), Math.atan2(offY, offX), false);
+    // 右切点 → 尖端
+    ctx.bezierCurveTo(rightCpX, rightCpY, cx + 0.7, tipY - 5.5, cx, tipY);
+    ctx.closePath();
+
+    // 轻微投影，让图钉在卫星影像上有立体感
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetY = 2;
+    ctx.fillStyle = '#EA4335';
+    ctx.fill();
+    // 不加白描边：卫星影像下白圈显得突兀，保留纯红主体
+
+    // 钉头中心白点
+    ctx.beginPath();
+    ctx.arc(cx, headY, 4.8, 0, Math.PI * 2);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+
+    pinCanvas = c;
+    return c;
+}
+
+// ---------- 标签配色：跟随明暗主题 ----------
+// 浅色模式：深字 + 白色半透明底；深色模式：浅字 + 深色半透明底。
+const LABEL_THEME = {
+    light: {
+        fillColor: new Color(0.07, 0.09, 0.11, 1),
+        backgroundColor: new Color(1, 1, 1, 0.9),
+    },
+    dark: {
+        fillColor: new Color(0.98, 0.98, 0.98, 1),
+        backgroundColor: new Color(0.09, 0.11, 0.15, 0.85),
+    },
+};
+
+function currentThemeKey() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+
+// 把当前主题的文字/底色写回某个标签
+function applyLabelTheme(entity, key = currentThemeKey()) {
+    const theme = LABEL_THEME[key] || LABEL_THEME.light;
+    if (!entity || !entity.label) return;
+    entity.label.fillColor = theme.fillColor;
+    entity.label.backgroundColor = theme.backgroundColor;
+}
+
+// 主题切换后刷新地图上所有书签标签
+function refreshBookmarkLabelTheme() {
+    if (!viewerInstance) return;
+    const key = currentThemeKey();
+    for (const e of viewerInstance.entities.values) {
+        if (e._isBookmark) applyLabelTheme(e, key);
+    }
+}
+
+// ---------- 高程兜底：仅在拾取退化成椭球面时使用 ----------
+/**
+ * 正常情况下 createPin() 直接锁定点击到的地表点，不会走到这里。
+ * 只有当该处地形瓦片尚未加载、拾取退化成椭球面（高度 0）时，
+ * 才去问地形服务要真实高程，避免图钉陷进地里。
+ *
+ * 不能用 heightReference: CLAMP_TO_GROUND 来兜底：它会在
+ * Billboard._updateClamping() 里每帧调 scene.getHeight() 读「当前已加载
+ * 瓦片」的高度，而且会把图钉吸到 3D 建筑屋顶上 —— 缩放时 LOD 一变、
+ * 建筑一加载，高度就变，这正是早先「图钉漂移」的根源。
+ * 这里取回高程后写死进 entity.position 并切回 NONE，之后高度恒定。
+ *
+ * 采样顺序（都只取地形，不含 3D 建筑）：
+ *   1. sampleTerrainMostDetailed() —— 直接问地形服务要最精细高程，
+ *      与相机位置、当前 LOD、是否在视野内全部无关
+ *   2. scene.sampleHeightMostDetailed() —— 场景采样兜底
+ *   3. globe.getHeight() —— 同步兜底
+ *   4. 0 —— 椭球面（地形关闭时的正确值）
+ */
+async function refineTerrainHeight(entity, cartesian) {
+    const scene = viewerInstance && viewerInstance.scene;
+    if (!scene) return;
+
+    const base = Cartographic.fromCartesian(cartesian);
+    if (!base) return;
+    const lon = base.longitude;
+    const lat = base.latitude;
+
+    const applyHeight = (h) => {
+        if (!Number.isFinite(h)) h = 0;
+        entity.position = new ConstantPositionProperty(Cartesian3.fromRadians(lon, lat, h));
+        if (entity.billboard) entity.billboard.heightReference = HeightReference.NONE;
+        if (entity.label) entity.label.heightReference = HeightReference.NONE;
+    };
+
+    // 1. 地形服务直查（最可靠）
+    //    椭球 provider 没有 availability，直接按 0（椭球面）处理，
+    //    避免无谓的采样请求和告警噪音 —— 地形关闭时 0 就是正确高度。
+    try {
+        const provider = scene.terrainProvider;
+        if (provider && provider.availability && typeof sampleTerrainMostDetailed === 'function') {
+            const sampled = await sampleTerrainMostDetailed(
+                provider,
+                [Cartographic.fromRadians(lon, lat, 0)]
+            );
+            const hit = sampled && sampled[0];
+            if (hit && Number.isFinite(hit.height)) {
+                applyHeight(hit.height);
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('书签地形高程查询失败，改用场景采样：', e);
+    }
+
+    // 2. 场景采样兜底
+    try {
+        if (typeof scene.sampleHeightMostDetailed === 'function') {
+            const sampled = await scene.sampleHeightMostDetailed(
+                [Cartographic.fromRadians(lon, lat, 0)]
+            );
+            const hit = sampled && sampled[0];
+            if (hit && Number.isFinite(hit.height)) {
+                applyHeight(hit.height);
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('书签场景高程采样失败，改用同步取值：', e);
+    }
+
+    // 3. 同步兜底：当前已加载瓦片的高度（地形关闭时为 0）
+    let syncHeight;
+    try {
+        syncHeight = scene.globe && scene.globe.getHeight
+            ? scene.globe.getHeight(Cartographic.fromRadians(lon, lat, 0))
+            : undefined;
+    } catch (e) {
+        syncHeight = undefined;
+    }
+
+    // 4. 都没有就用椭球面高度 0
+    applyHeight(Number.isFinite(syncHeight) ? syncHeight : 0);
+}
+
+// 地形开关切换后重新锁定所有图钉的高度
+function reanchorAllBookmarks() {
+    for (const item of bookmarks) {
+        const entity = viewerInstance.entities.getById(item.entityId);
+        if (!entity) continue;
+        const base = Cartesian3.fromDegrees(item.lon, item.lat, 0);
+        refineTerrainHeight(entity, base).catch(() => {});
+    }
+}
+
+function createPin(cartesian, name, onSurface = true) {
+    // ---------- 尖端对齐（本文件的核心坑）----------
+    // Cesium 的 pixelOffset 是「屏幕像素偏移」：负 y = 屏幕向上
+    // （_computeScreenSpacePosition 直接在 y 轴朝下的窗口坐标上相加，
+    //   着色器里再乘以 mpp 转成眼空间米数，而 mpp = czm_metersPerPixel 正比于深度）。
+    // 也就是说：像素偏移在屏幕上是常量，换算到地面却正比于相机距离 ——
+    // 相机越高，同样的 N 像素对应的地面距离越大。
+    //
+    // verticalOrigin BOTTOM 把图片底边（1x 坐标 y=50）对齐到位置点；
+    // 画布里尖端在 y=41，即本来就在锚点上方 9px，
+    // 所以这里必须用 +9（向下 9px）把尖端压回锚点。
+    // 之前写成 -9，等于把尖端又抬高了 9px，合计离锚点 18px：
+    // 表现为「尖端浮在点击点上方，相机越高浮得越远，拉到最近才看似归位」。
+    //
+    // 图片内部 9px 与 pixelOffset 9px 同属屏幕空间，二者在任意深度下精确抵消，
+    // 不存在透视误差（billboard 尺寸本身也是按 mpp 缩放的屏幕常量）。
     const entity = viewerInstance.entities.add({
         position: cartesian,
         name: name,
         billboard: {
-            image: iconPath,
-            width: 32,
-            height: 32,
+            image: getPinCanvas(),
+            width: 40,
+            height: 50,
             verticalOrigin: VerticalOrigin.BOTTOM,
-            pixelOffset: new Cartesian2(0, 2), 
-            heightReference: HeightReference.CLAMP_TO_GROUND,
+            pixelOffset: new Cartesian2(0, 9),
+            // 位置一次性写死，不做每帧贴地：
+            // CLAMP_TO_GROUND 会把图钉吸到 3D 建筑屋顶，并随地形 LOD 变化上下跳。
+            heightReference: HeightReference.NONE,
+            // 有限深度豁免：相机距离 < 5 万米时图钉不被地形/建筑遮挡；
+            // 超过 5 万米恢复深度测试，全球视角下仍会被地球正确遮挡（保留地平线剔除）。
+            disableDepthTestDistance: 50000,
         },
         label: {
             text: name,
-            font: '14px sans-serif',
-            fillColor: Color.BLACK,
-            backgroundColor: new Color(1, 1, 1, 0.7),
-            pixelOffset: new Cartesian2(0, -38),
+            font: '600 13px system-ui, sans-serif',
+            fillColor: LABEL_THEME[currentThemeKey()].fillColor,
             showBackground: true,
+            backgroundColor: LABEL_THEME[currentThemeKey()].backgroundColor,
+            backgroundPadding: new Cartesian2(7, 4),
             horizontalOrigin: HorizontalOrigin.CENTER,
+            verticalOrigin: VerticalOrigin.BOTTOM,
+            // 图钉顶端在锚点上方 39px，-46（向上 46px）让标签底边再高出 7px，
+            // 避免卫星影像下标签背景压住图钉头顶
+            pixelOffset: new Cartesian2(0, -46),
+            // 与 billboard 共用同一个位置，锁定后两者永不分离
+            heightReference: HeightReference.NONE,
+            disableDepthTestDistance: 50000,
         },
         _isBookmark: true
     });
     // 遵循当前显示状态
     try { entity.show = markersVisible; } catch (e) { /* ignore */ }
+    // 只有拾取退化成椭球面（该处地形瓦片还没加载）时才去查真实高程，
+    // 免得图钉陷进地里；否则直接锁定点击到的表面点，尖端与点击处严丝合缝。
+    if (!onSurface) {
+        entity.billboard.heightReference = HeightReference.CLAMP_TO_GROUND;
+        entity.label.heightReference = HeightReference.CLAMP_TO_GROUND;
+        refineTerrainHeight(entity, cartesian).catch(() => {});
+    }
     return entity;
 }
 

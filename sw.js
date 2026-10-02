@@ -68,7 +68,6 @@ const SHELL_URLS = [
   './js/settings.js',
 
   // 图标与 PWA 资源
-  './icons/pin.png',
   './icons/tencent.png',
   './icons/tianditu.png',
   './favicon.ico',

@@ -155,7 +155,7 @@ import { CONFIG } from './config.js';
         const compass = initCompass(viewer, showToast);
 
         
-        initBookmarks(viewer, 'icons/pin.png');
+        initBookmarks(viewer);
         
 
         // 初始化测量工具，拿到控制句柄

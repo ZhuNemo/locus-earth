@@ -176,7 +176,7 @@
                     newValue: JSON.stringify(terrainToggle.checked) 
                 }));
                 
-                showToastInternal(terrainToggle.checked ? '地形已开启' : '地形已关闭');
+                showToastInternal(terrainToggle.checked ? '地形已开启' : '地形已关闭（建筑可能显示为悬浮，建议保持开启）');
             });
         }
 

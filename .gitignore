@@ -2,3 +2,4 @@ node_modules/
 package-lock.json
 deepseek-development-log/
 tmp/
+.workbuddy/
