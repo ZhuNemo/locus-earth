@@ -6,9 +6,9 @@
 
 ---
 <div align="left">
-  <img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="80" height="80">
+  <img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="50" height="50">
   
-  <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="200">
+  <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="220">
 </div>
 
 ---
