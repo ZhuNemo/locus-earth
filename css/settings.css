@@ -354,9 +354,10 @@
         font-size: 12px;
     }
     .setting-item select {
-        min-width: 80px;
+        min-width: 88px;
         font-size: 13px;
-        padding: 4px 10px;
+        /* 右侧留出下拉箭头（background-position 定位在小箭头处），不要压到文字 */
+        padding: 6px 30px 6px 12px;
     }
     /* 窄屏：开关类设置项的两端对齐会挤压文字，整体改成纵向堆叠 */
     .setting-item:has(.toggle-switch),
@@ -365,11 +366,19 @@
         align-items: stretch;
         gap: 10px;
     }
-    .setting-item:has(.toggle-switch) .toggle-switch,
+    /* 纵向堆叠后左对齐。
+       注意：开关（.toggle-switch）尺寸由自身的 48×28 决定，绝不能再写
+       width:auto —— 它的 input 是 width:0、.toggle-slider 又是 position:absolute
+       不参与内在宽度计算，width:auto 会把整个开关压成 0 宽，
+       只剩绝对定位的滑块露成一个白圆点（就是之前的错位现象）。
+       select 只需 align-self 左对齐，保留上面的 min-width:88px 兜底，
+       否则会缩到只剩"浅"字那么宽。 */
+    .setting-item:has(.toggle-switch) .toggle-switch {
+        align-self: flex-start;
+    }
     .setting-item:has(select) select {
         align-self: flex-start;
-        min-width: 0;
-        width: auto;
+        /* 尺寸与 padding 由上面的 .setting-item select 统一负责，这里只管左对齐 */
     }
     .setting-action {
         font-size: 13px;
