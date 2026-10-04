@@ -17,13 +17,11 @@
         }
 
         /* 移动端菜单宽度适配 */
-        @media (max-width: 480px) {
+        @media (max-width: 600px) {
             .side-menu {
                 width: 60%;
             }
-        }
 
-        @media (max-width: 480px) {
             /* 隐藏 GitHub 主页链接 */
             .locus-header .brand .custom-message {
                 display: none;
@@ -75,7 +73,7 @@
             background: var(--glass-hover);
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 600px) {
             .top-btn,
             .menu-toggle {
                 width: 32px;

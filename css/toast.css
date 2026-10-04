@@ -19,11 +19,26 @@
             opacity: 0;
             transition: opacity 0.4s ease;
             font-family: 'Inter', 'Segoe UI', sans-serif;
-            white-space: nowrap;
-            white-space: normal; 
-            word-break: break-all; 
-            max-width: 120vw; 
-            text-align: center; 
+            /* 图标 + 文字：由 showToast 生成 .toast-icon / .toast-text 两个子元素 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            max-width: min(560px, calc(100vw - 32px));
+            text-align: center;
+        }
+        .toast-icon {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .toast-icon svg {
+            width: 17px;
+            height: 17px;
+            display: block;
+        }
+        .toast-text {
+            min-width: 0;
         }
         .toast-message.show {
             opacity: 1;

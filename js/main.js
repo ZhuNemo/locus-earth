@@ -12,6 +12,9 @@ import {
         } from 'cesium';
 
 import { initViewer } from './viewer.js';
+import { initImagery } from './imagery.js';
+import { initBasemapPicker } from './basemap-picker.js';
+import { initSearch } from './search.js';
 import { initUI } from './ui.js';
 import { initBookmarks } from './bookmarks.js';
 import { initCompass } from './compass.js';
@@ -64,7 +67,7 @@ import { CONFIG } from './config.js';
                     if (meta) {
                         meta.content = theme === 'dark' ? '#1a1a1a' : '#ffffff';
                     }
-                    console.log('🌓 主题已从设置页面同步:', theme);
+                    console.log('主题已从设置页面同步:', theme);
                 } catch {}
             }
         });
@@ -72,6 +75,13 @@ import { CONFIG } from './config.js';
         // ----- 初始化 viewer 并异步加载地形 -----
         const viewer = initViewer('cesiumContainer', new EllipsoidTerrainProvider());
         const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // 底图管理：叠加层联动 + 自定义底图选择器（右侧偏上）
+        initImagery(viewer);
+        initBasemapPicker();
+
+        // 地点搜索：挂载在可展开面板内部、两个开关的上方
+        initSearch(viewer);
 
 
         function applyTerrainSetting(enabled) {
@@ -135,19 +145,26 @@ import { CONFIG } from './config.js';
                     viewer.terrainProvider = provider;
                 }
             }).catch(e => {
-                console.warn('⚠️ 地形加载失败，已继续使用默认椭球体地形', e);
+                console.warn('地形加载失败，已继续使用默认椭球体地形', e);
             });
         } else {
             viewer.terrainProvider = new EllipsoidTerrainProvider();
         }
 
-        console.log('🌍 Locus Earth 启动成功！');
-        console.log('💡 高精度联动已启用：进入丹佛/华盛顿DC/华盛顿州/悉尼/波士顿区域自动切换。');
+        console.log('Locus Earth 启动成功！');
+        console.log('高精度联动已启用：进入丹佛/华盛顿DC/华盛顿州/悉尼/波士顿区域自动切换。');
 
         document.addEventListener('dragstart', function(e) {
         if (e.target.tagName === 'IMG' || e.target.tagName === 'A') {
             e.preventDefault();
         }
+        });
+
+        // ----- 全局禁用右键菜单与图片长按保存 -----
+        // 右键一律拦截；长按保存由 CSS（-webkit-touch-callout: none）与
+        // img 的 pointer-events 双重兜底（见 base.css / basemap-picker.css）
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
         });
 
         const hdLayers = await initHdLayers(viewer, showToast);

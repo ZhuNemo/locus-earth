@@ -1,0 +1,203 @@
+/* ============================================================================
+   自定义底图选择器（js/basemap-picker.js 的样式）
+   按钮规格与右下角 #camera-controls .ctrl-btn 完全一致，
+   全程使用主题变量，深浅色自动跟随。
+   ============================================================================ */
+
+/* 垂直居中于视口：按钮中心落在屏幕高度的 1/2 处。
+   菜单改为绝对定位（脱离文档流），否则容器高度会把按钮顶偏。 */
+#basemapPicker {
+    position: fixed;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    z-index: var(--z-panel);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+/* ---------- 按钮：与 .ctrl-btn 同规格 ---------- */
+#basemapBtn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    padding: 0;
+    touch-action: manipulation;
+}
+
+#basemapBtn svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+#basemapBtn:hover {
+    color: var(--text-primary);
+}
+
+#basemapBtn:active {
+    transform: scale(0.92);
+}
+
+/* 菜单展开时按钮点亮 */
+#basemapBtn.active {
+    color: var(--accent);
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+}
+
+/* ---------- 菜单：纵向单列、可滚动、毛玻璃 ----------
+   按钮移到屏幕中部后，向下展开会压住右下角相机控件，
+   因此改为“向上展开”，并限制在视口上半部内滚动。 */
+.basemap-menu {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    width: 96px;
+    max-height: min(440px, max(180px, calc(50vh - 110px)));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 8px;
+    border-radius: 18px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    /* 展开动画：从按钮上方轻微缩放浮现 */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px) scale(0.94);
+    transform-origin: bottom right;
+    transition:
+        opacity 0.22s ease,
+        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0.22s;
+    pointer-events: none;
+}
+
+.basemap-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition:
+        opacity 0.22s ease-out,
+        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: auto;
+}
+
+/* 细滚动条，与玻璃风格融合 */
+.basemap-menu {
+    scrollbar-width: thin;
+    scrollbar-color: var(--glass-border) transparent;
+}
+
+.basemap-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.basemap-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.basemap-menu::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 2px;
+}
+
+/* ---------- 菜单项：方形图源预览 + 下方名称 ---------- */
+.basemap-item {
+    background: transparent;
+    border: none;
+    padding: 7px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    border-radius: 12px;
+    font-family: inherit;
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.basemap-item:hover {
+    background: var(--glass-bg-strong);
+}
+
+.basemap-item:active {
+    transform: scale(0.96);
+}
+
+.basemap-item-icon {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg-strong);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+/* 当前选中的图源：accent 色描边环 */
+.basemap-item.selected .basemap-item-icon {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+.basemap-item-name {
+    font-size: 11px;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    max-width: 84px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.basemap-item.selected .basemap-item-name {
+    color: var(--accent-text);
+    font-weight: 500;
+}
+
+/* 加载中：图标轻微呼吸，提示正在换图 */
+.basemap-item.loading .basemap-item-icon {
+    animation: basemap-loading 1s ease-in-out infinite;
+}
+
+@keyframes basemap-loading {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}
+
+/* ---------- 移动端（<=600px） ---------- */
+@media (max-width: 600px) {
+    /* 仍居中，只是更靠边；顶部要避开全宽的浮动 logo 栏与展开面板 */
+    #basemapPicker {
+        right: 12px;
+    }
+
+    .basemap-menu {
+        max-height: min(400px, max(168px, calc(50vh - 132px)));
+    }
+}
+
+/* 图标的长按保存/选中保护由 base.css 的全局 img 规则统一处理：
+   pointer-events: none 让点击穿透到菜单项按钮，长按保存无从触发 */

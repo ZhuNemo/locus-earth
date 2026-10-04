@@ -13,7 +13,7 @@
 //   · 升级 Cesium 时，必须同时更新 index.html 的 importmap 与 CESIUM_VERSION
 // ============================================================================
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v10';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // Cesium 引擎缓存：把版本号写进缓存名，升级后旧缓存会在 activate 时被淘汰，
@@ -28,7 +28,7 @@ const CACHE_PREFIX = 'locus-earth-';
 
 // 首屏完整资源清单。
 // 这是 index.html 与 settings.html 首屏真正会请求到的全部文件：
-// 14 个 CSS、14 个 JS、3 个图标、3 个 favicon、2 个 PWA 图标与 manifest。
+// 15 个 CSS、17 个 JS、3 个图标、3 个 favicon、2 个 PWA 图标与 manifest。
 // 刻意不含 screenshot-*.png（各约 1–2 MB，只被 manifest 的安装界面使用）。
 const SHELL_URLS = [
   './',
@@ -40,10 +40,12 @@ const SHELL_URLS = [
   './css/base.css',
   './css/layout.css',
   './css/controls.css',
+  './css/basemap-picker.css',
   './css/menu.css',
   './css/buttons.css',
   './css/modals.css',
   './css/bookmarks.css',
+  './css/search.css',
   './css/toast.css',
   './css/themes.css',
   './css/measure.css',
@@ -53,8 +55,11 @@ const SHELL_URLS = [
 
   // 脚本：main.js 及其整个模块图，外加设置页脚本
   './js/main.js',
+  './js/icons.js',
+  './js/search.js',
   './js/viewer.js',
   './js/imagery.js',
+  './js/basemap-picker.js',
   './js/ui.js',
   './js/bookmarks.js',
   './js/hd-layers.js',
@@ -221,7 +226,7 @@ function precacheShell() {
     ).then(results => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.warn('⚠️ 预缓存失败:', SHELL_URLS[index], result.reason);
+          console.warn('预缓存失败:', SHELL_URLS[index], result.reason);
         }
       });
     })

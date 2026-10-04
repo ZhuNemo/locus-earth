@@ -336,7 +336,7 @@
 /* 主题相关的深色覆写已由 themes.css 的令牌统一处理，此处不再重复声明 */
 
 /* --- 响应式 --- */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
     .settings-header {
         padding: 10px 16px;
         min-height: 56px;
@@ -357,6 +357,19 @@
         min-width: 80px;
         font-size: 13px;
         padding: 4px 10px;
+    }
+    /* 窄屏：开关类设置项的两端对齐会挤压文字，整体改成纵向堆叠 */
+    .setting-item:has(.toggle-switch),
+    .setting-item:has(select) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .setting-item:has(.toggle-switch) .toggle-switch,
+    .setting-item:has(select) select {
+        align-self: flex-start;
+        min-width: 0;
+        width: auto;
     }
     .setting-action {
         font-size: 13px;

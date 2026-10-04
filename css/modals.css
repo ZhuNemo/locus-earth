@@ -68,6 +68,16 @@
             color: var(--text-primary);
             margin-top: 0;
             margin-bottom: 16px;
+            /* 标题图标（内联 SVG）与文字对齐 */
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-box h2 .ui-icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: 0;
+            color: var(--text-secondary);
         }
         .modal-box p {
             font-size: 15px;
@@ -90,6 +100,15 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
+        }
+
+        /* 按钮内联图标（导出/导入等），比正文略小 */
+        .inline-action-btn .ui-icon {
+            width: 15px;
+            height: 15px;
+            vertical-align: 0;
+            margin-left: 0;
         }
 
         .inline-action-btn:hover,
@@ -106,7 +125,6 @@
             right: 18px;
             background: none;
             border: none;
-            font-size: 24px;
             color: var(--text-muted);
             cursor: pointer;
             font-family: inherit;
@@ -117,12 +135,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 0;
+        }
+        /* 关闭图标由 ✕ 字符改为内联 SVG，尺寸下移一档改用 em 控制 */
+        .modal-box .close-btn .ui-icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: 0;
         }
         .modal-box .close-btn:hover {
             color: var(--text-primary);
             background: var(--glass-hover);
         }
-        @media (max-width: 700px) {
+        @media (max-width: 600px) {
             .locus-header {
                 padding: 10px 16px;
                 flex-direction: column;

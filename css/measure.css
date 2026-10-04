@@ -65,8 +65,14 @@
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
+    /* 图标 + 文字水平居中排列 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
+/* 关闭键只有图标，不参与 gap 布局 */
 .toolbar-btn.toolbar-mini-btn {
     width: 100%;
     min-width: 100px;
@@ -76,6 +82,19 @@
     border-radius: var(--radius-full);
     font-size: 18px;
     line-height: 1;
+    gap: 0;
+}
+
+/* 工具栏图标略小于正文，避免撑高按钮 */
+.toolbar-btn .ui-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: 0;
+    margin-left: 0;
+}
+.toolbar-btn.toolbar-mini-btn .ui-icon {
+    width: 17px;
+    height: 17px;
 }
 .toolbar-btn.toolbar-mini-btn svg {
     display: block;
@@ -116,6 +135,14 @@
     box-shadow: var(--shadow-glass);
     will-change: left, top;
     transition: left 0.18s ease, top 0.18s ease, opacity 0.18s ease, transform 0.18s ease;
+}
+
+/* 圆钮图标由 ☰ 字符改为内联 SVG */
+#measureFloatingBtn .ui-icon {
+    width: 22px;
+    height: 22px;
+    vertical-align: 0;
+    pointer-events: none;
 }
 
 #measureFloatingBtn:active {

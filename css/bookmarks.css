@@ -10,14 +10,34 @@
             font-weight: 600;
             color: var(--text-primary);
             margin: 0;
+            /* 标题图标（内联 SVG）与文字对齐 */
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .bookmarks-header h2 .ui-icon {
+            width: 18px;
+            height: 18px;
+            vertical-align: 0;
+            color: var(--text-secondary);
         }
 
         .bookmarks-header .close-btn {
             background: none;
             border: none;
-            font-size: 24px;
             color: var(--text-muted);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 关闭图标已由 ✕ 字符改为内联 SVG，改为显式尺寸控制 */
+        .bookmarks-header .close-btn .ui-icon {
+            width: 20px;
+            height: 20px;
+            vertical-align: 0;
         }
 
         .bookmarks-list {
@@ -106,7 +126,7 @@
         }
 
 
-        @media (min-width: 701px) {
+        @media (min-width: 601px) {
             #bookmarksPanel.modal-overlay {
                 background: var(--bg-overlay);
                 backdrop-filter: blur(var(--blur-sm));
@@ -128,7 +148,7 @@
         }
 
         
-        @media (max-width: 385px) {
+        @media (max-width: 600px) {
             .bookmarks-header {
                 flex-wrap: wrap;
                 gap: 4px 0;

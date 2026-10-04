@@ -92,9 +92,9 @@ export async function initHdLayers(viewer, showToast) {
                 if (result.status === 'fulfilled') {
                     const { name, tileset } = result.value;
                     hdTilesets.push(tileset);
-                    console.log(`✅ 高精度模型加载: ${name}`);
+                    console.log(`高精度模型加载: ${name}`);
                 } else {
-                    console.warn(`⚠️ 加载失败:`, result.reason);
+                    console.warn(`加载失败:`, result.reason);
                 }
             }
         }

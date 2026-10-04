@@ -153,15 +153,66 @@
     // =============================================
     // 6. 地形开关
     // =============================================
-    function showToastInternal(message) {
+    // 设置页是独立页面，settings.js 为普通脚本（非 module，无法 import），
+    // 因此这里内联一份与 js/utils.js 相同语义的 emoji → SVG 映射，
+    // 保证设置页提示同样不出现 emoji，且与主页面表现一致。
+    const TOAST_EMOJI_MAP = {
+        '📍': 'pin', '📌': 'pin',
+        '🌍': 'globe', '🌏': 'globe', '🌎': 'globe',
+        '🏙️': 'globe', '🏙': 'globe',
+        '⚠️': 'warn', '⚠': 'warn',
+        '✅': 'check',
+    };
+    const TOAST_SVG = {
+        pin: '<path d="M12 21.5s6.5-6.1 6.5-11a6.5 6.5 0 1 0-13 0c0 4.9 6.5 11 6.5 11Z"/><circle cx="12" cy="10.3" r="2.5"/>',
+        globe: '<circle cx="12" cy="12" r="9"/><path d="M3.2 10h17.6M3.2 14h17.6"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>',
+        warn: '<path d="M12 3.2 2.6 19.2h18.8L12 3.2Z"/><path d="M12 9.6v4.2M12 16.6h.01"/>',
+        check: '<path d="M20 6 9 17l-5-5"/>',
+    };
+    const LEADING_EMOJI_SETTINGS =
+        /^(\s*)([\u{1F000}-\u{1FAFF}\u{2190}-\u{21FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]+)\s*/u;
+
+    function renderToast(message) {
         const toast = document.getElementById('toastMessage');
-        if (toast) {
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 4000);
-        } else {
+        if (!toast) {
             console.log(message);
+            return;
         }
+
+        const raw = String(message ?? '');
+        let iconName = '';
+        let body = raw;
+
+        const m = raw.match(LEADING_EMOJI_SETTINGS);
+        if (m && TOAST_EMOJI_MAP[m[2]]) {
+            iconName = TOAST_EMOJI_MAP[m[2]];
+            body = raw.slice(m[0].length);
+        }
+
+        toast.innerHTML = '';
+        if (iconName && TOAST_SVG[iconName]) {
+            const wrap = document.createElement('span');
+            wrap.className = 'toast-icon';
+            wrap.innerHTML =
+                '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" ' +
+                'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                TOAST_SVG[iconName] + '</svg>';
+            toast.appendChild(wrap);
+        }
+        if (body) {
+            const span = document.createElement('span');
+            span.className = 'toast-text';
+            span.textContent = body;
+            toast.appendChild(span);
+        }
+
+        toast.classList.add('show');
+        clearTimeout(renderToast._t);
+        renderToast._t = setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    function showToastInternal(message) {
+        renderToast(message);
     }
 
     const terrainToggle = document.getElementById('terrainToggle');
@@ -288,5 +339,5 @@
             alert('发生错误：' + error.message);
         }
     });
-    console.log('⚙️ 设置页面已初始化');
+    console.log('设置页面已初始化');
 })();

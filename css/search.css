@@ -1,0 +1,260 @@
+/* ============================================================================
+   地点搜索（js/search.js 的样式）
+   位于可展开面板内部、两个开关的上方：
+   圆角横向长搜索栏、灰色底、宽度自适应（占满面板内容宽度）。
+   全部使用主题变量，深浅色自动跟随。
+   ============================================================================ */
+
+/* 面板内的容器：宽度 100% 自适应，作为下拉菜单的定位上下文 */
+#searchBox {
+    position: relative;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+/* ---------- 搜索栏本体 ---------- */
+.search-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: var(--radius-full);
+    /* 灰色底：浅色主题为冷灰白，深色主题为浅透明白，均由令牌控制 */
+    background: var(--control-track);
+    border: 1px solid transparent;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+}
+
+.search-field:hover {
+    background: var(--glass-active);
+}
+
+/* 聚焦：描边点亮，但仍保持"灰色输入框"的观感 */
+.search-field:focus-within {
+    background: var(--glass-bg-strong);
+    border-color: var(--accent-border);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* 搜索 / 清空图标 */
+.search-leading,
+.search-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.search-leading svg {
+    display: block;
+}
+
+.search-field:focus-within .search-leading {
+    color: var(--accent-text);
+}
+
+/* 输入框：去掉浏览器原生外观，透明融入父级灰底 */
+.search-input {
+    flex: 1 1 auto;
+    min-width: 0;             /* 关键：允许在窄容器里收缩，宽度才真正自适应 */
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+    /* 关闭 iOS 上的默认圆角与内阴影 */
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: var(--radius-full);
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* 原生 search 控件的清除按钮会与自定义清空键重复，隐藏掉 */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* 清空按钮：有内容时才出现 */
+.search-clear {
+    width: 18px;
+    height: 18px;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    border-radius: 50%;
+}
+
+.search-clear svg {
+    display: block;
+}
+
+.search-clear.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.search-clear:hover {
+    color: var(--text-primary);
+}
+
+/* 查询中的细微线索：前置图标轻微呼吸 */
+#searchBox.loading .search-leading {
+    animation: search-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes search-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* ---------- 结果下拉 ---------- */
+.search-results {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: var(--z-floating);
+    max-height: 264px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 5px;
+    border-radius: var(--radius-md);
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(var(--blur-md)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--blur-md)) saturate(150%);
+
+    /* 展开动画 */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px) scale(0.98);
+    transform-origin: top center;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 0.18s;
+    pointer-events: none;
+}
+
+.search-results.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    transition:
+        opacity 0.18s ease-out,
+        transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: auto;
+}
+
+/* 细滚动条，与玻璃风格一致 */
+.search-results {
+    scrollbar-width: thin;
+    scrollbar-color: var(--glass-border) transparent;
+}
+
+.search-results::-webkit-scrollbar {
+    width: 4px;
+}
+
+.search-results::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.search-results::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 2px;
+}
+
+/* ---------- 结果项 ---------- */
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 9px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: var(--text-primary);
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.search-result-item:hover,
+.search-result-item.active {
+    background: var(--glass-active);
+}
+
+.search-result-item.active {
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.search-result-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--text-muted);
+}
+
+.search-result-icon svg {
+    display: block;
+}
+
+.search-result-item.active .search-result-icon {
+    color: var(--accent-text);
+}
+
+.search-result-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12.5px;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* ---------- 移动端底部托盘：搜索栏随面板一起呈现 ---------- */
+@media (max-width: 600px) {
+    #searchBox {
+        margin-bottom: 10px;
+    }
+
+    .search-field {
+        height: 38px;   /* 触屏加大点击区域 */
+        padding: 0 12px;
+    }
+
+    .search-input {
+        font-size: 14px; /* <16px 时 iOS 会自动放大页面，这里贴线避免 */
+    }
+
+    .search-results {
+        /* 托盘在底部，下拉向上空间更充裕，限制得保守一些防止超出视口 */
+        max-height: min(240px, 34vh);
+    }
+}

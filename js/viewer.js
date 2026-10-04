@@ -1,17 +1,17 @@
-import * as Cesium from 'cesium'; 
-
-import { initCustomImagery } from './imagery.js';
+import * as Cesium from 'cesium';
 
 export function initViewer(containerId, terrainProvider) {
-    const defaultImageryProviders = Cesium.createDefaultImageryProviderViewModels();
-    const sentinelViewModel = defaultImageryProviders.find(vm => vm.name.includes('Sentinel-2'));
-
     const viewer = new Cesium.Viewer(containerId, {
         terrainProvider: terrainProvider,
-        baseLayerPicker: true, 
-        imageryProviderViewModels: defaultImageryProviders, 
-        selectedImageryProviderViewModel: sentinelViewModel, 
-        
+        // 底图选择 UI 已由 basemap-picker.js 接管（右侧偏上的自定义控件），
+        // 图源清单与切换逻辑在 imagery.js
+        baseLayerPicker: false,
+        // 默认底图：Sentinel-2（Ion 资产 3954）。
+        // 异步工厂 + ImageryLayer 包装：元数据就绪前 Viewer 照常创建
+        baseLayer: Cesium.ImageryLayer.fromProviderAsync(
+            Cesium.IonImageryProvider.fromAssetId(3954)
+        ),
+
         animation: false,
         timeline: false,
         geocoder: false,
@@ -23,8 +23,6 @@ export function initViewer(containerId, terrainProvider) {
         sceneMode: Cesium.SceneMode.SCENE3D,
         locale: 'zh-CN',
     });
-
-    initCustomImagery(viewer.baseLayerPicker.viewModel.imageryProviderViewModels, viewer);
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 

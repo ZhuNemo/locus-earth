@@ -321,70 +321,13 @@
 
 /* ============================================
    响应式适配
+   移动端统一断点：600px（全站主断点，不再有 480/385/700 多级阶梯）。
+   保留一个 360px 的极窄屏补充档（见文件末尾）。
+   若将来重新引入多级断点，必须保持“由宽到窄”书写顺序——
+   同权重规则后者覆盖前者，顺序颠倒会让窄屏规则整体失效。
    ============================================ */
-@media (max-width: 480px) {
-    .floating-header {
-        top: 12px;
-        left: 12px;
-        width: calc(100% - 24px);
-        max-width: none;
-        height: 52px;
-        padding: 0 10px 0 14px;
-    }
-
-    .expandable-panel {
-        top: 72px;
-        left: 12px;
-        width: calc(100% - 24px);
-        max-width: none;
-    }
-
-    .header-title {
-        font-size: 14px;
-    }
-
-    .header-version {
-        font-size: 10px;
-    }
-
-    .action-icon-wrap {
-        width: 40px;
-        height: 40px;
-    }
-
-    .action-icon-wrap svg {
-        width: 20px;
-        height: 20px;
-    }
-
-    .action-btn > span {
-        font-size: 10px;
-    }
-
-    .exit-google-btn {
-        top: 12px;
-        right: 12px;
-        padding: 7px 12px;
-        font-size: 12px;
-    }
-}
-
-@media (max-width: 360px) {
-    .action-icon-wrap {
-        width: 36px;
-        height: 36px;
-    }
-    .action-icon-wrap svg {
-        width: 18px;
-        height: 18px;
-    }
-    .action-btn > span {
-        font-size: 9px;
-    }
-}
-
-/* ---------- 移动端底部托盘 ---------- */
-@media (max-width: 700px) {
+/* ---------- 移动端底部托盘（<=600px） ---------- */
+@media (max-width: 600px) {
     .floating-header {
         top: 16px;
         left: 16px;
@@ -416,6 +359,13 @@
         /* 移动端托盘是全宽面板，直接压在卫星影像上，
            用略强一点的玻璃底以保证按钮文字的对比度 */
         background: var(--glass-bg-strong);
+        /* 收起：整块下移，只留第一个子元素（手柄）露在视口内。
+           calc() 里的百分比按元素自身高度解析，所以：
+             100%           = 面板整高，往下推
+             - var(--mobile-bar-h) = 少推手柄那一截，使手柄仍可见
+           漏加的 +24px 会把底部 padding 的 24px 也留在视口里，
+           收起时就会多露出一条内容（搜索栏/开关的边）。
+           这里严格只推 (100% - 手柄高)，收起后可见部分 = 手柄本身。 */
         transform: translateY(calc(100% - var(--mobile-bar-h)));
         opacity: 1;
         pointer-events: auto;
@@ -473,3 +423,62 @@
         right: 16px;
     }
 }
+
+@media (max-width: 600px) {
+    .floating-header {
+        top: 12px;
+        left: 12px;
+        width: calc(100% - 24px);
+        max-width: none;
+        height: 52px;
+        padding: 0 10px 0 14px;
+    }
+
+    /* 面板在 <=600px 已改为底部托盘，这里不再覆盖 .expandable-panel，
+       否则会把托盘打回顶部悬浮卡片 */
+
+    .header-title {
+        font-size: 14px;
+    }
+
+    .header-version {
+        font-size: 10px;
+    }
+
+    .action-icon-wrap {
+        width: 40px;
+        height: 40px;
+    }
+
+    .action-icon-wrap svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .action-btn > span {
+        font-size: 10px;
+    }
+
+    .exit-google-btn {
+        top: 12px;
+        right: 12px;
+        padding: 7px 12px;
+        font-size: 12px;
+    }
+}
+
+/* 极窄屏（<361px）：图标再收一档，避免功能行换行 */
+@media (max-width: 360px) {
+    .action-icon-wrap {
+        width: 36px;
+        height: 36px;
+    }
+    .action-icon-wrap svg {
+        width: 18px;
+        height: 18px;
+    }
+    .action-btn > span {
+        font-size: 9px;
+    }
+}
+

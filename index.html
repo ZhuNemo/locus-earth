@@ -48,10 +48,12 @@
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/controls.css" />
+    <link rel="stylesheet" href="css/basemap-picker.css" />
     <link rel="stylesheet" href="css/menu.css" />
     <link rel="stylesheet" href="css/buttons.css" />
     <link rel="stylesheet" href="css/modals.css" />
     <link rel="stylesheet" href="css/bookmarks.css" />
+    <link rel="stylesheet" href="css/search.css" />
     <link rel="stylesheet" href="css/toast.css" />
     <link rel="stylesheet" href="css/themes.css" /> 
     <link rel="stylesheet" href="css/measure.css" /> 
@@ -60,6 +62,51 @@
 
 </head>
 <body>
+    <!-- ============================================================
+         内联 SVG 图标库（symbol 精灵图）
+         全站 UI 不再使用 emoji，统一通过 <svg class="ui-icon"><use href="#i-xxx"/></svg> 引用。
+         设计规范：24×24 viewBox、线性风格、stroke="currentColor"（随主题变色）。
+         唯一例外：关于弹窗正文中的说明性 emoji 属于文案，不做替换。
+         脚本侧请改用 js/icons.js 导出的 Icons。
+         ============================================================ -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18M6 6l12 12"/>
+            </symbol>
+            <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21.5s6.5-6.1 6.5-11a6.5 6.5 0 1 0-13 0c0 4.9 6.5 11 6.5 11Z"/><circle cx="12" cy="10.3" r="2.5"/>
+            </symbol>
+            <symbol id="i-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 20h15"/>
+            </symbol>
+            <symbol id="i-import" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 15V3"/><path d="m7.5 7.5 4.5-4.5 4.5 4.5"/><path d="M4.5 20h15"/>
+            </symbol>
+            <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/><path d="M3.2 10h17.6M3.2 14h17.6"/><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>
+            </symbol>
+            <symbol id="i-area" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7.5V4h3.5M16.5 4H20v3.5M20 16.5V20h-3.5M7.5 20H4v-3.5"/><path d="m4.8 4.8 14.4 14.4"/>
+            </symbol>
+            <symbol id="i-ruler" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1.8" y="8.6" width="20.4" height="6.8" rx="1.6"/><path d="M6 8.6v2.6M9.6 8.6v3.6M13.2 8.6v2.6M16.8 8.6v3.6"/>
+            </symbol>
+            <symbol id="i-brush" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9.5 14.5 20 4"/><path d="M9.5 14.5c-1.4 1.4-1 3.2-2 4.2-1 1-2.8 1.2-4.3 1.2.9-1.4.6-2.6 1.4-3.6.7-.9 2.4-1.4 4.9-1.8Z"/>
+            </symbol>
+            <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h16M4 12h16M4 17h16"/>
+            </symbol>
+            <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3.1"/><path d="M19.5 12c0-.5-.05-1-.14-1.47l1.66-1.28-1.9-3.3-1.98.8a7.6 7.6 0 0 0-2.55-1.47L14.3 3h-3.8L10.2 5.28a7.6 7.6 0 0 0-2.55 1.47l-1.98-.8-1.9 3.3 1.66 1.28a7.8 7.8 0 0 0 0 2.94L3.77 14.75l1.9 3.3 1.98-.8a7.6 7.6 0 0 0 2.55 1.47L10.5 21h3.8l.29-2.28a7.6 7.6 0 0 0 2.55-1.47l1.98.8 1.9-3.3-1.66-1.28c.09-.47.14-.97.14-1.47Z"/>
+            </symbol>
+            <symbol id="i-document" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 16.5h4"/>
+            </symbol>
+        </defs>
+    </svg>
+
     <div class="floating-header">
         <div class="header-brand">
             <div class="logo-icon">
@@ -144,7 +191,7 @@
     </div>
 
     <!-- 退出谷歌模式按钮 -->
-    <button id="exitGoogleBtn" class="exit-google-btn" type="button" style="display:none;">❎ 退出 Google 地球</button>
+    <button id="exitGoogleBtn" class="exit-google-btn" type="button" style="display:none;">退出 Google 地球</button>
 
 
         <!-- 右下角控制面板（指南针 + 高度控制） -->
@@ -194,7 +241,7 @@
     <section id="time-control" class="time-control" aria-label="时间与光照控制">
         <div class="time-control__header">
             <div class="time-control__current">
-                <span class="time-control__status">Now</span>
+                <span class="time-control__status">Time</span>
                 <time id="current-time-label" datetime="">September 20, 13:07</time>
             </div>
             <button id="reset-time-btn" class="time-control__now" type="button" aria-label="回到当前时间">
@@ -223,21 +270,28 @@
     </section>
 
     <div id="loadingOverlay" style="position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; color: #fff; font-size: 1.2rem; transition: opacity 0.8s ease;">
-        <p>
-            🌏正在加载地球数据...
-            <span style="display:block; font-size:13px; color:#aaa"> 首屏加载较慢，请耐心等待 </span>
-        </p>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:10px; max-width:100%;">
+                <img src="favicon-32x32.png" alt="" aria-hidden="true" width="32" height="32">
+                <img src="locus-earth-logo.svg" alt="Locus Earth" style="display:block; width:min(231px, 62vw); height:auto;">
+            </div>
+            <p style="display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:0;">
+                <span class="loading-spinner" aria-hidden="true"></span>
+                <span>正在加载地球数据...</span>
+                <span style="display:block; width:100%; text-align:center; font-size:13px; color:#aaa"> 首屏加载较慢，请耐心等待 </span>
+            </p>
+        </div>
     </div>
 
     <!-- 收藏夹面板 -->
     <div id="bookmarksPanel" class="modal-overlay">
         <div class="modal-box glass-panel">
-            <button id="closeBookmarksBtn" class="close-btn">✕</button>
+            <button id="closeBookmarksBtn" class="close-btn"><svg class="ui-icon"><use href="#i-close"/></svg></button>
             <div class="bookmarks-header" style="margin-top:6px;">
-                <h2>📍 收藏夹</h2>
+                <h2><svg class="ui-icon"><use href="#i-pin"/></svg>收藏夹</h2>
                 <div>
-                    <button id="exportBookmarksBtn" class="inline-action-btn">⬇️ 导出</button>
-                    <button id="importBookmarksBtn" class="inline-action-btn">⬆️ 导入</button>
+                    <button id="exportBookmarksBtn" class="inline-action-btn"><svg class="ui-icon"><use href="#i-export"/></svg>导出</button>
+                    <button id="importBookmarksBtn" class="inline-action-btn"><svg class="ui-icon"><use href="#i-import"/></svg>导入</button>
                 </div>
             </div>
             <div id="bookmarksList" class="bookmarks-list">
@@ -256,7 +310,7 @@
     <!-- 信息弹窗 -->
     <div id="infoModal" class="modal-overlay">
         <div class="modal-box glass-panel">
-            <button id="closeInfoBtn" class="close-btn">✕</button>
+            <button id="closeInfoBtn" class="close-btn"><svg class="ui-icon"><use href="#i-close"/></svg></button>
             <h2>🌏 关于 Locus Earth</h2>
             <p>
                 <strong>Locus Earth</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地球”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
@@ -281,8 +335,8 @@
     <!-- 使用技巧弹窗 -->
     <div id="tipsModal" class="modal-overlay">
         <div class="modal-box glass-panel">
-            <button id="closeTipsBtn" class="close-btn">✕</button>
-            <h2>⚙ 使用技巧</h2>
+            <button id="closeTipsBtn" class="close-btn"><svg class="ui-icon"><use href="#i-close"/></svg></button>
+            <h2><svg class="ui-icon"><use href="#i-gear"/></svg>使用技巧</h2>
             <p>右下角的控件可以手动控制比例尺、恢复朝北、恢复俯仰角，指南针显示当前朝向。</p>
             <p>设置页可以修改色彩显示模式和地形控制等。</p>
             <p>测量悬浮菜单圆钮可以自由拖动，点击展开回到左上角。</p>
@@ -290,16 +344,16 @@
             <p>*：仅市中心小块区域有高精度建模覆盖</p>
             <p>快速确定高精度建模具体覆盖范围的方法：搜索城市名称，自动定位并手动放大，点击开启高精度模型，观察突然出现色差的地块。无反应请稍作等待。</p>
             <p>Bing在中国大陆路网显示有误，建议在浏览大陆地区时不要使用“Bing Maps Aerial with Labels”图层，使用“Bing Maps Roads"图层时不要开启3D建筑，会导致严重错位。浏览非大陆地区均可。</p>
-            <p style="font-size:13px; color:#666; margin-top:16px;">为节省数据用量，默认底图为Sentinel-2（分辨率较低），适合宏观浏览。如必须查看地面高清细节，请手动切换至 Bing 地图。</p> 
+            <p style="font-size:13px; color:#666; margin-top:16px;">为节省数据用量，默认底图为Sentinel-2（分辨率较低），适合宏观浏览。如必须查看地面高清细节，请通过右上角底图选择器切换至天地图卫星。</p> 
             <p style="font-size:13px; color:#666; margin-top:16px;">测试发现，某些Android设备存在兼容性问题：比例尺缩小到一定程度时地图瓦片渲染失败，表现为地球整体变黑。不影响任何功能，放大比例尺后即恢复正常。由于样本数量不够无法确认具体问题原因，但目前貌似无法被修复。</p>
         </div>
     </div>
 
-    <!-- Google地球模式 - 关于弹窗 -->
+    <!-- Google地球模式 - 关于弹窗（正文 emoji 属于文案，按要求保留） -->
     <div id="infoModalGoogle" class="modal-overlay">
         <div class="modal-box glass-panel">
-            <button id="closeInfoGoogleBtn" class="close-btn">✕</button>
-            <h2>🌍 关于Google地球模式</h2>
+            <button id="closeInfoGoogleBtn" class="close-btn"><svg class="ui-icon"><use href="#i-close"/></svg></button>
+            <h2><svg class="ui-icon"><use href="#i-globe"/></svg>关于Google地球模式</h2>
             <p>
                 当前处于 <strong>Google地球模式</strong>，由 Google Photorealistic 3D Tiles 提供全球 3D 模型和高清卫星影像。
             </p>
@@ -325,8 +379,8 @@
     <!-- 迭代记录弹窗 -->
     <div id="iterlogModal" class="modal-overlay">
         <div class="modal-box glass-panel">
-            <button id="closeIterlogBtn" class="close-btn">✕</button>
-            <h2>📝 迭代记录</h2>
+            <button id="closeIterlogBtn" class="close-btn"><svg class="ui-icon"><use href="#i-close"/></svg></button>
+            <h2><svg class="ui-icon"><use href="#i-document"/></svg>迭代记录</h2>
             <p>
             <strong>2026年</strong>
             </p>
@@ -350,6 +404,7 @@
             <p>08-31 V6.2：加入天地图、腾讯地图图源</p>
             <p>09-22 V6.3：UI现代化改造</p>
             <p>10-01 V7.0：全面修复JS逻辑问题、重写缓存机制</p>
+            <p>10-04 V7.1：新地图选择器、搜索框、SVG图标</p>
             <p>……</p>
         </div>
     </div>
@@ -375,14 +430,14 @@
                 <path d="M12 19 V5 M5 12 L12 5 L19 12"/>
             </svg>
         </button>
-        <button id="toolbarAreaBtn" class="toolbar-btn">📐 测面积</button>
-        <button id="toolbarDistBtn" class="toolbar-btn">📏 测距离</button>
-        <button id="toolbarClearBtn" class="toolbar-btn">🧹 清除</button>
-        <button id="toolbarExitBtn" class="toolbar-btn toolbar-mini-btn" title="关闭">✕</button>
+        <button id="toolbarAreaBtn" class="toolbar-btn"><svg class="ui-icon"><use href="#i-area"/></svg>测面积</button>
+        <button id="toolbarDistBtn" class="toolbar-btn"><svg class="ui-icon"><use href="#i-ruler"/></svg>测距离</button>
+        <button id="toolbarClearBtn" class="toolbar-btn"><svg class="ui-icon"><use href="#i-brush"/></svg>清除</button>
+        <button id="toolbarExitBtn" class="toolbar-btn toolbar-mini-btn" title="关闭"><svg class="ui-icon"><use href="#i-close"/></svg></button>
     </div>
 
     <!-- 测量悬浮圆钮 -->
-    <div id="measureFloatingBtn" style="display: none;">☰</div>
+    <div id="measureFloatingBtn" style="display: none;"><svg class="ui-icon"><use href="#i-menu"/></svg></div>
 
 
 </body>

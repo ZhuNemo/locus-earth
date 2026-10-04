@@ -46,7 +46,7 @@
             flex-grow: 0;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 600px) {
             .menu-toggle {
                 font-size: 24px;
                 padding: 0 4px;
@@ -61,6 +61,7 @@
             }
         }
 
+        /* 极窄屏（<361px）：再收一档 */
         @media (max-width: 360px) {
             .top-btn {
                 width: 28px;

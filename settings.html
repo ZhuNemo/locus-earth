@@ -15,10 +15,20 @@
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/buttons.css" />
+    <link rel="stylesheet" href="css/toast.css" />
     <link rel="stylesheet" href="css/settings.css" />
     <link rel="stylesheet" href="css/themes.css" />
 </head>
 <body class="settings-body">
+
+    <!-- 内联 SVG 图标库（与 index.html 同源同规范，全站无 emoji） -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <defs>
+            <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3.1"/><path d="M19.5 12c0-.5-.05-1-.14-1.47l1.66-1.28-1.9-3.3-1.98.8a7.6 7.6 0 0 0-2.55-1.47L14.3 3h-3.8L10.2 5.28a7.6 7.6 0 0 0-2.55 1.47l-1.98-.8-1.9 3.3 1.66 1.28a7.8 7.8 0 0 0 0 2.94L3.77 14.75l1.9 3.3 1.98-.8a7.6 7.6 0 0 0 2.55 1.47L10.5 21h3.8l.29-2.28a7.6 7.6 0 0 0 2.55-1.47l1.98.8 1.9-3.3-1.66-1.28c.09-.47.14-.97.14-1.47Z"/>
+            </symbol>
+        </defs>
+    </svg>
 
     <header class="settings-header">
         <button id="backBtn" class="back-btn" aria-label="返回主页面">
@@ -27,7 +37,7 @@
             </svg>
         </button>
         <div class="settings-title">
-            <h1>⚙️ 设置</h1>
+            <h1><svg class="ui-icon"><use href="#i-gear"/></svg>设置</h1>
             <p>若设置项未生效，重新开关即可恢复</p>
         </div>
     </header>
@@ -54,8 +64,8 @@
                     <span class="setting-desc">手动选择深色或浅色模式</span>
                 </div>
                 <select id="colorMode" disabled>
-                    <option value="light">☀️ 浅色</option>
-                    <option value="dark">🌙 深色</option>
+                    <option value="light">浅色</option>
+                    <option value="dark">深色</option>
                 </select>
             </div>
 
@@ -63,7 +73,7 @@
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-label">地形开关</span>
-                    <span class="setting-desc">关闭可大幅提升加载速度和节省流量</span>
+                    <span class="setting-desc">关闭可提升加载速度，但存在建模和OSM建筑悬空的问题，并非建筑损坏</span>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" id="terrainToggle" />
@@ -137,6 +147,9 @@
         </div>
         </div>
     </main>
+
+    <!-- 提示浮层（结构/样式与主页面 toast 一致，供设置页提示使用） -->
+    <div id="toastMessage" class="toast-message"></div>
 
     <script src="js/settings.js"></script>
 </body>
