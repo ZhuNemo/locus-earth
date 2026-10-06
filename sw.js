@@ -13,7 +13,7 @@
 //   · 升级 Cesium 时，必须同时更新 index.html 的 importmap 与 CESIUM_VERSION
 // ============================================================================
 
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v15';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // Cesium 引擎缓存：把版本号写进缓存名，升级后旧缓存会在 activate 时被淘汰，

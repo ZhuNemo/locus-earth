@@ -5,9 +5,9 @@ import { showToast } from './utils.js';
 // 自定义底图选择器
 //
 // 按钮与右下角相机控件（#camera-controls .ctrl-btn）同规格：48×48 玻璃按钮，
-// 垂直居中于视口右缘（屏幕高度的 1/2 处，见 css/basemap-picker.css）；
-// 点击向上展开纵向单列可滚动菜单，避免压住右下角相机控件，
-// 样式与全局毛玻璃一致。
+// 挂载于相机控件列顶部（见 css/basemap-picker.css）；
+// 点击后菜单在整列按钮的左侧展开，高度随内容自适应、超出可滚动。
+// 菜单展开期间给宿主列加 .basemap-open，把整列抬到最上层避免被遮挡。
 // ============================================================================
 
 // 按钮图标：层叠底图（线性风格，与头部/功能栏的 SVG 图标一致）
@@ -22,6 +22,7 @@ const BTN_ICON_SVG = `
 let pickerRoot = null;
 let menuEl = null;
 let buttonEl = null;
+let hostEl = null; // 宿主容器（#camera-controls，菜单展开时在其上加 .basemap-open）
 let isOpen = false;
 
 // ---------- 选中态 ----------
@@ -38,6 +39,8 @@ function openMenu() {
     menuEl.classList.add('open');
     buttonEl.classList.add('active');
     buttonEl.setAttribute('aria-expanded', 'true');
+    // 展开期间把宿主列抬到最上层，避免菜单被头部/展开面板遮挡
+    if (hostEl) hostEl.classList.add('basemap-open');
     refreshSelected();
     // 展开后如果菜单超出视口底部，让当前选中项滚进可视区
     requestAnimationFrame(() => {
@@ -51,6 +54,7 @@ function closeMenu() {
     menuEl.classList.remove('open');
     buttonEl.classList.remove('active');
     buttonEl.setAttribute('aria-expanded', 'false');
+    if (hostEl) hostEl.classList.remove('basemap-open');
 }
 
 function toggleMenu() {
@@ -128,7 +132,14 @@ export function initBasemapPicker() {
 
     pickerRoot.appendChild(buttonEl);
     pickerRoot.appendChild(menuEl);
-    document.body.appendChild(pickerRoot);
+    // 挂载到右下角相机控件列顶部，与指南针等按钮纵向对齐、间距一致
+    const cameraControls = document.getElementById('camera-controls');
+    hostEl = cameraControls || document.body;
+    if (cameraControls) {
+        cameraControls.insertBefore(pickerRoot, cameraControls.firstChild);
+    } else {
+        document.body.appendChild(pickerRoot);
+    }
 
     buttonEl.addEventListener('click', (e) => {
         e.stopPropagation();

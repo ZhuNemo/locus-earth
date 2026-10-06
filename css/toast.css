@@ -46,7 +46,24 @@
 
         .cesium-viewer-bottom {
             left: 8px !important;
+            /* 注意：不给 z-index——版权条保持在托盘（#expandablePanel，z 300）之下，
+               托盘展开时被面板遮挡、收起时露出（移动端通过 bottom 抬到手柄上方） */
         }
         .cesium-credit-text {
             display:none;
+        }
+
+        /* ---------- 移动端 ---------- */
+        @media (max-width: 600px) {
+            /* ion logo 缩小美化，抬到底部托盘手柄上方（收起时可见、展开时被面板盖住） */
+            .cesium-viewer-bottom {
+                bottom: calc(var(--mobile-bar-h) + 8px);
+                transform: scale(0.75);
+                transform-origin: left bottom;
+            }
+
+            /* 提示条同步上移，给缩小后的 ion logo 让出空间（logo 顶边约 76px） */
+            .toast-message {
+                bottom: 96px;
+            }
         }

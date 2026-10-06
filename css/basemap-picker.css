@@ -1,16 +1,14 @@
 /* ============================================================================
    自定义底图选择器（js/basemap-picker.js 的样式）
-   按钮规格与右下角 #camera-controls .ctrl-btn 完全一致，
+   按钮挂载于右下角 #camera-controls 列顶部，规格与 .ctrl-btn 完全一致，
    全程使用主题变量，深浅色自动跟随。
    ============================================================================ */
 
-/* 垂直居中于视口：按钮中心落在屏幕高度的 1/2 处。
-   菜单改为绝对定位（脱离文档流），否则容器高度会把按钮顶偏。 */
+/* 挂载在右下角 #camera-controls 按钮列顶部（JS 注入为第一个子元素），
+   借用父容器的 flex 列布局与 12px gap，与指南针等按钮纵向对齐、间距一致。
+   菜单为绝对定位（脱离文档流），不影响列内间距。 */
 #basemapPicker {
-    position: fixed;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
+    position: relative;
     z-index: var(--z-panel);
     display: flex;
     flex-direction: column;
@@ -59,14 +57,16 @@
 }
 
 /* ---------- 菜单：纵向单列、可滚动、毛玻璃 ----------
-   按钮移到屏幕中部后，向下展开会压住右下角相机控件，
-   因此改为“向上展开”，并限制在视口上半部内滚动。 */
+   菜单位于整个按钮列的左侧：顶部与列顶对齐（pickerRoot 是列的第一个子元素，
+   其顶部即列顶），向左伸出 12px 间距，向下按内容自适应延伸；
+   可用高度 = 列顶距视口底部 318px（bottom 30 + 5×48 + 4×12）- 16px 底部余量，
+   超出部分内部滚动。 */
 .basemap-menu {
     position: absolute;
-    bottom: calc(100% + 10px);
-    right: 0;
+    top: 0;
+    right: calc(100% + 12px);
     width: 96px;
-    max-height: min(440px, max(180px, calc(50vh - 110px)));
+    max-height: min(440px, 302px);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 8px;
@@ -80,11 +80,11 @@
     flex-direction: column;
     gap: 2px;
 
-    /* 展开动画：从按钮上方轻微缩放浮现 */
+    /* 展开动画：从按钮一侧轻微缩放浮现 */
     opacity: 0;
     visibility: hidden;
-    transform: translateY(8px) scale(0.94);
-    transform-origin: bottom right;
+    transform: translateX(8px) scale(0.94);
+    transform-origin: top right;
     transition:
         opacity 0.22s ease,
         transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
@@ -95,11 +95,17 @@
 .basemap-menu.open {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0) scale(1);
+    transform: translateX(0) scale(1);
     transition:
         opacity 0.22s ease-out,
         transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
     pointer-events: auto;
+}
+
+/* 菜单展开期间，把宿主按钮列抬到最上层（--z-menu 为全局最高层级），
+   避免菜单被头部悬浮栏 / 可展开面板（--z-floating）遮挡 */
+#camera-controls.basemap-open {
+    z-index: var(--z-menu);
 }
 
 /* 细滚动条，与玻璃风格融合 */
@@ -189,13 +195,10 @@
 
 /* ---------- 移动端（<=600px） ---------- */
 @media (max-width: 600px) {
-    /* 仍居中，只是更靠边；顶部要避开全宽的浮动 logo 栏与展开面板 */
-    #basemapPicker {
-        right: 12px;
-    }
-
+    /* 对齐与间距随 #camera-controls 自动跟随（其 right/gap 在此断点有覆盖）。
+       列顶距视口底部 = mobile-bar-h + 52 + 288，减 12px 底部余量得菜单可用高度 */
     .basemap-menu {
-        max-height: min(400px, max(168px, calc(50vh - 132px)));
+        max-height: min(400px, calc(var(--mobile-bar-h) + 328px));
     }
 }
 

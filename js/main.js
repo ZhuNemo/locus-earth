@@ -76,7 +76,7 @@ import { CONFIG } from './config.js';
         const viewer = initViewer('cesiumContainer', new EllipsoidTerrainProvider());
         const loadingOverlay = document.getElementById('loadingOverlay');
 
-        // 底图管理：叠加层联动 + 自定义底图选择器（右侧偏上）
+        // 底图管理：叠加层联动 + 自定义底图选择器（右下角控件列顶部）
         initImagery(viewer);
         initBasemapPicker();
 
