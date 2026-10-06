@@ -43,6 +43,10 @@
     --glass-active: rgba(16, 24, 40, 0.10);
     --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 
+    /* 浮层实底（下拉菜单/搜索结果等需要浮在其它内容之上的浮面）：
+       比 glass-bg-strong 更不透明，避免下层文字/控件透出来 */
+    --surface-raised: rgba(255, 255, 255, 0.94);
+
     --blur-sm: 6px;
     --blur-md: 20px;
     --blur-lg: 34px;
@@ -109,6 +113,10 @@
     --glass-hover: rgba(255, 255, 255, 0.08);
     --glass-active: rgba(255, 255, 255, 0.14);
     --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+    /* 浮层实底（下拉菜单/搜索结果等）：深色下需足够不透明，
+       否则下方开关/按钮文字会透出，看起来像结果被穿透 */
+    --surface-raised: rgba(22, 28, 41, 0.96);
 
     --accent: #60a5fa;
     --accent-strong: #3b82f6;

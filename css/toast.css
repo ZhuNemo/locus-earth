@@ -44,26 +44,68 @@
             opacity: 1;
         }
 
+        /* ---------- Cesium 版权条（CESIUM ion logo）----------
+           必须用 !important 固定：Cesium 自带 widgets.css 对
+           .cesium-viewer-bottom 声明 position:absolute; bottom:0; left:0
+           （无 right / 无 z-index），权重相同、靠加载顺序决定胜负，
+           不加 !important 容易被覆盖后跑出视口。
+
+           定位方式：Cesium 默认 absolute 锚定 #cesiumContainer，
+           但该容器在移动端被 flex 压缩、高度不等于视口，absolute 会算错位置
+           导致 logo 被挤出可视区。这里改为 position:fixed 直接锚定视口。
+           层级：保持在底部托盘（#expandablePanel，z 300）之下——
+           托盘展开时被面板遮挡、收起时正常显示。 */
         .cesium-viewer-bottom {
+            position: fixed !important;
             left: 8px !important;
-            /* 注意：不给 z-index——版权条保持在托盘（#expandablePanel，z 300）之下，
-               托盘展开时被面板遮挡、收起时露出（移动端通过 bottom 抬到手柄上方） */
+            right: auto !important;
+            bottom: 8px !important;
+            z-index: auto !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            /* 注意：不要设 pointer-events:none——署名内含数据来源链接，
+               禁用点击同样属于「阻碍署名可读性/可访问性」，违反合规要求 */
         }
-        .cesium-credit-text {
-            display:none;
+
+        /* ⚠️ 合规要求：Cesium ion 的署名信息（数据来源链接、套餐提示文字）
+           不得移除或以任何方式阻碍其可读性（见 Cesium 内容使用与署名指南）。
+           因此这里只能「缩小字号」美化观感，绝不能用 display:none 隐藏。
+           .cesium-credit-wrapper 更加不能碰——ion logo 本身就包在里面。 */
+        .cesium-credit-text,
+        .cesium-credit-textContainer {
+            font-size: 9px !important;
+            line-height: 1.2 !important;
+            opacity: 0.85 !important;
+        }
+
+        .cesium-credit-expand-link {
+            font-size: 9px !important;
+            line-height: 1.2 !important;
         }
 
         /* ---------- 移动端 ---------- */
         @media (max-width: 600px) {
-            /* ion logo 缩小美化，抬到底部托盘手柄上方（收起时可见、展开时被面板盖住） */
+            /* ion logo 位置：底边紧贴底部托盘手柄上沿（再留 6px 缝隙避免贴边）。
+               托盘收起时上边缘落在 bottom = mobile-bar-h 处，因此：
+                 bottom = mobile-bar-h + 6px  → logo 紧贴手柄上沿
+               托盘展开时面板覆盖此处，logo 被自然遮挡。 */
             .cesium-viewer-bottom {
-                bottom: calc(var(--mobile-bar-h) + 8px);
-                transform: scale(0.75);
-                transform-origin: left bottom;
+                position: fixed !important;
+                left: 8px !important;
+                right: auto !important;
+                bottom: calc(var(--mobile-bar-h) + 6px) !important;
             }
 
-            /* 提示条同步上移，给缩小后的 ion logo 让出空间（logo 顶边约 76px） */
+            /* 缩放作用于内部 logo 容器而非外层：
+               外层上的 transform 会创建新的包含块、让 fixed 定位基准错乱 */
+            .cesium-viewer-bottom .cesium-credit-logoContainer {
+                transform: scale(0.75) !important;
+                transform-origin: left bottom !important;
+            }
+
+            /* 提示条上移，让出 logo 所在的地图底部区域 */
             .toast-message {
-                bottom: 96px;
+                bottom: 104px;
             }
         }

@@ -132,12 +132,20 @@
     left: 0;
     right: 0;
     z-index: var(--z-floating);
-    max-height: 264px;
+    /* 高度限制：结果多时内部滚动，绝不无限延伸。
+       264px ≈ 6 条结果，再多就滚动，避免面板被撑破或被视口裁剪。 */
+    max-height: min(264px, 40vh);
     overflow-y: auto;
+    /* 触屏惯性滚动 + 阻止滚动穿透到地图 */
+    -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 5px;
     border-radius: var(--radius-md);
-    background: var(--glass-bg-strong);
+    /* 近实底背景：用 --bg-solid / 更强的玻璃底。
+       原先的 --glass-bg-strong（暗色仅 0.70 不透明）会让下方
+       开关/按钮文字透出来，看起来像"结果被穿透"，因此这里改用
+       自定义的实底 + 轻模糊，保证下拉始终清晰地浮在面板之上。 */
+    background: var(--surface-raised, var(--glass-bg-strong));
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-glass);
     backdrop-filter: blur(var(--blur-md)) saturate(150%);
@@ -254,7 +262,9 @@
     }
 
     .search-results {
-        /* 托盘在底部，下拉向上空间更充裕，限制得保守一些防止超出视口 */
-        max-height: min(240px, 34vh);
+        /* 托盘在底部、搜索栏又靠近托盘顶部，向下能用的垂直空间有限：
+           这里取"36vh 与 6 条结果"的较小值，结果再多就在下拉内部滚动，
+           既不会撑破面板，也不会被视口底部裁剪。 */
+        max-height: min(252px, 36vh);
     }
 }

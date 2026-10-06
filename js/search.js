@@ -106,7 +106,31 @@ function closeList() {
     if (!listEl) return;
     listEl.classList.remove('open');
     listEl.innerHTML = '';
+    // 清掉上一次按视口计算的内联 max-height，交回 CSS 兜底
+    listEl.style.maxHeight = '';
     activeIndex = -1;
+}
+
+// 根据当前视口，把下拉的可用高度限制在「搜索框下方 → 视口底部」之间。
+//
+// 为什么必须在运行时算，而不是写死一个 CSS max-height：
+//   移动端托盘贴底、搜索栏位于托盘顶部，下拉是向下展开的。
+//   视口高度、托盘内容高度一变，"搜索框到屏幕底"的剩余空间就变，
+//   写死的 252px 在 852 高的屏幕上只有 164px 可用，于是下拉底部
+//   冲到屏幕外、结果被裁剪且无法触达。这里实测后取内联值，
+//   保证下拉始终整块可见，超出的条目在下拉内部滚动。
+function fitListHeight() {
+    if (!listEl || !inputEl) return;
+    const field = inputEl.parentElement;          // .search-field
+    const fieldBottom = field.getBoundingClientRect().bottom;
+    const gap = 6;                                // 与 CSS 的 top: calc(100% + 6px) 对齐
+    const dropTop = fieldBottom + gap;
+    const margin = 16;                            // 距视口底留白
+    // 用可视视口高度（移动端浏览器地址栏收起/展开时 visualViewport 才准）
+    const viewportH = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const available = viewportH - dropTop - margin;
+    // 下限 120px：即使空间很紧也保证能看到 3 条并能滚动
+    listEl.style.maxHeight = `${Math.max(120, Math.floor(available))}px`;
 }
 
 function renderList(list) {
@@ -139,6 +163,8 @@ function renderList(list) {
     });
 
     listEl.classList.add('open');
+    // 展开后按当前视口收紧高度，避免超出屏幕底部
+    fitListHeight();
 }
 
 function highlightActive() {
@@ -292,7 +318,10 @@ function bindEvents() {
     });
 
     inputEl.addEventListener('focus', () => {
-        if (items.length && listEl.children.length) listEl.classList.add('open');
+        if (items.length && listEl.children.length) {
+            listEl.classList.add('open');
+            fitListHeight();
+        }
     });
 
     // 回车：直接用第一条结果
@@ -354,6 +383,16 @@ function bindEvents() {
     // 阻止面板/地图的快捷键抢走输入
     rootEl.addEventListener('keydown', (e) => e.stopPropagation());
     rootEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+
+    // 视口变化（移动端地址栏伸缩、横竖屏切换）时重新收紧下拉高度
+    const refit = () => {
+        if (listEl && listEl.classList.contains('open')) fitListHeight();
+    };
+    window.addEventListener('resize', refit, { passive: true });
+    window.addEventListener('orientationchange', refit, { passive: true });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', refit, { passive: true });
+    }
 }
 
 // ---------- 初始化 ----------

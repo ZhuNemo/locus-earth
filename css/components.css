@@ -363,13 +363,21 @@
            calc() 里的百分比按元素自身高度解析，所以：
              100%           = 面板整高，往下推
              - var(--mobile-bar-h) = 少推手柄那一截，使手柄仍可见
-           漏加的 +24px 会把底部 padding 的 24px 也留在视口里，
-           收起时就会多露出一条内容（搜索栏/开关的边）。
-           这里严格只推 (100% - 手柄高)，收起后可见部分 = 手柄本身。 */
-        transform: translateY(calc(100% - var(--mobile-bar-h)));
+           --drag-y 是拖拽手势期间叠加的实时位移（JS 写入），
+           非拖拽时为 0px，不影响常规开合。 */
+        transform: translateY(calc(100% - var(--mobile-bar-h) + var(--drag-y, 0px)));
         opacity: 1;
         pointer-events: auto;
-        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
+        /* 顺滑开合：带轻微过冲的弹性曲线，比原来的 ease 更有"跟手"感。
+           时长 0.42s 与 spring 曲线配合，收放都不会显得生硬。 */
+        transition: transform 0.42s cubic-bezier(0.22, 1.12, 0.36, 1), background 0.3s ease;
+        will-change: transform;
+    }
+
+    /* 拖拽进行中：关掉过渡，让面板 1:1 跟随手指，松开后再恢复过渡做吸附动画 */
+    .expandable-panel.dragging {
+        transition: none !important;
+        /* 拖拽时略微加深底，视觉上强调"正在被拉动" */
     }
 
     .panel-handle {
@@ -382,7 +390,20 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        touch-action: pan-y;
+        /* 允许纵向手势由 JS 接管（阻止浏览器滚动/下拉刷新） */
+        touch-action: none;
+        /* 手柄区域加大触摸热区，更好抓握 */
+        position: relative;
+    }
+
+    /* 扩大手柄的隐形触摸热区：上下各外扩 10px，不改变视觉尺寸 */
+    .panel-handle::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -10px;
+        bottom: -10px;
     }
 
     .handle-line {
@@ -390,10 +411,16 @@
         height: 4px;
         border-radius: var(--radius-full);
         background: var(--control-track);
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    /* 展开态手柄点亮一点，提示"可下滑收起" */
+    .expandable-panel.expanded .handle-line {
+        background: var(--text-muted);
     }
 
     .expandable-panel.expanded {
-        transform: translateY(0);
+        transform: translateY(var(--drag-y, 0px));
     }
 
     .panel-row.switches {

@@ -57,16 +57,25 @@
 }
 
 /* ---------- 菜单：纵向单列、可滚动、毛玻璃 ----------
-   菜单位于整个按钮列的左侧：顶部与列顶对齐（pickerRoot 是列的第一个子元素，
-   其顶部即列顶），向左伸出 12px 间距，向下按内容自适应延伸；
-   可用高度 = 列顶距视口底部 318px（bottom 30 + 5×48 + 4×12）- 16px 底部余量，
-   超出部分内部滚动。 */
+   菜单位于整个按钮列的左侧，向左伸出 12px 间距。
+   垂直位置：以「触发按钮的横向中心线」为基准居中 ——
+     按钮高 48px，#basemapBtn 是 #basemapPicker 的子元素，
+     其中心距 pickerRoot 顶部 24px；菜单 top:24px + translateY(-50%)
+     即让菜单自身的垂直中点落在按钮中心线上。
+   菜单高于可用空间时内部滚动（见 max-height）。 */
 .basemap-menu {
     position: absolute;
-    top: 0;
+    /* 24px = 按钮高 48 的一半；配合 translateY(-50%) 实现垂直居中对齐按钮 */
+    top: 24px;
     right: calc(100% + 12px);
     width: 96px;
-    max-height: min(440px, 302px);
+    /* 可用高度：菜单以按钮中心线居中，向上/向下各需一半高度。
+       实测按钮中心恒距视口底部 360px，故"中心到视口顶" = 100vh - 360px。
+       要留 16px 顶边距：max-height/2 <= 100vh - 376
+                        => max-height <= 2*(100vh - 376px)
+       矮屏（横屏）下这一项生效，避免菜单顶部越出屏幕（菜单变短并内部滚动）。
+       max() 兜底：100vh 很小时不让结果为负（负的 max-height 非法）。 */
+    max-height: min(440px, 60vh, max(140px, calc(2 * (100vh - 376px))));
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 8px;
@@ -80,11 +89,13 @@
     flex-direction: column;
     gap: 2px;
 
-    /* 展开动画：从按钮一侧轻微缩放浮现 */
+    /* 展开动画：从按钮一侧轻微缩放浮现。
+       注意 transform 里必须同时保留 translateY(-50%) 的居中偏移，
+       否则动画会把居中定位覆盖掉。 */
     opacity: 0;
     visibility: hidden;
-    transform: translateX(8px) scale(0.94);
-    transform-origin: top right;
+    transform: translateY(-50%) translateX(8px) scale(0.94);
+    transform-origin: right center;
     transition:
         opacity 0.22s ease,
         transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
@@ -95,7 +106,7 @@
 .basemap-menu.open {
     opacity: 1;
     visibility: visible;
-    transform: translateX(0) scale(1);
+    transform: translateY(-50%) translateX(0) scale(1);
     transition:
         opacity 0.22s ease-out,
         transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
@@ -195,10 +206,10 @@
 
 /* ---------- 移动端（<=600px） ---------- */
 @media (max-width: 600px) {
-    /* 对齐与间距随 #camera-controls 自动跟随（其 right/gap 在此断点有覆盖）。
-       列顶距视口底部 = mobile-bar-h + 52 + 288，减 12px 底部余量得菜单可用高度 */
+    /* 菜单现在以按钮中心线居中展开，可用高度受"按钮中心到屏幕上下边缘"约束。
+       移动端底部托盘会占掉下方空间，故高度再收一档，保证居中后不越界。 */
     .basemap-menu {
-        max-height: min(400px, calc(var(--mobile-bar-h) + 328px));
+        max-height: min(380px, 52vh);
     }
 }
 

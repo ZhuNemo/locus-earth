@@ -53,25 +53,128 @@ export function initUI(viewer, {
     if (panelHandle) {
         panelHandle.addEventListener('click', (e) => {
             e.stopPropagation();
+            // 拖拽手势结束后的 click 不应再触发一次 toggle，故在此拦截
+            if (suppressClick) {
+                suppressClick = false;
+                e.preventDefault();
+                return;
+            }
             togglePanel();
         });
 
-        let touchStartY = null;
-        panelHandle.addEventListener('touchstart', (e) => {
-            touchStartY = e.touches[0].clientY;
-        }, { passive: true });
-        panelHandle.addEventListener('touchend', (e) => {
-            if (touchStartY === null) return;
-            const deltaY = e.changedTouches[0].clientY - touchStartY;
-            if (Math.abs(deltaY) > 12) {
-                if (deltaY < 0 && !expandablePanel.classList.contains('expanded')) {
-                    openPanel();
-                } else if (deltaY > 0 && expandablePanel.classList.contains('expanded')) {
-                    closePanel();
+        // ------------------------------------------------------------------
+        // 移动端托盘：连续拖拽手势（下滑收起 / 上滑展开）
+        // ------------------------------------------------------------------
+        // 设计要点：
+        //   · 只用 touch 事件（桌面鼠标不参与），避免误伤点击。
+        //   · 拖拽期间写 --drag-y 让面板 1:1 跟手（CSS 里 .dragging 关掉了过渡）。
+        //   · 松开时按"位移 + 速度"决定吸附到展开还是收起，手感更自然。
+        //   · 展开态起始只能往上顶一点点（阻尼），主体是下滑；收起态反之。
+        const collapsedOffset = () => panelHandle.getBoundingClientRect().height; // 收起时露出的手柄高
+        let dragging = false;
+        let startY = 0;
+        let startDragY = 0;
+        let lastY = 0;
+        let lastT = 0;
+        let velocity = 0;
+        let suppressClick = false;
+        let dragMoved = false;
+
+        const panelHeight = () => expandablePanel.getBoundingClientRect().height;
+
+        function setDragY(px) {
+            expandablePanel.style.setProperty('--drag-y', `${px}px`);
+        }
+
+        function onTouchStart(e) {
+            if (e.touches.length !== 1) return;
+            // 只在移动端托盘布局下启用（桌面端面板不在底部，无需拖拽）
+            if (window.matchMedia('(min-width: 601px)').matches) return;
+
+            dragging = true;
+            dragMoved = false;
+            startY = e.touches[0].clientY;
+            lastY = startY;
+            lastT = e.timeStamp;
+            velocity = 0;
+            startDragY = 0;
+            expandablePanel.classList.add('dragging');
+        }
+
+        function onTouchMove(e) {
+            if (!dragging) return;
+            const y = e.touches[0].clientY;
+            let dy = y - startY;
+            const isExpanded = expandablePanel.classList.contains('expanded');
+
+            // 阻尼：展开态往上拖（会顶出屏幕）限制得很小；收起态往下拖限制也很小，
+            // 让手势方向与预期一致，反向只给"橡皮筋"反馈。
+            if (isExpanded) {
+                if (dy < 0) dy *= 0.18;
+                // 下滑不超过自身高度
+                if (dy > panelHeight()) dy = panelHeight();
+            } else {
+                // 收起态：上滑展开，dy 为负；向下拖几乎不动（已经到底了）
+                if (dy > 0) dy *= 0.18;
+                else {
+                    const max = panelHeight() - collapsedOffset();
+                    if (dy < -max) dy = -max;
                 }
             }
-            touchStartY = null;
-        }, { passive: true });
+
+            startDragY = dy;
+            setDragY(dy);
+
+            // 速度采样（px/ms）
+            const dt = e.timeStamp - lastT;
+            if (dt > 0) velocity = (y - lastY) / dt;
+            lastY = y;
+            lastT = e.timeStamp;
+
+            if (Math.abs(dy) > 6) dragMoved = true;
+            // 阻止页面滚动/下拉刷新（非 passive 监听才有意义）
+            if (dragMoved) e.preventDefault();
+        }
+
+        function onTouchEnd() {
+            if (!dragging) return;
+            dragging = false;
+            expandablePanel.classList.remove('dragging');
+
+            const isExpanded = expandablePanel.classList.contains('expanded');
+            const dy = startDragY;
+            const h = panelHeight();
+            const span = h - collapsedOffset();   // 收起态要移动的总距离
+            const VEL = 0.45;                     // 速度阈值 px/ms
+
+            // 决策：速度优先，其次看位移是否超过阈值
+            let shouldClose;
+            if (Math.abs(velocity) > VEL) {
+                shouldClose = velocity > 0;       // 快速下滑=收起；快速上滑=展开
+            } else {
+                shouldClose = isExpanded ? dy > span * 0.28 : !(dy < -span * 0.28);
+            }
+
+            // 先清掉拖拽位移，再切换 expanded，让 CSS 过渡做吸附动画
+            setDragY(0);
+            if (shouldClose) {
+                // 快速下滑的强手势即使面板未展开也保持收起
+                closePanel();
+            } else {
+                openPanel();
+            }
+
+            // 只要发生过拖动就吞掉随后的 click，避免"拖完又 toggle 一次"
+            suppressClick = dragMoved;
+            dragMoved = false;
+            velocity = 0;
+        }
+
+        panelHandle.addEventListener('touchstart', onTouchStart, { passive: true });
+        // touchmove 必须 passive:false 才能调用 preventDefault 阻止页面滚动
+        panelHandle.addEventListener('touchmove', onTouchMove, { passive: false });
+        panelHandle.addEventListener('touchend', onTouchEnd, { passive: true });
+        panelHandle.addEventListener('touchcancel', onTouchEnd, { passive: true });
     }
 
     // 点击面板外部自动收起
