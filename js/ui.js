@@ -1,5 +1,69 @@
 import { Cartesian3, Math as CesiumMath } from 'cesium';
 
+// =============================================
+// 面板收起工具（模块级，导出）
+// ---------------------------------------------
+// 放在 initUI 之外导出，是为了让 measure-ui.js 等模块也能复用，
+// 而不必依赖 initUI 的调用时机 —— main.js 里 initMeasureUI() 早于 initUI()。
+// 元素按 id 实时查询、不缓存引用，避免拿到过期节点。
+//
+// options.waitForTransition = true 时等面板收起动画走完再执行回调，
+// 用于「先收起主面板、功能条再出现」这类有先后顺序的需求。
+export function collapsePanelThen(callback, { waitForTransition = false } = {}) {
+    const panel = document.getElementById('expandablePanel');
+    const headerBtn = document.getElementById('toggleHeaderBtn');
+    if (!panel) {
+        callback();
+        return;
+    }
+
+    const wasExpanded = panel.classList.contains('expanded');
+    panel.classList.remove('expanded');
+    headerBtn?.classList.remove('rotated');
+
+    // 本来就没展开 → 不产生过渡，下一帧直接执行
+    if (!wasExpanded) {
+        requestAnimationFrame(callback);
+        return;
+    }
+
+    if (!waitForTransition) {
+        setTimeout(callback, 220);
+        return;
+    }
+
+    const ms = panelCollapseDuration(panel);
+    setTimeout(callback, ms > 0 ? ms : 240);
+}
+
+/**
+ * 读取面板当前「transform 过渡」的声明时长（桌面 0.28s / 移动端 0.42s）。
+ *
+ * 这里刻意不监听 transitionend：它在下面几种情况下根本不会触发，
+ * 回调就会被永久卡住 ——
+ *   · 浏览器跳过该属性的动画（元素不可见、后台标签页、无合成器）；
+ *   · 过渡被后续状态变更打断；
+ *   · 起止值相同（例如面板高度为 0）。
+ * 实测 headless Chrome 里 transitionstart 会晚到 500ms 以上，
+ * transitionend 更是不可靠。改用样式表里声明的时长做延迟：
+ * 时长本身就是"视觉上收完"的定义，改 CSS 也不必改 JS。
+ */
+function panelCollapseDuration(panel) {
+    const cs = getComputedStyle(panel);
+    const props = cs.transitionProperty.split(',');
+    const durs = cs.transitionDuration.split(',');
+    let ms = 0;
+    for (let i = 0; i < props.length; i++) {
+        const prop = props[i].trim();
+        if (prop !== 'transform' && prop !== 'all') continue;
+        const raw = (durs[i] ?? durs[0] ?? '').trim();
+        if (!raw) continue;
+        const n = parseFloat(raw) || 0;
+        ms = Math.max(ms, raw.endsWith('ms') ? n : n * 1000);
+    }
+    return ms;
+}
+
 export function initUI(viewer, {
     hd,
     showToast,
@@ -187,10 +251,8 @@ export function initUI(viewer, {
     });
 
     // 辅助：先收起面板，延迟后再执行回调（用于打开弹窗）
-    function closePanelThen(callback) {
-        closePanel();
-        setTimeout(callback, 220);
-    }
+    // 实现见模块顶部的 collapsePanelThen（同时供 measure-ui.js 复用）
+    const closePanelThen = collapsePanelThen;
 
     // =============================================
     // 1. 光照控制（开关形式）
@@ -198,13 +260,16 @@ export function initUI(viewer, {
     const modeToggle = document.getElementById('modeToggleBtn');
     let isLightingEnabled = false;
 
-    function switchLighting(enableLighting) {
+    // deferTimeControl：只推迟「时间/光照控制条」的显隐，
+    // 光照本身与开关高亮仍然立即生效 —— 让点击有即时反馈，
+    // 又不会让控制条与主面板同屏压叠。
+    function switchLighting(enableLighting, { deferTimeControl = false } = {}) {
         isLightingEnabled = enableLighting;
         viewer.scene.globe.enableLighting = enableLighting;
         viewer.scene.sun.show = enableLighting;
         viewer.scene.moon.show = enableLighting;
         viewer.clock.shouldAnimate = enableLighting;
-        timeControl?.setVisible(enableLighting);
+        if (!deferTimeControl) timeControl?.setVisible(enableLighting);
         if (enableLighting) {
             modeToggle.classList.add('active');
         } else {
@@ -212,8 +277,25 @@ export function initUI(viewer, {
         }
     }
 
+    // pending 序号：面板收起期间若用户又点了一次开关，
+    // 旧回调不能再把时间条弹出来（否则会出现"已关闭但控制条还在"）。
+    let lightingToggleSeq = 0;
+
     modeToggle.addEventListener('click', () => {
-        switchLighting(!isLightingEnabled);
+        if (isLightingEnabled) {
+            // 关闭：光照与时间条一起收掉，无需等待面板动画
+            lightingToggleSeq++;
+            switchLighting(false);
+            return;
+        }
+
+        const seq = ++lightingToggleSeq;
+        // 开启：开关先亮、光照立即生效，时间控制条等主面板收起后再出现
+        switchLighting(true, { deferTimeControl: true });
+        collapsePanelThen(() => {
+            if (seq !== lightingToggleSeq || !isLightingEnabled) return;
+            timeControl?.setVisible(true);
+        }, { waitForTransition: true });
     });
 
     // 初始化：默认关闭真实光照

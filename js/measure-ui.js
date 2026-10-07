@@ -1,4 +1,5 @@
 import { showToast } from './utils.js';
+import { collapsePanelThen } from './ui.js';
 
 export function initMeasureUI(viewer, measureTools) {
     const measureToolbar = document.getElementById('measureToolbar');
@@ -11,10 +12,17 @@ export function initMeasureUI(viewer, measureTools) {
     }
 
     // 1. 打开测量菜单
+    //    顺序要求：先收起主面板，等收起动画结束再展开测量工具条；
+    //    否则工具条会和面板同时在屏幕上，互相压叠（「真实光照」同理）。
     document.getElementById('measureBtn').addEventListener('click', () => {
+        // 先记录锚点位置再隐藏按钮：display:none 之后 offsetLeft/offsetTop
+        // 会变成 0，位置就只剩 style.left/top 这一个来源，首次点击容易落到兜底值。
+        const anchor = getFloatingButtonPosition();
         measureFloatingBtn.style.display = 'none';
-        showToolbarAtButtonPosition();
-        showToast('📏 选择测量方式');
+        collapsePanelThen(() => {
+            showToolbarAtButtonPosition(anchor);
+            showToast('📏 选择测量方式');
+        }, { waitForTransition: true });
     });
 
     // 2. 测面积、测距离、清除按钮
@@ -32,8 +40,9 @@ export function initMeasureUI(viewer, measureTools) {
     });
 
     // 3. 展开/收起动画
-    function showToolbarAtButtonPosition() {
-        const { left: buttonLeft, top: buttonTop } = getFloatingButtonPosition();
+    //    anchor：可选，显式指定工具条的锚点位置（不传则按悬浮按钮当前位置算）
+    function showToolbarAtButtonPosition(anchor) {
+        const { left: buttonLeft, top: buttonTop } = anchor || getFloatingButtonPosition();
         const left = Math.max(12, Math.min(buttonLeft, window.innerWidth - measureToolbar.offsetWidth - 12));
         const top = Math.max(80, Math.min(buttonTop, window.innerHeight - measureToolbar.offsetHeight - 12));
         measureToolbar.style.left = `${left}px`;
