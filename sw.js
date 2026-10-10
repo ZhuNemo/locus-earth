@@ -13,7 +13,7 @@
 //   · 升级 Cesium 时，必须同时更新 index.html 的 importmap 与 CESIUM_VERSION
 // ============================================================================
 
-const CACHE_VERSION = 'v21';
+const CACHE_VERSION = 'v26';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // Cesium 引擎缓存：把版本号写进缓存名，升级后旧缓存会在 activate 时被淘汰，
@@ -28,7 +28,7 @@ const CACHE_PREFIX = 'locus-earth-';
 
 // 首屏完整资源清单。
 // 这是 index.html 与 settings.html 首屏真正会请求到的全部文件：
-// 15 个 CSS、17 个 JS、3 个图标、3 个 favicon、2 个 PWA 图标与 manifest。
+// 15 个 CSS、20 个 JS、3 个图标、3 个 favicon、2 个 PWA 图标与 manifest。
 // 刻意不含 screenshot-*.png（各约 1–2 MB，只被 manifest 的安装界面使用）。
 const SHELL_URLS = [
   './',
@@ -70,6 +70,9 @@ const SHELL_URLS = [
   './js/time-control.js',
   './js/utils.js',
   './js/config.js',
+  './js/coord-transform.js',
+  './js/tool-modes.js',
+  './js/streetview.js',
   './js/settings.js',
 
   // 图标与 PWA 资源

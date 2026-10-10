@@ -12,6 +12,7 @@ import {
     Cartesian2,
     HeightReference,
 } from 'cesium';
+import { registerTool as registerTool, claim as claimTool, release as releaseTool } from './tool-modes.js';
 
 // ---------- 状态 ----------
 let isMarkingMode = false;
@@ -337,6 +338,7 @@ function handleClick(mousePosition, shiftKey) {
 
     if (isMarkingMode) {
         toggleMarkingMode(false);
+        releaseTool('mark');
     }
 }
 
@@ -676,13 +678,25 @@ function toggleMarkingMode(enable) {
     }
 }
 
+// 供互斥中心调用：停用标记（不带 release，避免递归）
+function deactivateMarking() {
+    toggleMarkingMode(false);
+}
+
 // ---------- 工具栏按钮设置 ----------
 function setupToolbarButton() {
     const markBtn = document.getElementById('markModeBtn');
     if (markBtn) {
         markBtn.addEventListener('click', () => {
-            toggleMarkingMode(!isMarkingMode);
+            if (isMarkingMode) {
+                toggleMarkingMode(false);
+                releaseTool('mark');
+            } else {
+                claimTool('mark'); // 先挤掉街景/测量，再点亮自己
+                toggleMarkingMode(true);
+            }
         });
+        registerTool('mark', deactivateMarking);
     } else {
         console.warn('未找到 markModeBtn，请在 HTML 中添加按钮');
     }

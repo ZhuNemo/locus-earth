@@ -1,9 +1,30 @@
 import { showToast } from './utils.js';
 import { collapsePanelThen } from './ui.js';
+import { registerTool, claim, release } from './tool-modes.js';
 
 export function initMeasureUI(viewer, measureTools) {
     const measureToolbar = document.getElementById('measureToolbar');
     const measureFloatingBtn = document.getElementById('measureFloatingBtn');
+    const measureBtn = document.getElementById('measureBtn');
+
+    /** 测量按钮高亮开关（与标记/街景一致） */
+    function setMeasureBtnActive(active) {
+        if (measureBtn) measureBtn.classList.toggle('active', active);
+    }
+
+    /** 完全退出测量：关工具条、清数据、还原按钮与光标 */
+    function exitMeasureMode() {
+        measureTools.clear();
+        measureToolbar.classList.remove('is-opening');
+        measureToolbar.classList.add('is-closing');
+        setTimeout(() => {
+            measureToolbar.style.display = 'none';
+            measureToolbar.classList.remove('is-closing');
+        }, 220);
+        measureFloatingBtn.style.display = 'none';
+        viewer.canvas.style.cursor = 'default';
+        setMeasureBtnActive(false);
+    }
 
     function getFloatingButtonPosition() {
         const left = Number.parseFloat(measureFloatingBtn.style.left) || measureFloatingBtn.offsetLeft || 16;
@@ -14,7 +35,12 @@ export function initMeasureUI(viewer, measureTools) {
     // 1. 打开测量菜单
     //    顺序要求：先收起主面板，等收起动画结束再展开测量工具条；
     //    否则工具条会和面板同时在屏幕上，互相压叠（「真实光照」同理）。
-    document.getElementById('measureBtn').addEventListener('click', () => {
+    //
+    //    互斥：测量会占用地图左键（画线/画多边形），必须先挤掉标记与街景，
+    //    否则三者的拾取 handler 会同时响应同一次点击。
+    measureBtn.addEventListener('click', () => {
+        claim('measure');
+        setMeasureBtnActive(true);
         // 先记录锚点位置再隐藏按钮：display:none 之后 offsetLeft/offsetTop
         // 会变成 0，位置就只剩 style.left/top 这一个来源，首次点击容易落到兜底值。
         const anchor = getFloatingButtonPosition();
@@ -24,6 +50,9 @@ export function initMeasureUI(viewer, measureTools) {
             showToast('📏 选择测量方式');
         }, { waitForTransition: true });
     });
+
+    // 注册到互斥中心：被标记/街景挤掉时，由它来调我们的退出回调
+    registerTool('measure', exitMeasureMode);
 
     // 2. 测面积、测距离、清除按钮
     document.getElementById('toolbarAreaBtn').addEventListener('click', () => {
@@ -75,15 +104,8 @@ export function initMeasureUI(viewer, measureTools) {
     document.getElementById('toolbarBackBtn').addEventListener('click', collapseToolbar);
 
     document.getElementById('toolbarExitBtn').addEventListener('click', () => {
-        measureTools.clear();
-        measureToolbar.classList.remove('is-opening');
-        measureToolbar.classList.add('is-closing');
-        setTimeout(() => {
-            measureToolbar.style.display = 'none';
-            measureToolbar.classList.remove('is-closing');
-        }, 220);
-        measureFloatingBtn.style.display = 'none';
-        viewer.canvas.style.cursor = 'default';
+        exitMeasureMode();
+        release('measure');
         showToast('✅ 已退出测量模式');
     });
 

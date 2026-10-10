@@ -24,6 +24,7 @@ import { initGoogleMode } from './google-mode.js';
 import { initMeasureTools } from './measure.js';
 import { initMeasureUI } from './measure-ui.js'
 import { initTimeControl } from './time-control.js';
+import { initStreetView } from './streetview.js';
 import { CONFIG } from './config.js';
 
         Ion.defaultAccessToken = CONFIG.cesiumToken;
@@ -180,6 +181,9 @@ import { CONFIG } from './config.js';
 
         initMeasureUI(viewer, measureTools);
         const timeControl = initTimeControl(viewer);
+
+        // 街景：进入中国境内显示按钮，点击后取点跳转腾讯街景
+        initStreetView(viewer);
 
         // 调用 initUI，传入所有需要的依赖
         // 注意：hdLayers 必须以整体对象传入，不能写成 { ...hdLayers }：
