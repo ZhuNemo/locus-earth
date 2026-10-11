@@ -45,6 +45,18 @@
         }
     </script>
 
+    <!-- Montserrat（仅拉丁字符）+ 中文沿用设备字体
+         · 源：fonts.loli.net（Infvie Envoy 公益 CDN，反代 Google Fonts；
+           fonts.googleapis.com / fonts.gstatic.com 在国内不可达，不要直接引）。
+         · 该 CSS 已按 unicode-range 切好 latin / latin-ext 子集且**不含 CJK**，
+           英文走 Montserrat，中文自动回落 --font-ui 里后面的苹方 / 微软雅黑。
+         · display=swap：字体没到先用系统字体顶上，不会白屏。
+         · 镜像失效时整条字体栈退回系统字体，不影响可读性。
+         · 字体栈统一在 css/themes.css 的 --font-ui。 -->
+    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+    <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/controls.css" />
@@ -95,7 +107,7 @@
                 <path d="M4 7h16M4 12h16M4 17h16"/>
             </symbol>
             <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3.1"/><path d="M19.5 12c0-.5-.05-1-.14-1.47l1.66-1.28-1.9-3.3-1.98.8a7.6 7.6 0 0 0-2.55-1.47L14.3 3h-3.8L10.2 5.28a7.6 7.6 0 0 0-2.55 1.47l-1.98-.8-1.9 3.3 1.66 1.28a7.8 7.8 0 0 0 0 2.94L3.77 14.75l1.9 3.3 1.98-.8a7.6 7.6 0 0 0 2.55 1.47L10.5 21h3.8l.29-2.28a7.6 7.6 0 0 0 2.55-1.47l1.98.8 1.9-3.3-1.66-1.28c.09-.47.14-.97.14-1.47Z"/>
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </symbol>
             <symbol id="i-document" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 16.5h4"/>
@@ -318,14 +330,39 @@
     <div id="infoModal" class="modal-overlay">
         <div class="modal-box glass-panel">
             <button id="closeInfoBtn" class="close-btn"><svg class="ui-icon"><use href="#i-close"/></svg></button>
-            <h2>🌏 关于 Locus Earth</h2>
-            <p>
-                <strong>Locus Earth</strong> 是一个基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 和 <a href="https://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> 开发的 3D 地球应用。灵感来自于Google地球，名称意为“位置地球”，旨在提供一个轻量、快速、可交互的全球地图浏览体验。
-            </p>
-            <p>📍 核心功能：3D 地形、卫星影像、全球建筑、光照切换、地点搜索，以及高精度建模（进入覆盖区自动触发）。收藏标记点保存在浏览器本地，支持导出/导入备份。</p>
-            <p>📋 功能栏（桌面为悬浮面板，移动端为底部托盘）内有「真实光照」「建筑白模」两个开关、地点搜索框，以及标记、收藏、测量、设置、关于等入口；进入高精度建模覆盖区时会自动出现「建模」按钮，进入中国大陆范围时会自动出现「街景」按钮。深浅色彩模式、地形、路网叠加等更细的选项在设置页中。</p>
-            <p>📁 开放源代码，代码文件见 <a href="https://github.com/ZhuNemo/locus-earth" target="_blank">GitHub 仓库</a>。</p>
+            <h2 class="about-header">
+                <img class="about-app-icon" src="android-chrome-192x192.png" alt="" aria-hidden="true">
+                <span class="about-title">
+                    <span class="about-name">Locus Earth</span>
+                    <span class="about-version">7.2</span>
+                </span>
+            </h2>
+            <p>基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 的轻量 3D 地球应用。</p>
+            <p>📍 功能：地形、卫星影像、全球建筑、光照切换、地点搜索、高精度建模、标记收藏（可导出）。</p>
+            <p>📋 进入覆盖区自动出现「建模」「街景」；更多选项见设置页。更多描述见仓库。</p>
+            <p>📁 开放源代码：<a href="https://github.com/ZhuNemo/locus-earth" target="_blank">GitHub 仓库</a>。</p>
             <p>🤖 使用人工智能辅助开发。</p>
+            <div class="dev-card">
+                <div class="dev-card__profile">
+                    <img class="dev-card__avatar" src="https://avatars.githubusercontent.com/u/269598867?v=4&size=64"
+                         alt="Zhu Nemo 的头像" loading="lazy" referrerpolicy="no-referrer"
+                         onerror="this.classList.add('is-broken')">
+                    <div class="dev-card__meta">
+                        <span class="dev-card__name">Zhu Nemo</span>
+                        <span class="dev-card__role">Developer</span>
+                    </div>
+                </div>
+                <div class="dev-card__links">
+                    <a class="dev-pill" href="https://github.com/ZhuNemo" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+                        GitHub
+                    </a>
+                    <a class="dev-pill" href="https://dev.to/zhunemo" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true" focusable="false"><rect x="2" y="4.5" width="20" height="15" rx="3.5" stroke="currentColor" stroke-width="1.8"/><text x="12" y="15.7" text-anchor="middle" font-size="7.5" font-weight="700" font-family="inherit" fill="currentColor" stroke="none">DEV</text></svg>
+                        Dev.to
+                    </a>
+                </div>
+            </div>
             <p style="margin-top: 12px; display:flex; flex-wrap:wrap; gap: 12px;">
                 <button id="openTipsBtn" type="button" class="inline-action-btn">使用技巧</button>
                 <button id="openIterlogBtn" type="button" class="inline-action-btn">迭代记录</button>

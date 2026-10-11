@@ -7,7 +7,7 @@
         var(--bg-primary);
     background-attachment: fixed;
     color: var(--text-primary);
-    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-family: var(--font-ui);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -232,7 +232,7 @@
     max-height: 80vh;
     overflow-y: auto;
     position: relative;
-    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-family: var(--font-ui);
     scrollbar-width: thin;
     opacity: 0;
     transform: translateY(var(--window-transition-offset)) scale(0.98);

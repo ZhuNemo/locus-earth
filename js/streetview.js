@@ -211,13 +211,15 @@ async function openStreetViewAt(windowPosition) {
 
     const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat);
 
-    showToast('🔍 正在查找最近的街景点…');
+    // 不带图标：原放大镜 emoji 全站仅此一处，按约定直接删除、不为它新增 SVG。
+    showToast('正在查找最近的街景点…');
     const result = await lookupPano(gcjLng, gcjLat);
 
     // 情形一：确认无街景 —— 不跳转。跳过去也只是一片没有蓝线的空白区域，
     // 反而让用户怀疑功能坏了；留在地图上、给一句明确提示更有用。
     if (result.status === LookupStatus.NONE) {
-        showToast('🚫 该位置附近没有街景覆盖，换个靠近道路的位置试试');
+        // 同上：原禁止 emoji 仅此一处，删除、不新增 SVG
+        showToast('该位置附近没有街景覆盖，换个靠近道路的位置试试');
         return;
     }
 
@@ -232,7 +234,8 @@ async function openStreetViewAt(windowPosition) {
     } else {
         // 情形三：查询失败（网络/超时/接口变更），覆盖情况未知 —— 仍跳转做降级，
         // 但不说"可点击蓝色路线"，因为我们也无法保证那里有路线。
-        showToast('🗺️ 未能确认街景覆盖，已打开地图视图');
+        // 同上：原地图 emoji 仅此一处，删除、不新增 SVG
+        showToast('未能确认街景覆盖，已打开地图视图');
     }
 }
 

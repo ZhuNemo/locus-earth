@@ -36,7 +36,7 @@
             max-height: 80vh;
             overflow-y: auto;
             position: relative;
-            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-family: var(--font-ui);
             scrollbar-width: thin;
             opacity: 0;
             transform: translateY(var(--window-transition-offset)) scale(0.98);
@@ -119,6 +119,113 @@
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
         }
+        /* ============================================================
+           关于弹窗：应用头 + 开发者卡片
+           （参照移动端「关于」样式：图标 + 名称 + 版本号；
+             颜色全部走 themes.css 令牌，深浅色模式自动适配）
+           ============================================================ */
+        .modal-box .about-header {
+            gap: 14px;
+            margin-bottom: 18px;
+            align-items: center;
+        }
+        .about-app-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            flex: none;
+        }
+        .about-title {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .about-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        .about-version {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            line-height: 1.2;
+        }
+
+        /* 开发者卡片：头像 + 署名 + 外链按钮组 */
+        .dev-card {
+            margin: 14px 0;
+            padding: 16px;
+            border-radius: var(--radius-lg);
+            background: var(--glass-bg-subtle);
+            border: 1px solid var(--border-color);
+        }
+        .dev-card__profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+        .dev-card__avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-full);
+            object-fit: cover;
+            flex: none;
+            background: var(--glass-hover);
+        }
+        /* 头像加载失败时占位，避免破图标 */
+        .dev-card__avatar.is-broken { visibility: hidden; }
+        .dev-card__meta {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+        .dev-card__name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+        .dev-card__role {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+        .dev-card__links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .dev-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            background: var(--glass-hover);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .dev-pill:hover,
+        .dev-pill:focus-visible {
+            background: var(--glass-active);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        .dev-pill svg { flex: none; }
+
         .modal-box .close-btn {
             position: absolute;
             top: 14px;

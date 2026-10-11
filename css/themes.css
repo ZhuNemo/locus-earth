@@ -23,6 +23,16 @@
     --z-toast: 1100;
     --z-menu: 1200;
 
+    /* ---------- 字体 ---------- */
+    /* Montserrat 只覆盖拉丁字符（Google Fonts 的 CSS 已按 unicode-range 切好
+       latin / latin-ext 子集，**不含 CJK**），所以英文走 Montserrat、
+       中文按此顺序自动回落到设备自带字体（苹方 / 微软雅黑 …），无需额外处理。
+       字体本身来自国内镜像（见 index.html / settings.html 的 <link>），
+       镜像失效时整条链路退回系统字体，不影响可读性。 */
+    --font-ui: 'Montserrat', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+               'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue',
+               Arial, sans-serif;
+
     /* ---------- 圆角 ---------- */
     --radius-sm: 8px;
     --radius-md: 14px;

@@ -4,72 +4,121 @@
 <a>简体中文</a> | <a href="README-EN.md">English</a>
 </div>
 
----
 <div align="left">
 <img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="50" height="50">
 <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="220">
 </div>
 
----
 <div align="left">
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
-## 📱 界面预览
-**移动端截图：**
-<img src="./screenshot-mobile.png" alt="screenshot-mobile">
+> 打开浏览器就能用的 3D 地球 —— 基于 Cesium，免安装、免注册。
+>
+> **[Github Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
 
-**桌面端截图：**
-<img src="./screenshot-desktop.png" alt="screenshot-desktop">
+---
 
-*P.S. 截图不一定实时更新，预览最新界面请访问网页！*
+## 目录
+- [项目简介](#-项目简介)
+- [核心功能](#-核心功能)
+- [界面预览](#-界面预览)
+- [使用说明](#-使用说明)
+- [设置与自定义](#-设置与自定义)
+- [技术栈与致谢](#-技术栈与致谢)
+- [API Key 注意事项](#-api-key-注意事项)
+- [项目信息](#-项目信息)
 
 ---
 
 ## 🌍 项目简介
-**Locus Earth - 基于 Cesium 的 Web 端 3D 全球地图应用**
+**Locus Earth** 是一个轻量、快速的开源 Web 3D 地球应用。灵感来自 Google Earth，把「打开就能看世界」这件事做薄做快：零构建、纯前端、可装到桌面/手机当 PWA 用。
 
-Locus Earth 是一个轻量、快速且高交互性的开源 3D 地球项目。灵感源自 Google Earth，旨在提供一个无需安装、开箱即用的全球地图浏览体验。
-
-## 🔗 访问地址
-您可以通过以下任意地址访问项目：
-- [Github Pages](https://zhunemo.github.io/locus-earth/)
-- [Cloudflare Pages](https://locus-earth.pages.dev)
+---
 
 ## ✨ 核心功能
-- **3D 地形与卫星影像**：基于 Cesium 的高精度地形与来自各个提供商的全球卫星影像。
-- **多底图选择器**：右侧控件列可一键切换 Sentinel-2、Blue Marble、Earth at Night、腾讯地图、天地图卫星等底图。
-- **全球建筑**：支持加载全球 OpenStreetMap 3D 建筑。
-- **高精度建模联动**：进入丹佛、华盛顿 D.C.、悉尼等指定区域时，自动开启高精度城市模型切换。
-- **街景**：进入中国大陆范围时功能栏自动出现「街景」按钮，在地图上点选任意位置即可跳转查看该处的 360° 全景（自动匹配最近的街景场景点；已内置 WGS-84 → 火星坐标自动校正）。跳转前会先确认该处是否有街景覆盖，无覆盖时只提示、不跳转。
-- **标记与收藏夹**：支持本地/浏览器缓存保存、导入、导出收藏标记点。
-- **测量工具**：支持测距与测面积，折线与多边形均贴地形渲染；工具条可在悬浮圆钮处自由拖动。
-- **地点搜索**：内置搜索框，输入地名即可定位。
-- **谷歌 3D 地球模式**：网络条件允许的情况下一键切换到谷歌 3D 地球，浏览与原版类似但运行大幅轻量化的 3D 城市。
-- **动态设置面板**：支持主题切换（跟随系统/手动深色/浅色）以及**地形开关等**。
-- **交互优化**：包含真实光照开关、建筑白模开关、指南针、恢复俯仰角等快捷操作，已全面适配移动端与桌面端的悬浮式 UI。
+
+**浏览**
+- 3D 地形 + 全球卫星影像，全球 3D 建筑（OpenStreetMap）。
+- 多底图一键切换：Sentinel-2、Blue Marble、夜间灯光、天地图卫星、腾讯地图等。
+
+**工具**
+- 测距 / 测面积（折线与多边形均贴地形）。
+- 标记与收藏夹，保存在浏览器本地，支持导入导出。
+- 地点搜索框，输入地名即定位。
+
+**情景联动**
+- 进入丹佛、华盛顿 D.C.、悉尼等覆盖区，自动开启高精度城市建模。
+- 进入中国大陆，功能栏自动出现「街景」按钮，点地图即可跳转 360° 全景。
+
+**外观与交互**
+- 真实光照、建筑白模开关；深浅主题（可跟随系统）。
+- 指南针、恢复俯仰角、可拖动的悬浮工具条，桌面与移动端均已适配。
+- 谷歌 3D 地球模式：网络允许时一键切换，比原版轻量得多。
+
+---
+
+## 📱 界面预览
+**移动端：**
+<img src="./screenshot-mobile.png" alt="screenshot-mobile">
+
+**桌面端：**
+<img src="./screenshot-desktop.png" alt="screenshot-desktop">
+
+*截图不一定实时更新，最新界面请访问网页。*
+
+---
 
 ## 🧭 使用说明
-- **标记 / 街景 / 测量三者互斥**：同一时刻只会有一个处于激活状态，开启其中一个会自动关闭另一个，避免点击冲突。
+- **标记 / 街景 / 测量三者互斥**：同一时刻只激活一个，切换时自动关闭另一个，避免点击冲突。
 - 街景跳转依赖网络，PWA 离线时不可用。
+- 移动端底部托盘可上滑展开，点击手柄收合。
+
+---
 
 ## ⚙️ 设置与自定义
-- 您可以通过点击菜单中按钮进入 `/settings/` 页面，自定义明暗主题、地形加载策略等。
+功能栏「设置」进入 `/settings/`，可调整明暗主题（跟随系统 / 手动）、地形加载、路网叠加与缓存。
+
+---
 
 ## 🚀 技术栈与致谢
-- 本项目由人工智能辅助构建。参与构建的 AI 产品（按优先级排序）：DeepSeek、Github Copilot、Hunyuan。
-- 技术栈：CesiumJS 1.118、原生 ES Modules（无构建步骤）、PWA（Service Worker + Manifest）。
-- 数据来源：[Cesium ion](https://ion.cesium.com/)、[OpenStreetMap](https://www.openstreetmap.org/)、[Natural Earth](https://www.naturalearthdata.com/)、[天地图](https://www.tianditu.gov.cn/)、[腾讯地图](https://map.qq.com/)。
-- 街景功能借助社区维护的第三方查看器 [qq-map](https://qq-map.netlify.app/) 打开全景画面（非腾讯官方服务），特此致谢。
-- 坐标系处理参见 [js/coord-transform.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/coord-transform.js)（WGS-84 ↔ GCJ-02 双向转换）。
+| | |
+|---|---|
+| **引擎** | CesiumJS 1.118 |
+| **架构** | 原生 ES Modules，零构建步骤 |
+| **形态** | PWA（Service Worker + Manifest） |
+| **AI 辅助** | DeepSeek、GitHub Copilot、Hunyuan |
 
-## 📝 API Key 相关注意事项
-- 项目内的 Cesium、腾讯地图、天地图密钥均已设置了域名白名单（仅允许在指定域名下使用），仅供本项目演示。
-- 如果您欲 Fork 本仓库并部署到自己的域名或本地使用，请直接修改 [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js) 文件，替换为您自己申请的免费密钥，并务必在控制台设置您自己的白名单，以免影响正常使用。请勿盗刷他人账号额度，谢谢理解！
-  - Cesium Ion Access Token，[申请入口](https://ion.cesium.com/tokens)
-  - 腾讯地图API，[申请入口](https://lbs.qq.com/dev/console/application/mine)
-  - 天地图API，[申请入口](https://cloudcenter.tianditu.gov.cn/center/development/myApp)
+**数据来源**：[Cesium ion](https://ion.cesium.com/) · [OpenStreetMap](https://www.openstreetmap.org/) · [Natural Earth](https://www.naturalearthdata.com/) · [天地图](https://www.tianditu.gov.cn/) · [腾讯地图](https://map.qq.com/)
+
+**特别致谢**：腾讯街景借助社区维护的第三方查看器 [qq-map](https://qq-map.netlify.app/) 打开全景（非腾讯官方服务）。坐标转换见 [js/coord-transform.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/coord-transform.js)（WGS-84 ↔ GCJ-02 双向）。
+
+---
+
+## 📝 API Key 注意事项
+<details>
+<summary><b>点开查看（Fork / 自部署必读）</b></summary>
+
+项目内置的 Cesium、腾讯地图、天地图密钥**都设了域名白名单**，仅供本项目演示。
+
+Fork 或部署到自己的域名 / 本地，请改 [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js)，换成自己申请的免费 Key，并在控制台设置自己的白名单。请勿盗刷他人额度，谢谢理解。
+
+申请入口：
+- [Cesium Ion Access Token](https://ion.cesium.com/tokens)
+- [腾讯地图 API](https://lbs.qq.com/dev/console/application/mine)
+- [天地图 API](https://cloudcenter.tianditu.gov.cn/center/development/myApp)
+
+</details>
+
+---
 
 ## 💡 项目信息
-- 个人项目开启时间：2026-07-04
-- 无团队，业余开发，不定期迭代。
+| | |
+|---|---|
+| **开始时间** | 2026-07-04 |
+| **团队** | 个人项目，业余开发，不定期迭代 |
+| **当前版本** | 7.2 |
+
+---
+
+<sub>© Zhu Nemo · [GitHub](https://github.com/ZhuNemo) · [Dev.to](https://dev.to/zhunemo)</sub>

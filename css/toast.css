@@ -18,7 +18,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.4s ease;
-            font-family: 'Inter', 'Segoe UI', sans-serif;
+            font-family: var(--font-ui);
             /* 图标 + 文字：由 showToast 生成 .toast-icon / .toast-text 两个子元素 */
             display: flex;
             align-items: center;

@@ -1,75 +1,124 @@
 # Locus Earth
 <div align="left">
-🌐 Language:
-<a href="README.md">Simplified Chinese</a> | <a>English</a>
+🌐 Language / 语言:
+<a href="README.md">简体中文</a> | <a>English</a>
 </div>
 
----
 <div align="left">
 <img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="50" height="50">
 <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="220">
 </div>
 
----
 <div align="left">
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
-## 📱 Interface Preview
-**Mobile screenshot:**
-<img src="./screenshot-mobile.png" alt="screenshot-mobile">
+> A 3D Earth you can use right in your browser — powered by Cesium, no installation, no registration.
+>
+> **[GitHub Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
 
-**Desktop screenshot:**
-<img src="./screenshot-desktop.png" alt="screenshot-desktop">
+---
 
-*P.S. Screenshots may not be updated in real time. To preview the latest interface, please visit the website!*
+## Table of Contents
+- [Project Introduction](#-project-introduction)
+- [Key Features](#-key-features)
+- [Interface Preview](#-interface-preview)
+- [Usage](#-usage)
+- [Settings & Customization](#-settings--customization)
+- [Tech Stack & Credits](#-tech-stack--credits)
+- [API Key Notes](#-api-key-notes)
+- [Project Info](#-project-info)
 
 ---
 
 ## 🌍 Project Introduction
-**Locus Earth - A Cesium-based Web 3D Global Map Application**
+**Locus Earth** is a lightweight, fast open-source Web 3D Earth application. Inspired by Google Earth, it keeps "open it and see the world" lean and fast: zero build, pure frontend, and installable as a PWA on desktop/mobile.
 
-Locus Earth is a lightweight, fast, and highly interactive open-source 3D Earth project. Inspired by Google Earth, it aims to provide a global map browsing experience that requires no installation and works out of the box.
+---
 
-## 🔗 Access URLs
-You can access the project via any of the following URLs:
-- [GitHub Pages](https://zhunemo.github.io/locus-earth/)
-- [Cloudflare Pages](https://locus-earth.pages.dev)
+## ✨ Key Features
 
-## ✨ Core Features
-- **3D Terrain and Satellite Imagery**: High-precision terrain based on Cesium and global satellite imagery from various providers.
-- **Multi-Basemap Selector**: The right-side control column allows one-click switching between basemaps such as Sentinel-2, Blue Marble, Earth at Night, Tencent Maps, Tianditu Satellite, etc.
-- **Global Buildings**: Supports loading global OpenStreetMap 3D buildings.
-- **High-Precision Modeling Integration**: When entering designated areas such as Denver, Washington D.C., Sydney, etc., high-precision city model switching is automatically enabled.
-- **Street View**: When entering mainland China, a “Street View” button automatically appears in the toolbar. Click any location on the map to jump to a 360° panorama of that place (automatically matching the nearest Street View scene point; built-in automatic WGS-84 → GCJ-02 “Mars coordinates” correction). Before jumping, it first checks whether Street View coverage exists at that location; if not, it only shows a prompt and does not jump.
-- **Markers and Favorites**: Supports saving, importing, and exporting favorite markers locally/in browser cache.
-- **Measurement Tools**: Supports distance and area measurement; polylines and polygons are both rendered draped over terrain; the toolbar can be freely dragged via the floating round button.
-- **Place Search**: Built-in search box; enter a place name to locate it.
-- **Google 3D Earth Mode**: When network conditions permit, switch to Google 3D Earth with one click and browse 3D cities similar to the original but with significantly lighter operation.
-- **Dynamic Settings Panel**: Supports theme switching (follow system/manual dark/light) and **terrain toggle, etc.**
-- **Interaction Optimizations**: Includes quick actions such as real lighting toggle, building white-model toggle, compass, restore pitch angle, etc., and is fully adapted to floating UI on both mobile and desktop.
+**Browsing**
+- 3D terrain + global satellite imagery, and global 3D buildings (OpenStreetMap).
+- One-click switching between multiple base maps: Sentinel-2, Blue Marble, Night Lights, Tianditu Satellite, Tencent Maps, etc.
 
-## 🧭 Usage Notes
-- **Markers / Street View / Measurement are mutually exclusive**: Only one can be active at a time; enabling one automatically disables the other to avoid click conflicts.
-- Street View navigation depends on the network and is unavailable when the PWA is offline.
+**Tools**
+- Distance / area measurement (both polylines and polygons are clamped to terrain).
+- Markers and favorites, stored locally in the browser, with import/export support.
+- Place search box; enter a place name to locate it.
 
-## ⚙️ Settings and Customization
-- You can click the button in the menu to enter the `/settings/` page and customize the light/dark theme, terrain loading strategy, etc.
+**Contextual Integration**
+- When entering covered areas such as Denver, Washington D.C., Sydney, etc., high-precision city modeling is automatically enabled.
+- When entering mainland China, a "Street View" button automatically appears in the toolbar; click the map to jump to a 360° panorama.
 
-## 🚀 Tech Stack and Acknowledgments
-- This project was built with AI assistance. AI products involved in its construction (in priority order): DeepSeek, Github Copilot, Hunyuan.
-- Tech stack: CesiumJS 1.118, native ES Modules (no build step), PWA (Service Worker + Manifest).
-- Data sources: [Cesium ion](https://ion.cesium.com/), [OpenStreetMap](https://www.openstreetmap.org/), [Natural Earth](https://www.naturalearthdata.com/), [Tianditu](https://www.tianditu.gov.cn/), [Tencent Maps](https://map.qq.com/).
-- The Street View feature uses the community-maintained third-party viewer [qq-map](https://qq-map.netlify.app/) to open panoramas (not an official Tencent service). Special thanks.
-- For coordinate system handling, see [js/coord-transform.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/coord-transform.js) (bidirectional conversion between WGS-84 ↔ GCJ-02).
+**Appearance & Interaction**
+- Realistic lighting, toggle for white building models; light/dark themes (can follow system).
+- Compass, reset pitch, draggable floating toolbar; adapted for both desktop and mobile.
+- Google 3D Earth mode: one-click switch when the network allows; much lighter than the original.
 
-## 📝 Notes on API Keys
-- The Cesium, Tencent Maps, and Tianditu keys in this project all have domain whitelists set (only allowed under specified domains) and are for demonstration purposes only.
-- If you want to fork this repository and deploy it to your own domain or use it locally, please directly modify [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js) and replace it with free keys you applied for. Be sure to set your own whitelist in the console to avoid affecting normal use. Please do not abuse other people's account quotas. Thank you for your understanding!
-  - Cesium Ion Access Token, [apply here](https://ion.cesium.com/tokens)
-  - Tencent Maps API, [apply here](https://lbs.qq.com/dev/console/application/mine)
-  - Tianditu API, [apply here](https://cloudcenter.tianditu.gov.cn/center/development/myApp)
+---
 
-## 💡 Project Information
-- Personal project start date: 2026-07-04
-- No team; developed in spare time; iterated irregularly.
+## 📱 Interface Preview
+**Mobile:**
+<img src="./screenshot-mobile.png" alt="screenshot-mobile">
+
+**Desktop:**
+<img src="./screenshot-desktop.png" alt="screenshot-desktop">
+
+*Screenshots may not be updated in real time; please visit the website for the latest interface.*
+
+---
+
+## 🧭 Usage
+- **Markers / Street View / Measurement are mutually exclusive**: only one can be active at a time; switching automatically closes the other to avoid click conflicts.
+- Street View redirection depends on the network and is unavailable when the PWA is offline.
+- On mobile, the bottom tray can be expanded by swiping up and collapsed by tapping the handle.
+
+---
+
+## ⚙️ Settings & Customization
+Use "Settings" in the toolbar to enter `/settings/`, where you can adjust the light/dark theme (follow system / manual), terrain loading, road network overlay, and cache.
+
+---
+
+## 🚀 Tech Stack & Credits
+| | |
+|---|---|
+| **Engine** | CesiumJS 1.118 |
+| **Architecture** | Native ES Modules, zero build step |
+| **Type** | PWA (Service Worker + Manifest) |
+| **AI Assistance** | DeepSeek, GitHub Copilot, Hunyuan |
+
+**Data Sources**: [Cesium ion](https://ion.cesium.com/) · [OpenStreetMap](https://www.openstreetmap.org/) · [Natural Earth](https://www.naturalearthdata.com/) · [Tianditu](https://www.tianditu.gov.cn/) · [Tencent Maps](https://map.qq.com/)
+
+**Special Thanks**: Tencent Street View uses the community-maintained third-party viewer [qq-map](https://qq-map.netlify.app/) to open panoramas (not an official Tencent service). For coordinate conversion, see [js/coord-transform.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/coord-transform.js) (bidirectional WGS-84 ↔ GCJ-02).
+
+---
+
+## 📝 API Key Notes
+<details>
+<summary><b>Click to view (required reading for forks / self-hosting)</b></summary>
+
+The built-in Cesium, Tencent Maps, and Tianditu keys **all have domain whitelists** and are for this project's demo only.
+
+If you fork or deploy to your own domain / locally, please edit [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js), replace them with your own free keys, and set your own whitelist in the console. Please do not abuse others' quotas. Thank you for your understanding.
+
+Application Links:
+- [Cesium Ion Access Token](https://ion.cesium.com/tokens)
+- [Tencent Maps API](https://lbs.qq.com/dev/console/application/mine)
+- [Tianditu API](https://cloudcenter.tianditu.gov.cn/center/development/myApp)
+
+</details>
+
+---
+
+## 💡 Project Info
+| | |
+|---|---|
+| **Start Date** | 2026-07-04 |
+| **Team** | Personal project, developed in spare time, iterated irregularly |
+| **Current Version** | 7.2 |
+
+---
+
+<sub>© Zhu Nemo · [GitHub](https://github.com/ZhuNemo) · [Dev.to](https://dev.to/zhunemo)</sub>
