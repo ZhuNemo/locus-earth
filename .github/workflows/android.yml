@@ -1,18 +1,18 @@
-// ============================================================================
-// Locus Earth Android 外壳 —— GitHub Actions 构建
-// ----------------------------------------------------------------------------
-// 触发方式：
-//   · 手动：Actions → Build Android APK → Run workflow
-//   · 打 tag：git tag v1.0 && git push origin v1.0
-//
-// 签名（可选，配了就用 release 签名，没配就自动回退 debug 签名）：
-//   Settings → Secrets and variables → Actions 里加四个 secret：
-//     ANDROID_KEYSTORE_BASE64     ← keytool 生成的 .jks 文件做 base64 后的内容
-//     ANDROID_KEYSTORE_PASSWORD
-//     ANDROID_KEY_ALIAS
-//     ANDROID_KEY_PASSWORD
-//   本机生成 base64（Windows Git Bash）：base64 -w0 release.jks > ks.txt
-// ============================================================================
+# ============================================================================
+# Locus Earth Android 外壳 —— GitHub Actions 构建
+# ----------------------------------------------------------------------------
+# 触发方式：
+#   · 手动：Actions → Build Android APK → Run workflow
+#   · 打 tag：git tag v1.0 && git push origin v1.0
+#
+# 签名（可选，配了就用 release 签名，没配就自动回退 debug 签名）：
+#   Settings → Secrets and variables → Actions 里加四个 secret：
+#     ANDROID_KEYSTORE_BASE64     ← keytool 生成的 .jks 文件做 base64 后的内容
+#     ANDROID_KEYSTORE_PASSWORD
+#     ANDROID_KEY_ALIAS
+#     ANDROID_KEY_PASSWORD
+#   本机生成 base64（Windows Git Bash）：base64 -w0 release.jks > ks.txt
+# ===========================================================================
 name: Build Android APK
 
 on:
