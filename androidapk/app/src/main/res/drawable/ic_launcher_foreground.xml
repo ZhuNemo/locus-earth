@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  自适应图标（Android 8.0+ / API 26+）的**前景层**：占位地球。
+  设计规则：viewBox 108×108，四周各留 18 单位会被系统裁掉，
+  因此图形必须落在中间 66×66 的安全区内。这里地球直径 64（R=32），刚好留 1 单位余量。
+
+  换成你自己的图标：见 androidapk/README.md「替换应用图标」。
+  最省事的做法是 Android Studio → 右键 res → New → Image Asset，
+  它会自动生成这一整套（含各密度 PNG）。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 地球外轮廓 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M22,54 a32,32 0 1,0 64,0 a32,32 0 1,0 -64,0"
+        android:strokeColor="@color/brand_sky"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.2" />
+
+    <!-- 经线 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M36.4,54 a17.6,32 0 1,0 35.2,0 a17.6,32 0 1,0 -35.2,0"
+        android:strokeColor="@color/brand_sky"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.2" />
+
+    <!-- 纬线 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M22,54 a32,17.6 0 1,0 64,0 a32,17.6 0 1,0 -64,0"
+        android:strokeColor="@color/brand_sky"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.2" />
+
+    <!-- 赤道 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M22,54 H86"
+        android:strokeColor="@color/brand_sky"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.2" />
+</vector>

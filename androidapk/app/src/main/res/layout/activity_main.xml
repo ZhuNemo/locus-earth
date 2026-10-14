@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  全屏视频用的容器（当前网页没有视频，这里是**预留钩子**，见 MainActivity.onShowFullscreen）。
+  WebView 是代码里动态 new 出来加到 index 0 的，不写在布局里 —— 因为渲染进程崩溃后
+  需要换一个新的 WebView，走同一条创建路径最不容易出错。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/shell_background">
+
+    <FrameLayout
+        android:id="@+id/fullscreenContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:visibility="gone" />
+
+</FrameLayout>

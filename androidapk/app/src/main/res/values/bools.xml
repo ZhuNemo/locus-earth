@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  系统栏图标配色（深色图标 = true）。
+  · 浅色主题：窗口底色是白的 → 要深色图标
+  · 深色主题：窗口底色是深蓝黑 → 要浅色图标（见 values-night/bools.xml）
+  为什么不像以前那样依赖主题自动处理：material 1.12.0 的 res 里**没有**任何
+  windowLightStatusBar 的声明（已核对 AAR 资源），继承链上只能落到平台默认值 false，
+  也就是"浅色模式下白底配白图标"。显式给值最稳。
+-->
+<resources>
+    <bool name="system_bars_light">true</bool>
+</resources>

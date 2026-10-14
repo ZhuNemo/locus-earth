@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  启动页主题。core-splashscreen 在 API 24~30 上会用它合成一个启动画面，
+  在 API 31+ 上直接映射到系统原生启动画面（四个 windowSplashScreen* / postSplashScreenTheme
+  属性名已在 core-splashscreen 1.0.1 的资源里核对过）。
+  关键是 postSplashScreenTheme：启动页消失后必须切回工作主题，
+  否则整个 App 会一直停在启动页主题上（Activity 背景错、状态栏配色错）。
+-->
+<resources>
+
+    <style name="Theme.LocusEarth.Splash" parent="Theme.SplashScreen">
+        <!-- 纯色底：与网页首屏底色一致，过渡不跳色 -->
+        <item name="windowSplashScreenBackground">@color/shell_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="windowSplashScreenAnimationDuration">200</item>
+        <item name="postSplashScreenTheme">@style/Theme.LocusEarth</item>
+    </style>
+
+    <!--
+      Material 3 + DayNight：浅色/深色跟随系统，不做自己的主题切换开关
+      （网页自己有主题切换，壳只负责提供不闪屏的底色）。
+      NoActionBar：全屏 WebView，不要标题栏。
+    -->
+    <style name="Theme.LocusEarth" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/shell_background</item>
+        <item name="android:colorBackground">@color/shell_background</item>
+
+        <!-- 系统栏：底色跟着壳，图标明暗由 bools.xml 的日/夜变体给。
+             显式写 windowLightStatusBar / windowLightNavigationBar 是必需的 ——
+             Material3 主题不声明它们，落到平台默认值 false 会出现"白底白图标"。
+             windowLightNavigationBar 是 API 27+ 属性，24~26 上会被忽略，
+             那两版由 shell_navbar 用深色兜底（见 colors.xml）。 -->
+        <item name="android:statusBarColor">@color/shell_background</item>
+        <item name="android:windowLightStatusBar">@bool/system_bars_light</item>
+        <item name="android:navigationBarColor">@color/shell_navbar</item>
+        <item name="android:windowLightNavigationBar">@bool/system_bars_light</item>
+    </style>
+
+</resources>

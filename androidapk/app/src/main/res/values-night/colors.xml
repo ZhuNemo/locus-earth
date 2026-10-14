@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 深色：对齐网页 data-theme="dark" 下的 bg-primary（#0e1320） -->
+<resources>
+    <color name="shell_background">#FF0E1320</color>
+    <color name="shell_navbar">#FF0E1320</color>
+</resources>

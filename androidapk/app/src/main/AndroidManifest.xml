@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ================= 权限 =================
+         只申请真正用得上的三项。
+         · INTERNET            —— 加载网页
+         · ACCESS_FINE_LOCATION    \  Locus Earth 的"定位到我"需要；
+         · ACCESS_COARSE_LOCATION  /  两者一起申请，用户可选"大致位置"
+         网页目前不需要相机 / 麦克风 / 存储读写，所以一律不申请。
+         将来若网页需要（例如导出书签文件），参考 androidapk/README.md 的 TODO 章节，
+         优先走 MediaStore / 系统文件选择器，不要申请 MANAGE_EXTERNAL_STORAGE。
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- 定位是可选能力，不要求设备必须有 GPS 硬件 -->
+    <uses-feature
+        android:name="android.hardware.location"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+
+    <!-- ================= 包可见性 =================
+         targetSdk 30+ 起，只有声明了 <queries> 才能"看到"别的应用。
+         我们只需要把白名单外的链接丢给浏览器，因此声明 VIEW + BROWSABLE。
+         注意：代码里**没有**依赖 resolveActivity() 来判断能否打开，
+         而是直接 startActivity + 捕获 ActivityNotFoundException，双保险。
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="mailto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="tel" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LocusEarth.Splash"
+        android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="false"
+        tools:targetApi="33">
+
+        <!--
+          configChanges：把能接的都接下来，避免旋转/深浅色切换时 Activity 重建。
+          WebView 一旦重建，Cesium 场景、Service Worker 缓存、用户当前视角都会丢，
+          体验上像"闪退重开"。
+          launchMode=singleTask：从系统浏览器切回来时复用同一个实例。
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|uiMode|locale|layoutDirection|fontScale"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.LocusEarth.Splash"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

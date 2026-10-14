@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用名：桌面图标下显示的字 -->
+    <string name="app_name">Locus Earth</string>
+</resources>

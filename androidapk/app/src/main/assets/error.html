@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>无法连接到 Locus Earth</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #1b2430;
+    --muted: #6b7684;
+    --accent: #2f7fd1;
+    --card: rgba(0, 0, 0, 0.035);
+    --line: rgba(0, 0, 0, 0.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1320;
+      --fg: #eaf0f8;
+      --muted: #939eae;
+      --accent: #88c8f8;
+      --card: rgba(255, 255, 255, 0.05);
+      --line: rgba(255, 255, 255, 0.12);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { width: 100%; max-width: 420px; text-align: center; }
+  .globe { width: 64px; height: 64px; margin: 0 auto 20px; display: block; }
+  .globe circle, .globe ellipse, .globe line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+  h1 { margin: 0 0 10px; font-size: 19px; font-weight: 650; letter-spacing: 0.2px; }
+  p { margin: 0 0 8px; font-size: 14px; line-height: 1.65; color: var(--muted); }
+  .detail {
+    margin: 18px 0 24px;
+    padding: 12px 14px;
+    text-align: left;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--card);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+    word-break: break-all;
+  }
+  .detail b { color: var(--fg); font-weight: 600; }
+  .detail .row + .row { margin-top: 8px; }
+  .retry {
+    display: inline-block;
+    padding: 13px 30px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #08111c;
+    font-size: 15px;
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .retry:active { opacity: 0.85; }
+  .hint { margin-top: 16px; font-size: 12px; color: var(--muted); opacity: 0.8; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- 内联 SVG，不引任何外部资源：断网时它必须还能渲染 -->
+    <svg class="globe" viewBox="0 0 108 108" aria-hidden="true">
+      <circle cx="54" cy="54" r="32" />
+      <ellipse cx="54" cy="54" rx="17.6" ry="32" />
+      <ellipse cx="54" cy="54" rx="32" ry="17.6" />
+      <line x1="22" y1="54" x2="86" y2="54" />
+    </svg>
+
+    <h1>没能加载 Locus Earth</h1>
+    <p>请确认网络连接正常，然后重试。</p>
+
+    <div class="detail">
+      <div class="row"><b>目标地址</b><br /><span id="target">—</span></div>
+      <div class="row" id="codeRow" hidden><b>错误码</b><br /><span id="code">—</span><span id="desc"></span></div>
+    </div>
+
+    <!--
+      重试按钮是一个普通链接，不做任何 JS Bridge：
+      点击 → 触发一次同为白名单内的 https 导航 → shouldOverrideUrlLoading 返回 false
+      → 在同一个 WebView 里重新加载应用首页。等价于 webView.reload()，
+      但不需要把原生能力暴露给网页（需求里明确禁止 addJavascriptInterface）。
+    -->
+    <a class="retry" href="https://locus-earth.pages.dev/">重试</a>
+
+    <p class="hint">如果反复失败，可在浏览器中打开 locus-earth.pages.dev 看看是不是整个网络的问题。</p>
+  </div>
+
+  <script>
+    // 原生侧把失败信息放在 URL 的 hash 里（不是 query）：
+    // hash 永远不参与资源路径匹配，因此不会影响 WebViewAssetLoader 定位到本文件。
+    (function () {
+      try {
+        var raw = location.hash.replace(/^#/, '');
+        if (!raw) return;
+        var params = {};
+        raw.split('&').forEach(function (pair) {
+          var i = pair.indexOf('=');
+          if (i < 0) return;
+          params[pair.slice(0, i)] = decodeURIComponent(pair.slice(i + 1));
+        });
+        if (params.target) {
+          document.getElementById('target').textContent = params.target;
+        }
+        if (params.code) {
+          document.getElementById('codeRow').hidden = false;
+          document.getElementById('code').textContent = params.code;
+          if (params.desc) {
+            document.getElementById('desc').textContent = '（' + params.desc + '）';
+          }
+        }
+      } catch (e) {
+        // 出错也无所谓：上面的占位符已经保证页面可读、可点
+      }
+    })();
+  </script>
+</body>
+</html>

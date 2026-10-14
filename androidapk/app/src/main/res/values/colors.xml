@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  壳的窗口底色。刻意跟网页自己的底色对齐，做到"启动页 → 网页首屏"没有色差跳变：
+    · 浅色：网页的 theme-color meta 是 #ffffff
+    · 深色：网页 CSS 变量 bg-primary 是 #0e1320（见仓库 css/themes.css）
+  如果哪天网页换底色，改 shell_background 这两个值即可，不需要动 Kotlin 代码。
+  （注意：XML 注释里不能出现连续两个 ASCII 连字符，所以上面没写 CSS 变量名全称。）
+-->
+<resources>
+    <color name="shell_background">#FFFFFFFF</color>
+
+    <!-- 导航栏颜色。API 24~26 上导航栏图标只能是浅色（windowLightNavigationBar 是 API 27 的
+         属性），所以低版本给深色兜底；API 27+ 在 values-v27/colors.xml 里覆盖成白色。 -->
+    <color name="shell_navbar">#FF0E1320</color>
+
+    <!-- 以下三色取自仓库现有的 android-chrome-512x512.png（用取色脚本采样），
+         仅服务于占位启动图标。换成你自己的图标时，这几个颜色可以一起删掉。 -->
+    <color name="ic_launcher_background">#FF0E1320</color>
+    <color name="brand_sky">#FF88C8F8</color>
+    <color name="brand_leaf">#FF589038</color>
+</resources>

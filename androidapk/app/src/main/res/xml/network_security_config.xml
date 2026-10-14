@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  强制 HTTPS。
+  · base-config 把 cleartextTrafficPermitted 设为 false —— 注意：一旦存在本文件，
+    AndroidManifest 里的 android:usesCleartextTraffic 就被忽略，以本文件为准，
+    所以两处都写了 false，保持一致免得后人误读。
+  · 这里**故意不加任何 domain-config 例外**：仓库全站资源都是 https
+    （天地图/腾讯/OSM/Cesium 均走 https 或 data: URI），不给任何域名开后门。
+  · 不覆盖 trust-anchors，也就不会为了调试而信任用户证书 —— 线上包不能被中间人抓包。
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

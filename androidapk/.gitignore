@@ -1,0 +1,21 @@
+# Android 工程产物 / 本地配置 / 签名材料，一律不入库
+.gradle/
+build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# 签名材料：绝对不要提交
+*.jks
+*.keystore
+keystore.properties
+
+# IDE
+.idea/
+*.iml
+*.hprof
+
+# 系统
+.DS_Store
+Thumbs.db
