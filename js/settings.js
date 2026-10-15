@@ -215,6 +215,54 @@
         renderToast(message);
     }
 
+    // ========================================================================
+    // 页内确认弹窗（取代原生 confirm）
+    // ------------------------------------------------------------------------
+    // 原生确认框在 Android 外壳里是「<域名> 显示」的系统对话框，不跟随主题，
+    // 也不套用本站样式。这里复用本页 .modal / .modal-content 结构。
+    // ========================================================================
+    let resolveConfirmRequest = null;
+
+    function askConfirm(message) {
+        const modal = document.getElementById('confirmModal');
+        const messageEl = document.getElementById('confirmMessage');
+        const okBtn = document.getElementById('okConfirmBtn');
+        const cancelBtn = document.getElementById('cancelConfirmBtn');
+
+        // 弹窗缺失时退回原生 confirm，保证功能不丢
+        if (!modal || !okBtn || !cancelBtn) return Promise.resolve(confirm(message));
+
+        // 上一个还挂着就直接当作取消，避免 Promise 永远悬着
+        if (resolveConfirmRequest) {
+            const stale = resolveConfirmRequest;
+            resolveConfirmRequest = null;
+            stale(false);
+        }
+
+        if (messageEl) messageEl.textContent = message;
+        modal.classList.add('active');
+        okBtn.focus();
+
+        return new Promise((resolve) => {
+            const finish = (result) => {
+                resolveConfirmRequest = null;
+                modal.classList.remove('active');
+                okBtn.removeEventListener('click', onOk);
+                cancelBtn.removeEventListener('click', onCancel);
+                modal.removeEventListener('click', onBackdrop);
+                resolve(result);
+            };
+            const onOk = () => finish(true);
+            const onCancel = () => finish(false);
+            const onBackdrop = (e) => { if (e.target === modal) finish(false); };
+
+            resolveConfirmRequest = finish;
+            okBtn.addEventListener('click', onOk);
+            cancelBtn.addEventListener('click', onCancel);
+            modal.addEventListener('click', onBackdrop);
+        });
+    }
+
     const terrainToggle = document.getElementById('terrainToggle');
         if (terrainToggle) {
             terrainToggle.checked = localStorage.getItem('terrainEnabled') !== 'false';
@@ -322,21 +370,24 @@
                 document.documentElement.setAttribute('data-theme', 'light');
             }
 
-            // 5. 反馈
-            alert(shellRepopulated
-                ? '清理已完成！部分资源将在刷新后重新获取。'
-                : '清理已完成！离线缓存未能自动重建，请刷新页面后重试。');
+            // 5. 反馈（页内 toast，取代原生 alert）
+            showToastInternal(shellRepopulated
+                ? '清理已完成，部分资源将在刷新后重新获取'
+                : '清理已完成，但离线缓存未能自动重建，请刷新页面后重试');
             clearCacheModal.classList.remove('active');
 
             if (clearCesiumCache && clearCesiumCache.checked) {
-                if (confirm("Cesium 引擎缓存已清除。为了彻底释放空间并重新加载最新引擎，是否立即刷新页面？")) {
+                const reloadNow = await askConfirm(
+                    'Cesium 引擎缓存已清除。为了彻底释放空间并重新加载最新引擎，是否立即刷新页面？'
+                );
+                if (reloadNow) {
                     location.reload();
                 }
             }
 
         } catch (error) {
             console.error('清除缓存失败:', error);
-            alert('发生错误：' + error.message);
+            showToastInternal('发生错误：' + error.message);
         }
     });
     console.log('设置页面已初始化');

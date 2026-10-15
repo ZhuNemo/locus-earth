@@ -2,4 +2,20 @@
 <resources>
     <!-- 应用名：桌面图标下显示的字 -->
     <string name="app_name">Locus Earth</string>
+
+    <!-- ================= 首次启动提示 =================
+         目的：让用户明确「这是个网页应用」，而不是原生 App。
+         只在首次启动出现，点「进入」后再也不弹（见 WelcomeDialog / MainActivity）。
+         文案刻意短：两段加起来约铺满屏幕 60%，不写长篇大论。 -->
+    <string name="welcome_title_zh">这是一个网页应用</string>
+    <string name="welcome_title_en">This is a web app</string>
+
+    <string name="welcome_body_zh">Locus Earth 是一个网页应用，这里的界面由网页实时加载，与使用浏览器打开的是同一份。它不是原生 App：功能更新随网页自动生效，无需更新安装包。需要联网使用。原网页：locus-earth.pages.dev。</string>
+    <string name="welcome_body_en">Locus Earth is a web app, and its interface is loaded in real-time through the web, just like when you open it in a browser. It’s not a native app: feature updates take effect automatically whenever the web page updates, so there’s no need to update the installation package. It requires an internet connection. Original web page: locus-earth.pages.dev.</string>
+
+    <string name="welcome_exit">退出</string>
+    <string name="welcome_enter">进入</string>
+
+    <!-- 无障碍朗读用：把中英标题读成一句，避免读屏把两行标题读散 -->
+    <string name="welcome_dialog_a11y">这是一个网页应用，This is a web app</string>
 </resources>

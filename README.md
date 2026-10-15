@@ -25,6 +25,7 @@
 - [界面预览](#-界面预览)
 - [使用说明](#-使用说明)
 - [设置与自定义](#-设置与自定义)
+- [Android 版（APK）](#-android-版apk)
 - [技术栈与致谢](#-技术栈与致谢)
 - [API Key 注意事项](#-api-key-注意事项)
 - [项目信息](#-项目信息)
@@ -33,6 +34,8 @@
 
 ## 🌍 项目简介
 **Locus Earth** 是一个轻量、快速的开源 Web 3D 地球应用。灵感来自 Google Earth，把「打开就能看世界」这件事做薄做快：零构建、纯前端、可装到桌面/手机当 PWA 用。
+
+全部代码以 MIT 许可开源，**网页端与 Android 壳工程都在本仓库里**（壳在 [`androidapk/`](./androidapk/)，见 [Android 版](#-android-版apk)）。网页本身无需安装；APK 只是另一种进入方式，不是必需品 —— 你也可以自行构建、修改、再分发。
 
 ---
 
@@ -78,6 +81,46 @@
 
 ## ⚙️ 设置与自定义
 功能栏「设置」进入 `/settings/`，可调整明暗主题（跟随系统 / 手动）、地形加载、路网叠加与缓存。
+
+---
+
+## 📱 Android 版（APK）
+
+本项目**不是一个原生 App**。网页才是主体，Android 版只是一个原生 WebView 外壳 ——
+它把网页全屏装进一个没有地址栏的窗口里，页面内容仍然从线上实时加载。
+
+| | |
+|---|---|
+| **获取** | 从 [Releases](https://github.com/ZhuNemo/locus-earth/releases) 下载 APK；或按下表自行构建 |
+| **包名 / 要求** | `dev.locusearth.app` · Android 7.0（API 24）及以上 |
+| **壳的职责** | 全屏无地址栏 · 白名单域名留在壳内 · 其余链接交给系统浏览器 · 首次启动说明「这是网页应用」 |
+| **源码位置** | [`androidapk/`](./androidapk/)（独立 Gradle 工程，与主项目同为 MIT 许可） |
+
+**网页更新后不用重装 APK。** 壳里没有任何业务逻辑，改网页即对所有已安装用户生效。
+只有换图标、改白名单域名、改包名这类壳自身的事才需要重新出包。
+
+<details>
+<summary><b>点开查看：自己构建 APK / 签名说明</b></summary>
+
+三种方式任选：
+
+| 方式 | 怎么做 |
+|---|---|
+| GitHub Actions（推荐） | 仓库 `Actions` → `Build Android APK` → `Run workflow`；或推一个 `v*` tag。产物在 Artifacts 里 |
+| 命令行 | `cd androidapk && ./gradlew :app:assembleRelease`（Windows 用 `gradlew.bat`） |
+| Android Studio | 打开 **`androidapk/`** 目录（不是仓库根）→ `Build → Build APK(s)` |
+
+签名是可选的：CI 上配了密钥就出正式签名包，**没配也能构建成功**（自动回退 debug 签名，能装能跑、不能上架）。
+Fork 后要发布自己的版本，请按 [`androidapk/README.md`](./androidapk/README.md) 第六节
+生成自己的 keystore，**不要复用他人密钥**。
+
+安装时需在系统设置里允许「安装未知来源应用」。用自备密钥签名的包，
+后续更新必须用**同一个密钥**签名，否则系统会拒绝覆盖安装。
+
+完整的构建、签名、换图标、加白名单域名、Cloudflare Pages 部署排除等说明，
+见 **[`androidapk/README.md`](./androidapk/README.md)**。
+
+</details>
 
 ---
 

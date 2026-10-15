@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>标记命名弹窗 · 渲染核对</title>
+<!-- 引入的是工程里真实的样式表，确保看到的就是线上生效的样式 -->
+<link rel="stylesheet" href="../css/themes.css">
+<link rel="stylesheet" href="../css/modals.css">
+<link rel="stylesheet" href="../css/bookmarks.css">
+<style>
+    html, body { margin: 0; padding: 0; height: 100%; }
+    /* 用一个接近卫星影像的底，模拟弹窗压在真实地图上的观感 */
+    body {
+        background: #2b3a2e;
+        background-image:
+            radial-gradient(circle at 30% 20%, rgba(120,140,110,0.55), transparent 55%),
+            radial-gradient(circle at 75% 70%, rgba(60,80,70,0.65), transparent 60%),
+            linear-gradient(160deg, #3a4a3c 0%, #1d2a24 55%, #16211d 100%);
+        font-family: var(--font-ui);
+        display: flex;
+        align-items: center;
+    }
+    /* 截图时让弹窗直接呈现在打开状态（线上由 .active 控制） */
+    .modal-overlay { position: static; opacity: 1; visibility: visible; pointer-events: auto; }
+    .modal-overlay .modal-box { opacity: 1; transform: none; }
+    .shot { padding: 24px; }
+    .shot + .shot { border-left: 1px dashed rgba(255,255,255,0.25); }
+    .shot-label {
+        color: rgba(255,255,255,0.85);
+        font-size: 12px;
+        letter-spacing: .04em;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+<div class="shot">
+    <div class="shot-label">浅色主题</div>
+    <div id="markerNameModal" class="modal-overlay active" role="dialog" aria-modal="true"
+         aria-labelledby="markerNameTitle">
+        <div class="modal-box glass-panel">
+            <button id="closeMarkerNameBtn" class="close-btn" aria-label="取消">
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <h2 id="markerNameTitle"><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg>为这个位置命名</h2>
+            <label class="field-label" for="markerNameInput">名称</label>
+            <input id="markerNameInput" class="text-field" type="text" maxlength="40"
+                   autocomplete="off" enterkeyhint="done" placeholder="例如：家、公司、观景台" value="标记 7">
+            <p id="markerNameError" class="field-error" role="alert"></p>
+            <div class="modal-actions">
+                <button id="cancelMarkerNameBtn" class="inline-action-btn" type="button">取消</button>
+                <button id="confirmMarkerNameBtn" class="inline-action-btn is-primary" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="shot" data-theme="dark">
+    <div class="shot-label">深色主题</div>
+    <div id="markerNameModalDark" class="modal-overlay active">
+        <div class="modal-box glass-panel">
+            <button class="close-btn" aria-label="取消">
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <h2><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg>为这个位置命名</h2>
+            <label class="field-label">名称</label>
+            <input class="text-field" type="text" value="标记 7" placeholder="例如：家、公司、观景台">
+            <p class="field-error" role="alert"></p>
+            <div class="modal-actions">
+                <button class="inline-action-btn" type="button">取消</button>
+                <button class="inline-action-btn is-primary" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="shot" data-theme="light">
+    <div class="shot-label">校验失败态（替代原 alert）</div>
+    <div id="markerNameModalErr" class="modal-overlay active">
+        <div class="modal-box glass-panel">
+            <button class="close-btn" aria-label="取消">
+                <svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <h2><svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg>为这个位置命名</h2>
+            <label class="field-label">名称</label>
+            <input class="text-field is-invalid" type="text" value="" placeholder="例如：家、公司、观景台">
+            <p class="field-error" role="alert">名称不能为空</p>
+            <div class="modal-actions">
+                <button class="inline-action-btn" type="button">取消</button>
+                <button class="inline-action-btn is-primary" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

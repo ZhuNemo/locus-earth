@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  首次启动提示的正文区。
+
+  为什么标题 + 中文正文 + 英文正文放在**同一个 TextView** 里：
+  用三个 TextView（标题大、英文小、正文中）会让行距和段距很难对齐 ——
+  中文正文吃掉了「英文必须紧跟其后」的紧密度，看上去像两块不相干的文字。
+  这里靠 HTML 的 <big> 把标题放大、<br> 控段距，一份文本一次设置完，
+  字号与段距在深色模式下也不需要额外维护第二套样式。
+
+  按钮是两个 MaterialButton：左边描边（退出）、右边实心（进入）。
+  这是提示型弹窗的常规层级：破坏性/次要动作在左且视觉更轻，主行动在右且更重。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <TextView
+        android:id="@+id/welcomeMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="15sp"
+        android:lineSpacingMultiplier="1.25"
+        android:text="@string/welcome_title_zh" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/welcomeExit"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="@string/welcome_exit" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/welcomeEnter"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="@string/welcome_enter" />
+    </LinearLayout>
+</LinearLayout>

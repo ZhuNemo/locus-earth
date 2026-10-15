@@ -119,6 +119,74 @@
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
         }
+
+        /* ============================================================
+           标记命名弹窗
+           ------------------------------------------------------------
+           取代原生 prompt()。原生弹窗在 Android 外壳里会渲染成
+           「<域名> 显示」的系统对话框，既不是本项目的字体/配色，
+           也不跟随深浅色主题，与全站设计语言完全脱节。
+           这里复用既有的 .modal-overlay + .modal-box.glass-panel，
+           只补两个新零件：文本框（.text-field）与底部按钮行
+           （.modal-actions，按钮沿用 .inline-action-btn）。
+           ============================================================ */
+        .modal-box .field-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .modal-box .text-field {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 16px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            background: var(--glass-bg-subtle);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 15px;
+            line-height: 1.4;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .modal-box .text-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* 聚焦态沿用强调色，和设置页控件保持一致 */
+        .modal-box .text-field:focus {
+            border-color: var(--accent-border);
+            background: var(--glass-bg);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        /* 校验失败：红色描边 + 下方提示，取代原来的 alert() */
+        .modal-box .text-field.is-invalid {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 3px var(--danger-soft);
+        }
+
+        .modal-box .field-error {
+            min-height: 18px;
+            margin: 6px 0 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--danger);
+        }
+
+        .modal-box .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
         /* ============================================================
            关于弹窗：应用头 + 开发者卡片
            （参照移动端「关于」样式：图标 + 名称 + 版本号；

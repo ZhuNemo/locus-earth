@@ -25,6 +25,7 @@
 - [Interface Preview](#-interface-preview)
 - [Usage](#-usage)
 - [Settings & Customization](#-settings--customization)
+- [Android Version (APK)](#-android-version-apk)
 - [Tech Stack & Credits](#-tech-stack--credits)
 - [API Key Notes](#-api-key-notes)
 - [Project Info](#-project-info)
@@ -33,6 +34,8 @@
 
 ## 🌍 Project Introduction
 **Locus Earth** is a lightweight, fast open-source Web 3D Earth application. Inspired by Google Earth, it keeps "open it and see the world" lean and fast: zero build, pure frontend, and installable as a PWA on desktop/mobile.
+
+All code is open source under the MIT license, and **both the web app and the Android shell live in this repository** (the shell is in [`androidapk/`](./androidapk/), see [Android Version](#-android-version-apk)). The web app needs no installation; the APK is simply another way in, not a requirement — you are free to build, modify, and redistribute it yourself.
 
 ---
 
@@ -78,6 +81,50 @@
 
 ## ⚙️ Settings & Customization
 Use "Settings" in the toolbar to enter `/settings/`, where you can adjust the light/dark theme (follow system / manual), terrain loading, road network overlay, and cache.
+
+---
+
+## 📱 Android Version (APK)
+
+This is **not a native app**. The web app is the product; the Android version is just a native WebView
+shell that puts the site full-screen in a window with no address bar — the content itself is still
+loaded live from the web.
+
+| | |
+|---|---|
+| **Get it** | Download the APK from [Releases](https://github.com/ZhuNemo/locus-earth/releases), or build it yourself |
+| **Package / requirement** | `dev.locusearth.app` · Android 7.0 (API 24) or newer |
+| **What the shell does** | Full-screen, no address bar · keeps allow-listed domains in-app · sends other links to the system browser · explains "this is a web app" on first launch |
+| **Source** | [`androidapk/`](./androidapk/) (standalone Gradle project, MIT licensed like the main project) |
+
+**No APK reinstall is needed when the web app updates.** The shell contains no business logic,
+so web changes reach every installed user immediately. A rebuild is only required for shell-side
+things: icons, allow-listed domains, package name.
+
+<details>
+<summary><b>Build it yourself / signing notes</b></summary>
+
+Three options:
+
+| Option | How |
+|---|---|
+| GitHub Actions (recommended) | Repo `Actions` → `Build Android APK` → `Run workflow`; or push a `v*` tag. Artifacts appear under the run |
+| Command line | `cd androidapk && ./gradlew :app:assembleRelease` (use `gradlew.bat` on Windows) |
+| Android Studio | Open the **`androidapk/`** directory (not the repo root) → `Build → Build APK(s)` |
+
+Signing is optional: with keystore secrets configured, CI produces a properly signed build;
+**without them the build still succeeds** (it falls back to the debug signature — installable and
+runnable, but not publishable). After forking, generate your own keystore as described in section 6 of
+[`androidapk/README.md`](./androidapk/README.md) and **never reuse someone else's key**.
+
+You must allow "install from unknown sources" in system settings. Builds signed with your own key
+must be updated with **the same key**, or the system will refuse the upgrade.
+
+Full instructions on building, signing, replacing icons, adding allow-listed domains, and excluding
+the shell from Cloudflare Pages deployments are in
+**[`androidapk/README.md`](./androidapk/README.md)** (written in Chinese).
+
+</details>
 
 ---
 

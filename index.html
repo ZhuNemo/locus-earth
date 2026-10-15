@@ -112,6 +112,9 @@
             <symbol id="i-document" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 16.5h4"/>
             </symbol>
+            <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6h.01"/>
+            </symbol>
         </defs>
     </svg>
 
@@ -324,6 +327,48 @@
     <!-- 隐藏的文件输入 -->
     <input type="file" id="importFileInput" accept=".csv,.txt" style="display:none;" />
 
+    <!-- 标记命名弹窗
+         取代浏览器原生 prompt()：原生弹窗在 Android 外壳里会显示成
+         「<域名> 显示」的系统对话框，与全站设计语言完全脱节。
+         结构与其他弹窗一致：.modal-overlay > .modal-box.glass-panel + .close-btn -->
+    <div id="markerNameModal" class="modal-overlay" role="dialog" aria-modal="true"
+         aria-labelledby="markerNameTitle">
+        <div class="modal-box glass-panel">
+            <button id="closeMarkerNameBtn" class="close-btn" aria-label="取消">
+                <svg class="ui-icon"><use href="#i-close"/></svg>
+            </button>
+            <h2 id="markerNameTitle"><svg class="ui-icon"><use href="#i-pin"/></svg>为这个位置命名</h2>
+            <label class="field-label" for="markerNameInput">名称</label>
+            <input id="markerNameInput" class="text-field" type="text" maxlength="40"
+                   autocomplete="off" enterkeyhint="done" placeholder="例如：家、公司、观景台" />
+            <p id="markerNameError" class="field-error" role="alert"></p>
+            <div class="modal-actions">
+                <button id="cancelMarkerNameBtn" class="inline-action-btn" type="button">取消</button>
+                <button id="confirmMarkerNameBtn" class="inline-action-btn" type="button">确定</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- 通用确认弹窗
+         取代原生 confirm()。同一原因：原生弹窗在 Android 外壳里会渲染成
+         「<域名> 显示」的系统对话框，不跟随主题，也不套用本站样式。
+         文案由 JS 注入（askConfirm），所以这里只放结构。 -->
+    <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true"
+         aria-labelledby="confirmTitle">
+        <div class="modal-box glass-panel">
+            <button id="closeConfirmBtn" class="close-btn" aria-label="取消">
+                <svg class="ui-icon"><use href="#i-close"/></svg>
+            </button>
+            <h2 id="confirmTitle"><svg class="ui-icon"><use href="#i-info"/></svg>请确认</h2>
+            <p id="confirmMessage"></p>
+            <div class="modal-actions">
+                <button id="cancelConfirmBtn" class="inline-action-btn" type="button">取消</button>
+                <button id="okConfirmBtn" class="inline-action-btn" type="button">确定</button>
+            </div>
+        </div>
+    </div>
 
 
     <!-- 信息弹窗 -->

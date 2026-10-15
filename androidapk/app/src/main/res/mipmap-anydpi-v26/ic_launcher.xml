@@ -2,12 +2,14 @@
 <!--
   自适应图标（API 26+）。
   background 直接引用颜色资源 —— 这是官方文档的写法，不需要额外画一个背景矢量。
-  monochrome 是给 Android 13+ 的「主题图标」用的：系统只取 alpha 通道自己上色，
-  所以前景那套描边矢量可以原样复用。
-  低版本（API 24/25）走 mipmap-<density>/ic_launcher.png，见同目录的 mipmap-* 文件夹。
+  foreground 是 mipmap-<density>/ic_launcher_foreground.png：由 tools/gen-icon-assets.py
+             从 androidapk/icon-source/ 的源图生成，蓝盘直径严格等于 66dp 安全区。
+  monochrome 是给 Android 13+ 的「主题图标」用的，见 ic_launcher_monochrome.xml
+             里关于"为什么主题图标仍是线框矢量"的说明。
+  低版本（API 24/25）走 mipmap-<density>/ic_launcher.png / ic_launcher_round.png。
 -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background" />
-    <foreground android:drawable="@drawable/ic_launcher_foreground" />
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_monochrome" />
 </adaptive-icon>

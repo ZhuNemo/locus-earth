@@ -13,9 +13,16 @@
          属性），所以低版本给深色兜底；API 27+ 在 values-v27/colors.xml 里覆盖成白色。 -->
     <color name="shell_navbar">#FF0E1320</color>
 
-    <!-- 以下三色取自仓库现有的 android-chrome-512x512.png（用取色脚本采样），
-         仅服务于占位启动图标。换成你自己的图标时，这几个颜色可以一起删掉。 -->
+    <!-- ================= 图标配色 =================
+         桌面图标底：与 shell_navbar / shell_background(深色) 同一个深蓝黑，
+         实心浅蓝圆盘压在上面，深浅色桌面上都清晰。 -->
     <color name="ic_launcher_background">#FF0E1320</color>
-    <color name="brand_sky">#FF88C8F8</color>
-    <color name="brand_leaf">#FF589038</color>
+
+    <!-- 以下两色从 androidapk/icon-source 的 512 源图**实际采样**得到，
+         用来重绘主题图标（monochrome）的线框矢量：
+           brand_sky  = 海洋 #88C9F9
+           brand_leaf = 陆地 #5C913B
+         （早先的 #88C8F8 / #589038 是目测填的，与源图差 1~2 个色阶，已按实测修正。） -->
+    <color name="brand_sky">#FF88C9F9</color>
+    <color name="brand_leaf">#FF5C913B</color>
 </resources>

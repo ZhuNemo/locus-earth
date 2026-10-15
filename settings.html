@@ -153,6 +153,21 @@
         </div>
     </main>
 
+    <!-- 通用确认弹窗
+         取代原生 confirm()：原生弹窗在 Android 外壳里会渲染成
+         「<域名> 显示」的系统对话框，不跟随主题，也不套用本站样式。
+         结构复用本页 .modal / .modal-content / .modal-buttons。 -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h2>请确认</h2>
+            <p id="confirmMessage"></p>
+            <div class="modal-buttons">
+                <button id="okConfirmBtn" type="button">确定</button>
+                <button id="cancelConfirmBtn" type="button">取消</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 提示浮层（结构/样式与主页面 toast 一致，供设置页提示使用） -->
     <div id="toastMessage" class="toast-message"></div>
 

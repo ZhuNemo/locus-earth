@@ -7,9 +7,10 @@
          · INTERNET            —— 加载网页
          · ACCESS_FINE_LOCATION    \  Locus Earth 的"定位到我"需要；
          · ACCESS_COARSE_LOCATION  /  两者一起申请，用户可选"大致位置"
-         网页目前不需要相机 / 麦克风 / 存储读写，所以一律不申请。
-         将来若网页需要（例如导出书签文件），参考 androidapk/README.md 的 TODO 章节，
-         优先走 MediaStore / 系统文件选择器，不要申请 MANAGE_EXTERNAL_STORAGE。
+         网页不需要相机 / 麦克风；收藏夹的导入导出走 SAF（系统文件选择器 /
+         系统分享面板），由用户按次授权，因此**也不需要任何存储权限**。
+         将来若还有别的落盘需求，继续优先走 MediaStore / SAF，
+         不要申请 MANAGE_EXTERNAL_STORAGE 或 WRITE_EXTERNAL_STORAGE。
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -28,6 +29,9 @@
          我们只需要把白名单外的链接丢给浏览器，因此声明 VIEW + BROWSABLE。
          注意：代码里**没有**依赖 resolveActivity() 来判断能否打开，
          而是直接 startActivity + 捕获 ActivityNotFoundException，双保险。
+
+         文件选择器（收藏夹导入）同样受包可见性限制：没有 GET_CONTENT 这条，
+         ACTION_GET_CONTENT 可能解析不到任何系统文件管理器。
     -->
     <queries>
         <intent>
@@ -47,6 +51,12 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="tel" />
+        </intent>
+        <!-- 网页的 <input type="file"> → 系统文件选择器 -->
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+            <category android:name="android.intent.category.OPENABLE" />
+            <data android:mimeType="*/*" />
         </intent>
     </queries>
 

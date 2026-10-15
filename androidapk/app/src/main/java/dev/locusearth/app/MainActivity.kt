@@ -2,17 +2,20 @@ package dev.locusearth.app
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.DownloadManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.os.Message
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -70,6 +73,14 @@ class MainActivity : AppCompatActivity() {
      */
     private val pendingGeoPrompts = mutableListOf<Pair<String, GeolocationPermissions.Callback>>()
 
+    /**
+     * 等待文件选择结果的 WebView 回调（网页的 <input type="file">）。
+     *
+     * 必须保存下来并且在**任何**结束路径上作答（选中 / 取消都要），
+     * 漏答一次会让网页那个 input 永久卡住，之后连点击都不再有反应。
+     */
+    private var pendingFilePathCallback: ValueCallback<Array<Uri>>? = null
+
     private val locationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
             val granted = result.values.any { it }
@@ -77,6 +88,20 @@ class MainActivity : AppCompatActivity() {
             pendingGeoPrompts.clear()
             // 无论允许还是拒绝都必须回答 WebView，否则网页的定位回调会一直挂着
             pending.forEach { (origin, callback) -> callback.invoke(origin, granted, false) }
+        }
+
+    /**
+     * 选文件（收藏夹导入专用）。
+     *
+     * 用 ACTION_GET_CONTENT + CATEGORY_OPENABLE 而不是存储权限：
+     * SAF 由系统文件选择器授权单次访问，**不需要申请任何存储读写权限**，
+     * 与工程「只申请三项权限」的约定一致。
+     */
+    private val fileChooserLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            deliverFileChooserResult(
+                WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data)
+            )
         }
 
     // ========================================================================
@@ -100,6 +125,36 @@ class MainActivity : AppCompatActivity() {
 
         AssetsLoader.init(this)
 
+        // 首次启动先弹「这是一个网页应用」，用户点「进入」后才开始建 WebView。
+        // 顺序很重要：点「退出」时不应该已经白花流量去加载地球。
+        // Activity 重建（旋转/深浅色切换）时 FragmentManager 会自动恢复这个 DialogFragment，
+        // 此时 welcome_shown 已是 true，不会重复弹出。
+        if (WelcomeDialog.shouldShow(this, fromExternalLink = false) &&
+            supportFragmentManager.findFragmentByTag(WelcomeDialog.TAG) == null
+        ) {
+            showWelcomeDialog()
+        } else {
+            setupWebView()
+        }
+    }
+
+    /** 展示首次启动提示；两条出口都对应明确的用户意图 */
+    private fun showWelcomeDialog() {
+        val dialog = WelcomeDialog()
+        dialog.onEnter = { setupWebView() }
+        dialog.onExit = { finishAffinity() }
+        dialog.show(supportFragmentManager, WelcomeDialog.TAG)
+    }
+
+    /**
+     * 建主 WebView 并开始加载。
+     *
+     * 单独抽成方法而不是留在 onCreate 里：首次启动要等提示弹窗点了「进入」才走到这里，
+     * 用 isInitialized 兜住「Dialog 恢复 + 再次回调」造成的重复初始化。
+     */
+    private fun setupWebView() {
+        if (::webView.isInitialized) return
+
         webView = createMainWebView()
         // 放在 index 0：全屏容器始终压在它上面
         rootView.addView(webView, 0)
@@ -116,7 +171,7 @@ class MainActivity : AppCompatActivity() {
                         hideFullscreen()
                         return
                     }
-                    if (webView.canGoBack()) {
+                    if (::webView.isInitialized && webView.canGoBack()) {
                         webView.goBack()
                     } else {
                         finish()
@@ -214,7 +269,11 @@ class MainActivity : AppCompatActivity() {
             onNewWindowRequest = { message -> handleCreateWindow(message) },
             onShowFullscreen = { view, callback -> showFullscreen(view, callback) },
             onHideFullscreen = { hideFullscreen() },
+            onShowFileChooser = { callback, params -> handleShowFileChooser(callback, params) },
         )
+
+        // 下载兜底（http/https 直链；blob 下载的限制见 setupDownloadListener 注释）
+        setupDownloadListener()
 
         if (BuildConfig.DEBUG) {
             // 调试包可以在 chrome://inspect 里远程调试（正式包不生效）
@@ -315,6 +374,119 @@ class MainActivity : AppCompatActivity() {
         val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
         return fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED
+    }
+
+    // ========================================================================
+    // 文件选择（网页的 <input type="file">）
+    // ========================================================================
+
+    /**
+     * 网页点击 `<input type="file">` 时被 WebChromeClient 转到这里。
+     *
+     * 这是收藏夹「导入」在壳里能工作的前提：没有它，点击毫无反应
+     * （WebView 默认不处理，网页的 change 事件永远等不到文件）。
+     *
+     * 用 ACTION_GET_CONTENT 让系统文件选择器接管，因此**不需要任何存储权限**。
+     */
+    private fun handleShowFileChooser(
+        filePathCallback: ValueCallback<Array<Uri>>,
+        params: WebChromeClient.FileChooserParams,
+    ): Boolean {
+        // 上一次的回调还没作答就又来一次（例如连点两下）：先把旧的取消掉，
+        // 否则那个 input 会永久卡住，而且旧的 callback 再也无人可达。
+        pendingFilePathCallback?.onReceiveValue(null)
+
+        pendingFilePathCallback = filePathCallback
+
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            // 网页写的是 accept=".csv,.txt"，WebView 会翻成 MIME 类型传进来；
+            // 逐个过滤成合法 MIME，坏值会让系统文件选择器直接抛异常。
+            val mimeTypes = params.acceptTypes
+                .filter { it.isNotBlank() && it.contains('/') && !it.contains(',') }
+            type = if (mimeTypes.size == 1) mimeTypes[0] else "*/*"
+            if (mimeTypes.size > 1) {
+                putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes.toTypedArray())
+            }
+            // 允许一次选多个，与 FileChooserParams.MODE_OPEN_MULTIPLE 对应
+            if (params.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            }
+        }
+
+        return try {
+            fileChooserLauncher.launch(intent)
+            true
+        } catch (e: ActivityNotFoundException) {
+            // 设备上没有文件选择器（极罕见）：必须作答，否则网页那个 input 卡死
+            Log.w(TAG, "没有可用的文件选择器", e)
+            deliverFileChooserResult(null)
+            Toast.makeText(this, "没有可用的文件管理器", Toast.LENGTH_SHORT).show()
+            false
+        }
+    }
+
+    /**
+     * 把选择结果交回网页。
+     *
+     * ⚠️ 无论用户是选中文件还是点了取消，**都必须**调用一次 onReceiveValue：
+     * 取消要传 null。漏答会让网页的 <input type="file"> 永久处于等待状态。
+     */
+    private fun deliverFileChooserResult(uris: Array<Uri>?) {
+        val callback = pendingFilePathCallback ?: return
+        pendingFilePathCallback = null
+        callback.onReceiveValue(uris)
+    }
+
+    // ========================================================================
+    // 下载（兜底）
+    // ========================================================================
+
+    /**
+     * 下载兜底。
+     *
+     * 背景：网页的收藏夹导出优先走 `navigator.share()`（系统分享面板，可存到「文件」），
+     * 桌面浏览器则回退到 `<a download>` + blob。
+     *
+     * ⚠️ 这里**存不下 blob: 下载**：blob 的字节只存在于渲染进程里，
+     * DownloadListener 拿到的只是一个 `blob:https://...` 字符串，原生侧读不到内容。
+     * 所以 blob 场景只能靠网页那边走分享通路，这个监听器负责的是
+     * http/https 直链（以及将来网页可能新增的下载入口）。
+     */
+    private fun setupDownloadListener() {
+        webView.setDownloadListener { url, _, contentDisposition, mimeType, _ ->
+            if (url.startsWith("blob:")) {
+                Log.w(TAG, "blob: 下载无法在壳内保存，请改用系统分享导出: $url")
+                Toast.makeText(this, "请用「导出」里的系统分享保存文件", Toast.LENGTH_LONG).show()
+                return@setDownloadListener
+            }
+
+            val uri = Uri.parse(url)
+            if (!DomainPolicy.isAllowedUri(uri) && !url.startsWith("data:")) {
+                Log.w(TAG, "拒绝下载非白名单地址: $url")
+                return@setDownloadListener
+            }
+
+            try {
+                val request = DownloadManager.Request(uri).apply {
+                    setMimeType(mimeType)
+                    setNotificationVisibility(
+                        DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                    )
+                    // 落到系统「下载」目录，不需要存储权限
+                    setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS,
+                        android.webkit.URLUtil.guessFileName(url, contentDisposition, mimeType),
+                    )
+                }
+                val manager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+                manager.enqueue(request)
+                Toast.makeText(this, "已开始下载", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Log.w(TAG, "下载失败: $url", e)
+                Toast.makeText(this, "下载失败", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     // ========================================================================
