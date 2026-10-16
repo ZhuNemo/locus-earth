@@ -52,8 +52,9 @@ android {
 
         // versionName 会被拼进 WebView 的 UA（见 DomainPolicy.UA_SUFFIX），
         // 改版本号时网页端拿到的标记也会跟着变，这是有意为之。
-        versionCode = 1
-        versionName = "1.0"
+        // 1.1：修复启动闪退（createMainWebView 在字段 webView 赋值前就去读它）。
+        versionCode = 2
+        versionName = "1.1"
     }
 
     signingConfigs {

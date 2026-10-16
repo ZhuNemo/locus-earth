@@ -252,7 +252,7 @@ maven { url = uri("https://maven.aliyun.com/repository/public") }
 | 应用名 | `Locus Earth` |
 | applicationId / namespace | `dev.locusearth.app` |
 | minSdk / targetSdk / compileSdk | **24** / **34** / **34** |
-| versionCode / versionName | 1 / 1.0 |
+| versionCode / versionName | 2 / 1.1 |
 | 语言 | Kotlin |
 | 构建脚本 | Gradle Kotlin DSL（`build.gradle.kts`） |
 | AGP / Gradle / Kotlin / JDK | 8.6.1 / 8.9 / 1.9.24 / 17 |
@@ -460,7 +460,7 @@ Safe Zone 判断失准。生成脚本里用 `SOURCE_DISC_RATIO = 1.0026` 显式�
 壳会在 WebView 的 User-Agent 末尾追加一段标记：
 
 ```
-... Mozilla/5.0 (...) ... LocusEarthAndroid/1.0
+... Mozilla/5.0 (...) ... LocusEarthAndroid/1.1
 ```
 
 版本号取自 `app/build.gradle.kts` 的 `versionName`（见 `DomainPolicy.UA_SUFFIX`）。
@@ -593,7 +593,7 @@ blob 的字节只存在于渲染进程，`DownloadListener.onDownloadStart` 收�
 1. **`onRenderProcessGone` 后重建 WebView**（`MainActivity.recreateWebView`）。
    Cesium 场景吃内存，渲染进程被系统回收时默认是**整个 App 一起闪退**；
    接管后表现是「页面重载回首页」。代价是未保存的视角会丢 —— 但比闪退好。
-2. **UA 标记**：需求里要求的 ` LocusEarthAndroid/1.0` 由 `versionName` 自动拼，
+2. **UA 标记**：需求里要求的 ` LocusEarthAndroid/1.1` 由 `versionName` 自动拼，
    改版本号不会忘记同步。
 
 ---

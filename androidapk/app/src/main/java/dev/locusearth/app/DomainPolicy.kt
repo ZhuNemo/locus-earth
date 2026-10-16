@@ -14,7 +14,7 @@ object DomainPolicy {
     const val START_URL = "https://locus-earth.pages.dev/"
 
     /**
-     * 追加到 WebView User-Agent 末尾的标记，形如 `" LocusEarthAndroid/1.0"`。
+     * 追加到 WebView User-Agent 末尾的标记，形如 `" LocusEarthAndroid/1.1"`。
      * 版本号取自 build.gradle.kts 的 versionName，改版本号会自动同步。
      * 网页端可以用 `navigator.userAgent.includes('LocusEarthAndroid')` 判断自己跑在壳里。
      */

@@ -273,7 +273,11 @@ class MainActivity : AppCompatActivity() {
         )
 
         // 下载兜底（http/https 直链；blob 下载的限制见 setupDownloadListener 注释）
-        setupDownloadListener()
+        // ⚠️ 必须把「正在创建的这个」实例传进去，不能让被调用方去读字段 webView：
+        //    此刻字段还没赋值（`webView = createMainWebView()` 要等方法返回才执行），
+        //    直接读字段会抛 UninitializedPropertyAccessException（lateinit property
+        //    webView has not been initialized），表现为一打开就闪退。
+        setupDownloadListener(this)
 
         if (BuildConfig.DEBUG) {
             // 调试包可以在 chrome://inspect 里远程调试（正式包不生效）
@@ -452,9 +456,14 @@ class MainActivity : AppCompatActivity() {
      * DownloadListener 拿到的只是一个 `blob:https://...` 字符串，原生侧读不到内容。
      * 所以 blob 场景只能靠网页那边走分享通路，这个监听器负责的是
      * http/https 直链（以及将来网页可能新增的下载入口）。
+     *
+     * [target] 是**正在创建的**那个 WebView，不是字段 `webView`：
+     * 工厂方法返回之前字段还处于未初始化状态，这里不能去读它。
+     * 两条创建路径（首次 setupWebView / 渲染进程崩溃后的 recreateWebView）
+     * 共用同一个工厂，因此监听器也在这里一并挂上。
      */
-    private fun setupDownloadListener() {
-        webView.setDownloadListener { url, _, contentDisposition, mimeType, _ ->
+    private fun setupDownloadListener(target: WebView) {
+        target.setDownloadListener { url, _, contentDisposition, mimeType, _ ->
             if (url.startsWith("blob:")) {
                 Log.w(TAG, "blob: 下载无法在壳内保存，请改用系统分享导出: $url")
                 Toast.makeText(this, "请用「导出」里的系统分享保存文件", Toast.LENGTH_LONG).show()
