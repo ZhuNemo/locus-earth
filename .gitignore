@@ -4,3 +4,6 @@ deepseek-development-log/
 tmp/
 .workbuddy/
 tests/
+# 渲染核对用的临时产物：本体现在放在 .workbuddy/.tmp-ui-preview/，
+# 但 render.py 里的 OUT 是拼接 REPO 的固定路径，万一在仓库根跑出同名目录也不该入库
+.tmp-ui-preview/
