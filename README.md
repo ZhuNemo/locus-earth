@@ -4,18 +4,24 @@
 <a>简体中文</a> | <a href="README-EN.md">English</a>
 </div>
 
+---
+
 <div align="left">
 <img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="50" height="50">
 <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="220">
 </div>
 
+---
+
 <div align="left">
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
-> 打开浏览器就能用的 3D 地球 —— 基于 Cesium，免安装、免注册。
+---
+
+> 基于 Cesium 的 3D 地球，打开浏览器即可使用，无需安装或注册
 >
-> **[Github Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
+> **[GitHub Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
 
 ---
 
@@ -33,31 +39,31 @@
 ---
 
 ## 🌍 项目简介
-**Locus Earth** 是一个轻量、快速的开源 Web 3D 地球应用。灵感来自 Google Earth，把「打开就能看世界」这件事做薄做快：零构建、纯前端、可装到桌面/手机当 PWA 用。
+**Locus Earth** 是一个开源的 Web 3D 地球应用，交互方式参考 Google Earth。它用原生 ES Modules 编写，没有构建步骤，打开网页就能运行，也可以装到桌面或手机当 PWA 使用。
 
-全部代码以 MIT 许可开源，**网页端与 Android 壳工程都在本仓库里**（壳在 [`androidapk/`](./androidapk/)，见 [Android 版](#-android-版apk)）。网页本身无需安装；APK 只是另一种进入方式，不是必需品 —— 你也可以自行构建、修改、再分发。
+代码以 MIT 许可开源，**网页端和 Android 壳工程都在本仓库里**（壳在 [`androidapk/`](./androidapk/)，见 [Android 版](#-android-版apk)）。网页本身不需要安装；APK 只是另一种打开方式，你也可以自行构建、修改和分发。
 
 ---
 
 ## ✨ 核心功能
 
 **浏览**
-- 3D 地形 + 全球卫星影像，全球 3D 建筑（OpenStreetMap）。
-- 多底图一键切换：Sentinel-2、Blue Marble、夜间灯光、天地图卫星、腾讯地图等。
+- 3D 地形与全球卫星影像，叠加全球 3D 建筑（OpenStreetMap 数据）。
+- 底图切换：Sentinel-2、Blue Marble、夜间灯光、天地图卫星、腾讯地图等。
 
 **工具**
-- 测距 / 测面积（折线与多边形均贴地形）。
-- 标记与收藏夹，保存在浏览器本地，支持导入导出。
-- 地点搜索框，输入地名即定位。
+- 距离与面积测量，折线和多边形都贴合地形。
+- 标记与收藏夹，数据保存在浏览器本地，支持导入导出。
+- 地点搜索：输入地名直接定位。
 
-**情景联动**
-- 进入丹佛、华盛顿 D.C.、悉尼等覆盖区，自动开启高精度城市建模。
-- 进入中国大陆，功能栏自动出现「街景」按钮，点地图即可跳转 360° 全景。
+**区域联动**
+- 进入丹佛、华盛顿 D.C.、悉尼等覆盖区，自动切换到高精度城市建模。
+- 进入中国大陆，功能栏自动出现「街景」按钮，点击地图可跳转 360° 全景。
 
 **外观与交互**
-- 真实光照、建筑白模开关；深浅主题（可跟随系统）。
-- 指南针、恢复俯仰角、可拖动的悬浮工具条，桌面与移动端均已适配。
-- 谷歌 3D 地球模式：网络允许时一键切换，比原版轻量得多。
+- 昼夜光照（太阳 / 月亮，可调时间）、建筑白模开关；深浅主题可跟随系统。
+- 指南针、恢复俯仰角、可拖动的悬浮工具条，桌面和移动端都已适配。
+- Google 3D 模式：网络能访问 Google 时，可加载 Google 的 3D Tiles。该数据是 Cesium ion 上的演示资产，可能被限流或下架。
 
 ---
 
@@ -73,30 +79,37 @@
 ---
 
 ## 🧭 使用说明
-- **标记 / 街景 / 测量三者互斥**：同一时刻只激活一个，切换时自动关闭另一个，避免点击冲突。
-- 街景跳转依赖网络，PWA 离线时不可用。
+- **标记 / 街景 / 测量三者互斥**：同一时刻只能激活一个，切换时会自动关闭另一个，避免点击冲突。
+- 街景跳转需要联网，PWA 离线时不可用。
 - 移动端底部托盘可上滑展开，点击手柄收合。
 
 ---
 
 ## ⚙️ 设置与自定义
-功能栏「设置」进入 `/settings/`，可调整明暗主题（跟随系统 / 手动）、地形加载、路网叠加与缓存。
+功能栏「设置」进入 `/settings.html`，可调整明暗主题（跟随系统 / 手动）、地形加载、路网叠加与缓存。
+
+**渲染与性能**：3D 场景关闭了 WebGL 自带的 MSAA，改用 FXAA 后处理抗锯齿。
+原因是 MSAA 在移动端代价偏高：GPU 不支持硬件 MSAA 的设备上，Chromium 可能退化成
+软件 MSAA（每像素多次采样，填充率明显下降），支持的设备也要额外付出带宽和显存；
+而 FXAA 只是一次全屏 pass，不额外占用显存。两个开关都在 `js/viewer.js` 里
+（`contextOptions.webgl.antialias` 和 `scene.postProcessStages.fxaa.enabled`），
+低端机上如果觉得卡，把 FXAA 那行改成 `false` 即可，没有其它影响。
 
 ---
 
 ## 📱 Android 版（APK）
 
-本项目**不是一个原生 App**。网页才是主体，Android 版只是一个原生 WebView 外壳 ——
+本项目不是原生 App：网页是主体，Android 版只是一个原生 WebView 外壳 ——
 它把网页全屏装进一个没有地址栏的窗口里，页面内容仍然从线上实时加载。
 
 | | |
 |---|---|
-| **获取** | 从 [Releases](https://github.com/ZhuNemo/locus-earth/releases) 下载 APK；或按下表自行构建 |
+| **获取** | 从 [Releases](https://github.com/ZhuNemo/locus-earth/releases) 下载 APK；或自行构建（方法见下方折叠说明） |
 | **包名 / 要求** | `dev.locusearth.app` · Android 7.0（API 24）及以上 |
 | **壳的职责** | 全屏无地址栏 · 白名单域名留在壳内 · 其余链接交给系统浏览器 · 首次启动说明「这是网页应用」 |
 | **源码位置** | [`androidapk/`](./androidapk/)（独立 Gradle 工程，与主项目同为 MIT 许可） |
 
-**网页更新后不用重装 APK。** 壳里没有任何业务逻辑，改网页即对所有已安装用户生效。
+**网页更新后不需要重装 APK。** 壳里没有任何业务逻辑，网页一改，所有已安装用户立即生效。
 只有换图标、改白名单域名、改包名这类壳自身的事才需要重新出包。
 
 <details>
@@ -144,7 +157,7 @@ Fork 后要发布自己的版本，请按 [`androidapk/README.md`](./androidapk/
 
 项目内置的 Cesium、腾讯地图、天地图密钥**都设了域名白名单**，仅供本项目演示。
 
-Fork 或部署到自己的域名 / 本地，请改 [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js)，换成自己申请的免费 Key，并在控制台设置自己的白名单。请勿盗刷他人额度，谢谢理解。
+Fork 或部署到自己的域名 / 本地，请改 [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js)，换成自己申请的免费 Key，并在控制台设置自己的白名单。请不要用别人的密钥消耗其配额。
 
 申请入口：
 - [Cesium Ion Access Token](https://ion.cesium.com/tokens)
@@ -159,7 +172,7 @@ Fork 或部署到自己的域名 / 本地，请改 [js/config.js](https://github
 | | |
 |---|---|
 | **开始时间** | 2026-07-04 |
-| **团队** | 个人项目，业余开发，不定期迭代 |
+| **维护** | 个人项目，业余开发，不定期更新 |
 | **当前版本** | 7.2 |
 
 ---

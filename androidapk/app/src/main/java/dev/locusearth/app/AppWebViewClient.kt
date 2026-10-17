@@ -17,6 +17,7 @@ import android.webkit.WebViewClient
  *   · shouldOverrideUrlLoading —— 只裁决**顶层导航**：白名单内留壳里，其余丢系统浏览器
  *   · shouldInterceptRequest   —— 只服务于本地 assets 的虚拟域名，绝不拦真实资源
  *   · onReceivedError          —— 主框架失败时切到本地错误页
+ *   · onPageCommitVisible      —— 首帧已绘制，宿主据此撤掉启动页
  *
  * 关于 SSL：这里**故意不重写 onReceivedSslError**。
  * 一旦重写并调用 handler.proceed()，就等于给所有证书错误开了后门（中间人可读全站流量）。
@@ -26,6 +27,8 @@ class AppWebViewClient(
     private val onExternalUri: (Uri) -> Unit,
     private val onMainFrameError: (Uri, WebResourceError) -> Unit,
     private val onRendererGone: () -> Unit,
+    /** 主框架已经绘制出第一帧 —— 比 onPageFinished 早（不用等子资源），比 onPageStarted 晚（内容真的可见了） */
+    private val onFirstContentVisible: () -> Unit,
 ) : WebViewClient() {
 
     // ---------- 1. 顶层导航 ----------
@@ -76,7 +79,23 @@ class AppWebViewClient(
         return if (AssetsLoader.isAssetUri(uri)) AssetsLoader.intercept(uri) else null
     }
 
-    // ---------- 3. 加载失败 ----------
+    // ---------- 3.5 首帧已绘制 ----------
+
+    /**
+     * 主框架提交了第一帧可绘制内容。
+     *
+     * 这是"启动页可以撤了"最早且最准的信号：比 onPageFinished 早得多
+     * （后者要等所有子资源），又比 onPageStarted 晚得多（内容真的可见了）。
+     * 宿主 MainActivity 用它放开启动页的续命条件。
+     *
+     * 只在主框架有意义（WebView 也只为主框架回调这个方法）；
+     * 错误页、bfcache 命中的历史页同样会走这里，届时启动页一样该撤。
+     */
+    override fun onPageCommitVisible(view: WebView, url: String) {
+        onFirstContentVisible()
+    }
+
+    // ---------- 4. 加载失败 ----------
 
     override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
         // 子资源失败不换页：Cesium 少一张瓦片是常态，整页换成错误页反而更糟
@@ -97,7 +116,7 @@ class AppWebViewClient(
         onMainFrameError(request.url, error)
     }
 
-    // ---------- 4. 渲染进程崩溃 ----------
+    // ---------- 5. 渲染进程崩溃 ----------
 
     /**
      * Cesium 场景很吃内存，渲染进程被系统回收是常见事件。

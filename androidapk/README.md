@@ -252,7 +252,7 @@ maven { url = uri("https://maven.aliyun.com/repository/public") }
 | 应用名 | `Locus Earth` |
 | applicationId / namespace | `dev.locusearth.app` |
 | minSdk / targetSdk / compileSdk | **24** / **34** / **34** |
-| versionCode / versionName | 2 / 1.1 |
+| versionCode / versionName | 3 / 1.2 |
 | 语言 | Kotlin |
 | 构建脚本 | Gradle Kotlin DSL（`build.gradle.kts`） |
 | AGP / Gradle / Kotlin / JDK | 8.6.1 / 8.9 / 1.9.24 / 17 |
@@ -267,7 +267,7 @@ maven { url = uri("https://maven.aliyun.com/repository/public") }
 | `androidx.appcompat:appcompat` | `AppCompatActivity` |
 | `com.google.android.material:material` | Material 3 主题、弹窗、按钮 |
 | `androidx.activity:activity-ktx` | `OnBackPressedCallback`、权限申请 |
-| `androidx.webkit:webkit` | `WebViewAssetLoader`（本地错误页，见下） |
+| `androidx.webkit:webkit` | `WebViewAssetLoader`（本地错误页）+ **1.13.0 起的浏览器能力开关**：bfcache、预渲染、内核预热（见 §16 之后「性能设置」） |
 | `androidx.core:core-splashscreen` | 启动页 |
 
 启动加载：`https://locus-earth.pages.dev/`
@@ -417,11 +417,12 @@ Safe Zone 判断失准。生成脚本里用 `SOURCE_DISC_RATIO = 1.0026` 显式�
 
 ## 十一、首次启动提示（「这是一个网页应用」）
 
-首次安装后第一次打开，会弹一个**原生 Material 3 弹窗**，中英双语说明「这是网页应用，不是原生 App」，
+首次安装后第一次打开，先出现一屏**全屏的原生提示页**，中英双语说明「这是网页应用，不是原生 App」，
 底部两个按钮：**退出**（结束应用）/ **进入**（开始加载网页）。点过「进入」之后，
-以后每次启动都直接进网页，不再弹。
+以后每次启动都直接进网页，不再出现。
 
-实现：`WelcomeDialog.kt`（DialogFragment + `MaterialAlertDialogBuilder`）+ `layout/dialog_welcome.xml` + `values/strings.xml`。
+实现：`WelcomeScreen.kt`（`object`，往 Activity 根布局 `addView` 一个整页视图）
++ `layout/view_welcome.xml` + `values/strings.xml`。
 
 ### 为什么要它
 
@@ -432,26 +433,27 @@ Safe Zone 判断失准。生成脚本里用 `SOURCE_DISC_RATIO = 1.0026` 显式�
 
 | 决定 | 原因 |
 |---|---|
-| 弹窗在**建 WebView 之前**弹出 | 用户点「退出」时不该已经白花流量去加载地球。见 `MainActivity.setupWebView()` |
-| `setCancelable(false)`，点外部和返回键都不关 | 要求用户明确表态，避免「没进也没退」的模棱两可状态 |
-| 用 `DialogFragment` 而不是裸 `Dialog` | 弹窗期间旋转屏幕 / 切深浅色会重建 Activity，裸 Dialog 会泄漏并跟着旧 Activity 消失 |
-| 用 `MaterialAlertDialogBuilder` | 直接吃本工程的 M3 主题，圆角/阴影/深浅色/字体全是原生风格，不用自己搭窗口 |
-| 读完 `commit()` 而不是 `apply()` | 用户可能点完立刻强杀应用，`apply()` 异步落盘有极小概率没写完，下次启动会又弹一次 |
-| 中英标题 + 正文放在**同一个 TextView**（HTML `<big>`/`<br>`） | 三个 TextView 很难对齐行距，英文会显得和中文字脱节；一份文本一次设置完 |
-| 文案短：两段合计约铺满屏幕 60% | 这是提示不是说明文档，写长了没人看 |
+| 提示页在**建 WebView 之前**出现 | 用户点「退出」时不该已经白花流量去加载地球。见 `MainActivity.setupWebView()` |
+| 没有「点外部/返回键关掉」这条路 | 只有「退出 / 进入」两个出口，要求用户明确表态，避免「没进也没退」的模棱两可状态 |
+| 用**整页视图**而不是弹窗 | 双语文案在弹窗里宽度受限，中文正体会被挤成很多短行；整页可以分四段排版（中英标题 + 中英正文），按钮固定在底部 |
+| 直接 `addView` 到 Activity 根布局，不另开 Activity | 壳只有 MainActivity 一个窗口，返回键/任务栈/深链回壳都不用多考虑一层；这一屏的职责只是「在 WebView 建起来之前挡住它」 |
+| 按钮的 `textColor` / `backgroundTint` / `strokeColor` 全部写死 | Material 按钮默认从主题继承 `colorOnPrimary` 一类属性。提示页是用户看到的第一屏，只要某一层主题没解析到，按钮文字就会和背景同色而「消失」。所以这三样一律用 `welcome_button_*` 资源显式给值，不依赖继承链 |
+| 读完 `commit()` 而不是 `apply()` | 用户可能点完立刻强杀应用，`apply()` 异步落盘有极小概率没写完，下次启动会又出现一次 |
+| 中英标题、正文分成四个 TextView | 全屏页纵向空间足够，按层级排版比用 HTML `<big>`/`<small>` 模拟字号更清晰 |
 
-### 改文案 / 改「只弹一次」的行为
+### 改文案 / 改「只出现一次」的行为
 
 | 想改什么 | 改哪里 |
 |---|---|
 | 文案 | `values/strings.xml` 的 `welcome_*` |
 | 按钮文字 | 同上 `welcome_exit` / `welcome_enter` |
-| 布局与间距 | `res/layout/dialog_welcome.xml` |
-| 记住「已看过」的键 | `WelcomeDialog.KEY_SHOWN`（存在 SharedPreferences `locus_earth_shell`） |
-| 让老用户再看到一次 | 卸载重装，或清应用数据（该键随应用数据一起被清） |
+| 布局与间距 | `res/layout/view_welcome.xml` |
+| 颜色（深浅色各一套） | `values/colors.xml`、`values-night/colors.xml` 的 `welcome_*` |
+| 记住「已看过」的键 | `WelcomeScreen` 里的 `KEY_SHOWN`（存在 SharedPreferences `locus_earth_shell`） |
+| 让老用户再看一次 | 卸载重装，或清应用数据（该键随应用数据一起被清） |
 
 > 卸载重装 / 清应用数据后提示会再出现一次，这是预期行为 —— 那等同于一次全新安装。
-> 版本升级**不会**重弹：`SharedPreferences` 不随 APK 更新而清除。
+> 版本升级**不会**重现：`SharedPreferences` 不随 APK 更新而清除。
 
 ---
 
@@ -460,7 +462,7 @@ Safe Zone 判断失准。生成脚本里用 `SOURCE_DISC_RATIO = 1.0026` 显式�
 壳会在 WebView 的 User-Agent 末尾追加一段标记：
 
 ```
-... Mozilla/5.0 (...) ... LocusEarthAndroid/1.1
+... Mozilla/5.0 (...) ... LocusEarthAndroid/1.2
 ```
 
 版本号取自 `app/build.gradle.kts` 的 `versionName`（见 `DomainPolicy.UA_SUFFIX`）。
@@ -585,7 +587,7 @@ blob 的字节只存在于渲染进程，`DownloadListener.onDownloadStart` 收�
 | `onCreateWindow` 没用「返回 null 让当前 WebView 加载」 | Android 的契约里**没有**这个选项：返回 null 就是不创建窗口，网页的 `window.open` 会静默失败，街景按钮直接失效。现在用一个不渲染的「接驳 WebView」把目标 URL 截下来再路由回主 WebView |
 | `javaScriptCanOpenWindowsAutomatically = true` | 不是优化，是**功能必需**。网页的街景按钮是 `await lookupPano()` 之后再 `window.open`，用户手势已被 await 吃掉，默认设置下会被弹窗拦截器吞掉 → 表现是「点街景点不动」 |
 | 错误页的「重试」是普通链接而不是 `webView.reload()` | 需求禁止 `addJavascriptInterface`，网页没有路径回调原生。链接触发一次白名单内的导航，效果等价 |
-| 首次提示弹窗不可取消 | 见第十一节：要求用户明确表态，避免「没进也没退」 |
+| 首次提示页没有「关掉」这条路 | 见第十一节：只有退出 / 进入两个出口，要求用户明确表态，避免「没进也没退」 |
 | 下拉刷新：未实现 | 与设计一致（地球交互容易误触） |
 
 ### 需求之外额外做的两个加固（觉得多余可以删）
@@ -593,7 +595,7 @@ blob 的字节只存在于渲染进程，`DownloadListener.onDownloadStart` 收�
 1. **`onRenderProcessGone` 后重建 WebView**（`MainActivity.recreateWebView`）。
    Cesium 场景吃内存，渲染进程被系统回收时默认是**整个 App 一起闪退**；
    接管后表现是「页面重载回首页」。代价是未保存的视角会丢 —— 但比闪退好。
-2. **UA 标记**：需求里要求的 ` LocusEarthAndroid/1.1` 由 `versionName` 自动拼，
+2. **UA 标记**：需求里要求的 ` LocusEarthAndroid/1.2` 由 `versionName` 自动拼，
    改版本号不会忘记同步。
 
 ---
@@ -619,7 +621,33 @@ blob 的字节只存在于渲染进程，`DownloadListener.onDownloadStart` 收�
 | 2 | 定位权限被**永久拒绝**后没有二次引导 | 当前只在系统弹窗里申请一次；用户选「不再询问」后网页只会拿到失败回调。可在 `shouldShowRequestPermissionRationale` 为 false 时加一个跳系统设置的提示 |
 | 3 | 相机 / 麦克风 | 网页目前不需要，Manifest 里未声明。将来需要时补 `<uses-permission>` + `WebChromeClient.onPermissionRequest` |
 | 4 | 全屏视频 | `onShowCustomView` / `onHideCustomView` 已按契约实现（含隐藏系统栏、返回键退出全屏），但没有真实视频可测 |
-| 5 | 设置页返回会导致主页面重新加载 | **已知行为差异**，非壳的问题：网页用整页跳转进 `settings.html`，返回时 `history.back()` 在 WebView 里退化成一次真实导航（浏览器通常有 back/forward cache，WebView 未必命中），于是 Cesium 场景重建、相机回到默认视角。根因仍在排查中 |
+| 5 | ~~设置页返回会导致主页面重新加载~~ → **已解决（bfcache）** | 见下方「性能设置」第 2 条：命中 bfcache 时返回不重新加载 Cesium 场景、相机视角不丢；未命中（旧内核 / 内核不支持）时行为与之前一致 |
+
+### 性能设置：向商业浏览器看齐做了哪些
+
+壳不自定义内核、不上 Bubblewrap / TWA，所以性能空间就在「把 WebView 自带的浏览器能力用满」。
+下面 6 项都落在 `MainActivity` 与 `AndroidManifest.xml` 里，按收益从大到小：
+
+| # | 设置 | 位置 | 收益 / 原因 |
+|---|---|---|---|
+| 1 | **启动页挡到网页首帧** | `MainActivity.holdSplashUntilFirstFrame()` | 商业浏览器是「用户看到内容那一刻才撤启动画面」，不是窗口首帧。本应用首屏要拉 Cesium，不挡的话观感是「启动页 → 白/黑屏 → 地球」三段跳。带 6 秒兜底超时，断网不会把人锁死在启动页 |
+| 2 | **Back/Forward Cache（bfcache）** | `MainActivity.createMainWebView()` | 治上面原问题 5：`settings.html` 返回命中 bfcache 时**不重新加载** Cesium 场景、相机视角不丢。来自 `androidx.webkit` 1.13.0 的实验性 API，调用前先 `WebViewFeature.isFeatureSupported(BACK_FORWARD_CACHE)` 探测，不支持的设备什么都不做 |
+| 3 | **渲染进程优先级 IMPORTANT** | 同上 | Cesium 吃内存。把渲染进程标成「重要且不可豁免」，系统回收时先动别人（≈浏览器前台标签的优先级），减少「场景莫名重载」 |
+| 4 | **关掉 WebView 级缩放**（`setSupportZoom(false)`） | 同上 | 双指/双击判定完全交给 Cesium，触摸事件少一层 WebView 仲裁，地球更跟手 |
+| 5 | **显式 `android:hardwareAccelerated="true"`** | `AndroidManifest.xml` | WebGL 的前提（API 14 起默认就是 true，写出来是为了防被「顺手优化」关掉） |
+| 6 | **依赖升到 `androidx.webkit:1.13.0`** | `app/build.gradle.kts` | 第 2 项的能力来源。aar 元数据里 `minCompileSdk=34`，与工程 compileSdk 一致，不用动 SDK |
+
+**刻意没做的，以及为什么**：
+
+| 没做 | 原因 |
+|---|---|
+| `prerenderUrlAsync`（预渲染首页） | Cesium 场景会被渲染两遍，内存 / GPU 翻倍，反而更容易触发渲染进程回收。等真有「秒开」诉求时再实验 |
+| `startUpWebView`（异步内核预热） | androidx 自己标注「实验性、不适合非实验用途、随时可能删」；收益只是省一次几十到几百毫秒的内核启动，不划算 |
+| `setOffscreenPreRaster` | 全屏 3D 页面不滚动，预光栅化没有对象 |
+| `android:largeHeap` | 只放大 app 进程的 Java 堆；JS / WebGL 的内存住在渲染进程里，加了没用 |
+| `setForceDark` / `setAlgorithmicDarkeningAllowed` | 网页自带深浅色主题，交给网页，壳不插手 |
+| `setCacheMode(LOAD_CACHE_ELSE_NETWORK)` | Service Worker 自己管缓存；强制走缓存可能给出过期瓦片，对地球应用是错的 |
+| `DOCUMENT_START_SCRIPT` / `WEB_MESSAGE_LISTENER` | 都属于「壳向网页注入东西」，与「不暴露原生能力、不被网页牵着走」的约定相冲 |
 
 ---
 
@@ -652,13 +680,13 @@ androidapk/
         │   ├── MainActivity.kt          ← 装配 WebView、返回键、定位、全屏、错误页、重建
         │   ├── AppWebViewClient.kt      ← 顶层导航裁决 / 子资源放行 / 错误上报
         │   ├── AppWebChromeClient.kt    ← 新窗口 / 定位询问 / 全屏回调
-        │   ├── WelcomeDialog.kt         ← 首次启动提示（「这是一个网页应用」）
+        │   ├── WelcomeScreen.kt          ← 首次启动的全屏提示页（「这是一个网页应用」）
         │   ├── DomainPolicy.kt          ← ★ 白名单与 URL 策略（加域名只改这里）
         │   └── AssetsLoader.kt          ← assets 的虚拟 https 域名映射
         └── res/
             ├── drawable/ic_launcher_monochrome.xml  ← Android 13+ 主题图标（线框地球矢量）
             ├── drawable-*-dpi/ic_splash_logo.png     ← 启动页图标（脚本生成）
-            ├── layout/activity_main.xml / dialog_welcome.xml
+            ├── layout/activity_main.xml / view_welcome.xml
             ├── mipmap-anydpi-v26/     ← 自适应图标（API 26+）
             ├── mipmap-*-dpi/          ← 位图图标：前景 / 传统方形 / 传统圆形（脚本生成）
             ├── values/ values-night/  ← 颜色、文案、主题
@@ -680,17 +708,18 @@ androidapk/
 | 壳内不暴露原生能力 | 全工程无 `addJavascriptInterface` |
 | 图标安全区正确 | `tools/gen-icon-assets.py` 自带自检：6 个密度的实测圆盘直径与 `66/108 × 画布` 逐一相符（mdpi 实测 66px / 期望 66px） |
 | 自适应图标在各遮罩下不被切 | 用生成产物模拟 circle / squircle / rounded / square 四种遮罩，圆盘均完整落在 66dp 安全区内 |
-| 首次启动提示的资源闭合 | `welcome_*` 六个字符串、`dialog_welcome.xml`、`welcomeMessage`/`welcomeExit`/`welcomeEnter` 三个 id 与 Kotlin 引用逐一对照，全部命中 |
+| 首次启动提示的资源闭合 | `welcome_*` 六个字符串、`view_welcome.xml`、`welcomeTitle`/`welcomeSubtitle`/`welcomeBody`/`welcomeBodyEn`/`welcomeExit`/`welcomeEnter` 六个 id、以及 `welcome_*` 六个颜色（values + values-night 各一套）与 Kotlin 引用逐一对照，全部命中 |
 | 文件选择用到的平台 API | 解析真 `android.jar`（android-35）的 class 常量池逐条核对：`onShowFileChooser` / `FileChooserParams.parseResult` / `ValueCallback.onReceiveValue` / `DownloadManager.Request.*` / `URLUtil.guessFileName` 全部存在且签名一致 |
 | 网页侧不再出现原生弹窗 | 全站 `prompt(` / `confirm(` / `alert(` 已清空，仅保留 3 处「弹窗元素缺失时退回原生」的兜底，均有注释标明 |
 | `androidapk/` 不进 CF 部署产物 | `cf-pages-exclude.sh` **已本地实跑**：输出 56 个文件、`androidapk` 匹配 0 个、`index.html`/`sw.js`/`manifest.json`/`settings.html` 全在位（需在 CF 后台把 Build command 指过去） |
 
 设备侧（装到手机上按这几步过一遍）：
 
-- [ ] **首次安装后首次启动**：弹出「这是一个网页应用」双语提示，点「进入」才加载地球
-- [ ] **第二次启动**：直接进网页，不再弹提示
-- [ ] 提示上点「退出」：应用结束，不进网页
-- [ ] 提示显示期间旋转屏幕 / 切换系统深浅色：弹窗不消失、内容不丢
+- [ ] **首次安装后首次启动**：出现全屏的「这是一个网页应用」提示页（中英标题 + 中英正文，底部两个按钮），文字不被截断、两个按钮上的「退出 / 进入」都清晰可见，点「进入」才加载地球
+- [ ] **第二次启动**：直接进网页，不再出现提示页
+- [ ] 提示页上点「退出」：应用结束，不进网页
+- [ ] 提示页显示期间旋转屏幕 / 切换系统深浅色：页面不消失、文字不丢（`uiMode` 在 `configChanges` 里，Activity 不重建，所以**深浅色不会实时切换**，重启应用后生效 —— 这是刻意的，避免 Cesium 场景被重建）
+- [ ] 小屏 + 大字号（系统字体调到最大）：正文可以滚动到底，两个按钮仍完整可见
 - [ ] 清应用数据后再启动：提示重新出现（这是预期行为）
 - [ ] 冷启动：启动页是纯色、无白屏闪烁，随后自动进入地球
 - [ ] 地球加载完，拖动/缩放正常（说明子资源没有被拦）

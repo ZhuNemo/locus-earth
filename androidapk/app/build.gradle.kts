@@ -52,9 +52,10 @@ android {
 
         // versionName 会被拼进 WebView 的 UA（见 DomainPolicy.UA_SUFFIX），
         // 改版本号时网页端拿到的标记也会跟着变，这是有意为之。
-        // 1.1：修复启动闪退（createMainWebView 在字段 webView 赋值前就去读它）。
-        versionCode = 2
-        versionName = "1.1"
+        // 1.2：首次启动提示改成全屏页 + 一组浏览器向性能开关（启动页挡首帧、
+        //      bfcache、渲染进程优先级、手势仲裁）。
+        versionCode = 3
+        versionName = "1.2"
     }
 
     signingConfigs {
@@ -128,7 +129,11 @@ dependencies {
     // OnBackPressedCallback / registerForActivityResult
     implementation("androidx.activity:activity-ktx:1.9.3")
     // WebViewAssetLoader：在不开 allowFileAccess 的前提下把 assets/ 用 https 提供给 WebView
-    implementation("androidx.webkit:webkit:1.11.0")
+    // 1.13.0：还带来几项"向浏览器看齐"的能力开关 —— bfcache（WebSettingsCompat
+    //   .setBackForwardCacheEnabled，治 settings.html 返回时重建 Cesium 场景）、
+    //   预渲染 prerenderUrlAsync、异步内核预热 startUpWebView。
+    //   aar-metadata 里 minCompileSdk=34，与工程 compileSdk 一致，不用动 SDK。
+    implementation("androidx.webkit:webkit:1.13.0")
     // 启动页
     implementation("androidx.core:core-splashscreen:1.0.1")
 }

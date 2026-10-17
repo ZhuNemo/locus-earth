@@ -4,16 +4,22 @@
 <a href="README.md">简体中文</a> | <a>English</a>
 </div>
 
+---
+
 <div align="left">
 <img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="50" height="50">
 <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="220">
 </div>
 
+---
+
 <div align="left">
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
-> A 3D Earth you can use right in your browser — powered by Cesium, no installation, no registration.
+---
+
+> A 3D Earth in the browser, built with Cesium. No installation or sign-up.
 >
 > **[GitHub Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
 
@@ -33,31 +39,31 @@
 ---
 
 ## 🌍 Project Introduction
-**Locus Earth** is a lightweight, fast open-source Web 3D Earth application. Inspired by Google Earth, it keeps "open it and see the world" lean and fast: zero build, pure frontend, and installable as a PWA on desktop/mobile.
+**Locus Earth** is an open-source Web 3D Earth app whose interaction model follows Google Earth. It is written in native ES Modules with no build step, runs directly in the browser, and can be installed as a PWA on desktop or mobile.
 
-All code is open source under the MIT license, and **both the web app and the Android shell live in this repository** (the shell is in [`androidapk/`](./androidapk/), see [Android Version](#-android-version-apk)). The web app needs no installation; the APK is simply another way in, not a requirement — you are free to build, modify, and redistribute it yourself.
+All code is open source under the MIT license, and **both the web app and the Android shell live in this repository** (the shell is in [`androidapk/`](./androidapk/), see [Android Version](#-android-version-apk)). The web app needs no installation; the APK is just another way in, and you are free to build, modify, and redistribute it yourself.
 
 ---
 
 ## ✨ Key Features
 
 **Browsing**
-- 3D terrain + global satellite imagery, and global 3D buildings (OpenStreetMap).
-- One-click switching between multiple base maps: Sentinel-2, Blue Marble, Night Lights, Tianditu Satellite, Tencent Maps, etc.
+- 3D terrain and global satellite imagery, with global 3D buildings (OpenStreetMap data).
+- Base map switching: Sentinel-2, Blue Marble, Night Lights, Tianditu Satellite, Tencent Maps, and more.
 
 **Tools**
-- Distance / area measurement (both polylines and polygons are clamped to terrain).
-- Markers and favorites, stored locally in the browser, with import/export support.
-- Place search box; enter a place name to locate it.
+- Distance and area measurement; both polylines and polygons are clamped to terrain.
+- Markers and favorites, stored locally in the browser, with import/export.
+- Place search: type a place name to jump to it.
 
-**Contextual Integration**
-- When entering covered areas such as Denver, Washington D.C., Sydney, etc., high-precision city modeling is automatically enabled.
-- When entering mainland China, a "Street View" button automatically appears in the toolbar; click the map to jump to a 360° panorama.
+**Regional Integration**
+- Entering covered areas such as Denver, Washington D.C., or Sydney switches to high-precision city modeling automatically.
+- Entering mainland China makes a "Street View" button appear in the toolbar; click the map to open a 360° panorama.
 
 **Appearance & Interaction**
-- Realistic lighting, toggle for white building models; light/dark themes (can follow system).
-- Compass, reset pitch, draggable floating toolbar; adapted for both desktop and mobile.
-- Google 3D Earth mode: one-click switch when the network allows; much lighter than the original.
+- Day/night lighting (sun and moon, with adjustable time) and a white building-model toggle; light/dark themes can follow the system.
+- Compass, pitch reset, draggable floating toolbar; works on desktop and mobile.
+- Google 3D mode: when Google is reachable, loads Google's 3D Tiles. That asset is a Cesium ion demo and may be rate-limited or taken down.
 
 ---
 
@@ -68,27 +74,34 @@ All code is open source under the MIT license, and **both the web app and the An
 **Desktop:**
 <img src="./screenshot-desktop.png" alt="screenshot-desktop">
 
-*Screenshots may not be updated in real time; please visit the website for the latest interface.*
+*Screenshots may not be up to date; visit the site for the current interface.*
 
 ---
 
 ## 🧭 Usage
 - **Markers / Street View / Measurement are mutually exclusive**: only one can be active at a time; switching automatically closes the other to avoid click conflicts.
-- Street View redirection depends on the network and is unavailable when the PWA is offline.
-- On mobile, the bottom tray can be expanded by swiping up and collapsed by tapping the handle.
+- Street View redirection needs a network connection and is unavailable when the PWA is offline.
+- On mobile, the bottom tray expands by swiping up and collapses by tapping the handle.
 
 ---
 
 ## ⚙️ Settings & Customization
-Use "Settings" in the toolbar to enter `/settings/`, where you can adjust the light/dark theme (follow system / manual), terrain loading, road network overlay, and cache.
+Use "Settings" in the toolbar to open `/settings.html`, where you can adjust the light/dark theme (follow system / manual), terrain loading, road network overlay, and cache.
+
+**Rendering & performance**: the 3D scene turns off WebGL's built-in MSAA and uses FXAA post-processing instead.
+MSAA is expensive on mobile: on devices without hardware MSAA support, Chromium may fall back to
+software MSAA (multiple samples per pixel, a clear hit to fill rate), and devices that do support it still
+pay extra bandwidth and VRAM. FXAA is a single full-screen pass and costs no extra VRAM. Both switches are
+in `js/viewer.js` (`contextOptions.webgl.antialias` and `scene.postProcessStages.fxaa.enabled`); on a
+low-end device, set the FXAA line to `false` — nothing else depends on it.
 
 ---
 
 ## 📱 Android Version (APK)
 
-This is **not a native app**. The web app is the product; the Android version is just a native WebView
-shell that puts the site full-screen in a window with no address bar — the content itself is still
-loaded live from the web.
+This is not a native app: the web app is the product, and the Android version is just a native WebView
+shell that puts the site full-screen in a window with no address bar — the content is still loaded live
+from the web.
 
 | | |
 |---|---|
@@ -98,11 +111,11 @@ loaded live from the web.
 | **Source** | [`androidapk/`](./androidapk/) (standalone Gradle project, MIT licensed like the main project) |
 
 **No APK reinstall is needed when the web app updates.** The shell contains no business logic,
-so web changes reach every installed user immediately. A rebuild is only required for shell-side
+so a web change reaches every installed user immediately. A rebuild is only required for shell-side
 things: icons, allow-listed domains, package name.
 
 <details>
-<summary><b>Build it yourself / signing notes</b></summary>
+<summary><b>Click to view: build it yourself / signing notes</b></summary>
 
 Three options:
 
@@ -148,7 +161,7 @@ the shell from Cloudflare Pages deployments are in
 
 The built-in Cesium, Tencent Maps, and Tianditu keys **all have domain whitelists** and are for this project's demo only.
 
-If you fork or deploy to your own domain / locally, please edit [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js), replace them with your own free keys, and set your own whitelist in the console. Please do not abuse others' quotas. Thank you for your understanding.
+If you fork or deploy to your own domain / locally, edit [js/config.js](https://github.com/ZhuNemo/locus-earth/blob/main/js/config.js), replace them with your own free keys, and set your own whitelist in the console. Please don't use someone else's key and consume their quota.
 
 Application Links:
 - [Cesium Ion Access Token](https://ion.cesium.com/tokens)
@@ -163,7 +176,7 @@ Application Links:
 | | |
 |---|---|
 | **Start Date** | 2026-07-04 |
-| **Team** | Personal project, developed in spare time, iterated irregularly |
+| **Maintenance** | Personal project, built in spare time, updated irregularly |
 | **Current Version** | 7.2 |
 
 ---

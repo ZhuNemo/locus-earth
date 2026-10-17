@@ -5,8 +5,8 @@
 
     <!-- ================= 首次启动提示 =================
          目的：让用户明确「这是个网页应用」，而不是原生 App。
-         只在首次启动出现，点「进入」后再也不弹（见 WelcomeDialog / MainActivity）。
-         文案刻意短：两段加起来约铺满屏幕 60%，不写长篇大论。 -->
+         只在首次启动出现，点「进入」后再也不弹（见 WelcomeScreen / MainActivity）。
+         文案刻意短：全屏页里分四段排（中/英 各一段标题 + 一段正文），不写长篇大论。 -->
     <string name="welcome_title_zh">这是一个网页应用</string>
     <string name="welcome_title_en">This is a web app</string>
 
@@ -15,7 +15,4 @@
 
     <string name="welcome_exit">退出</string>
     <string name="welcome_enter">进入</string>
-
-    <!-- 无障碍朗读用：把中英标题读成一句，避免读屏把两行标题读散 -->
-    <string name="welcome_dialog_a11y">这是一个网页应用，This is a web app</string>
 </resources>

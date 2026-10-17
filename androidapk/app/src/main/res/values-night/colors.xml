@@ -3,4 +3,14 @@
 <resources>
     <color name="shell_background">#FF0E1320</color>
     <color name="shell_navbar">#FF0E1320</color>
+
+    <!-- 首次启动全屏提示（深色）：正文对齐网页 data-theme="dark" 的
+         text-primary / text-secondary；主按钮用网页的 accent（#60A5FA）配深底文字，
+         浅蓝实心 + 深蓝黑文字在这一屏上对比最强。 -->
+    <color name="welcome_text">#FFF2F4F7</color>
+    <color name="welcome_text_dim">#FFC6CFDA</color>
+    <color name="welcome_button_primary_bg">#FF60A5FA</color>
+    <color name="welcome_button_primary_text">#FF0B1220</color>
+    <color name="welcome_button_outline">#FF3A4457</color>
+    <color name="welcome_button_outline_text">#FFF2F4F7</color>
 </resources>

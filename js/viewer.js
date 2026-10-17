@@ -22,7 +22,27 @@ export function initViewer(containerId, terrainProvider) {
         sceneModePicker: false,
         sceneMode: Cesium.SceneMode.SCENE3D,
         locale: 'zh-CN',
+
+        // ================= 抗锯齿：刻意关掉 MSAA，改用 FXAA =================
+        // 背景：这一项**不写**的话，浏览器按 WebGL 规范默认 antialias=true。
+        // 而 Chromium 在 GPU 不支持硬件 MSAA 的设备上可能退化成"软件 MSAA"
+        // —— 按像素多次采样，填充率直接崩（Cocos Creator 当年就是被这个坑到
+        // 强制关掉的）。支持硬件 MSAA 的设备则会拿到 4x MSAA，带宽和显存代价
+        // 同样不低。两种结果对"连续拖动的地球"都不划算：掉帧比锯齿更显眼。
+        // 所以这里显式关掉上下文自带的 MSAA，抗锯齿交给下面的 FXAA。
+        contextOptions: {
+            webgl: {
+                antialias: false
+            }
+        }
     });
+
+    // ----- 抗锯齿：FXAA（后处理） -----
+    // 代价只有一次全屏廉价 pass，不额外占显存，对标记点、折线这类细边缘有效。
+    // 要知道的副作用：开了它 Cesium 会走后处理纹理路径（先画离屏纹理再 blit 到屏幕），
+    // 此时起作用的是 scene.msaaSamples（默认 1 = 关）而不是上下文自带的 antialias。
+    // 低端机上如果觉得变卡，把这一行改成 false 即可，没有其它牵连。
+    viewer.scene.postProcessStages.fxaa.enabled = true;
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
 

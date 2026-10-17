@@ -25,4 +25,17 @@
          （早先的 #88C8F8 / #589038 是目测填的，与源图差 1~2 个色阶，已按实测修正。） -->
     <color name="brand_sky">#FF88C9F9</color>
     <color name="brand_leaf">#FF5C913B</color>
+
+    <!-- ================= 首次启动全屏提示（浅色） =================
+         这一组颜色**显式给值**，不写成 ?attr/colorOnPrimary 之类的主题属性。
+         原因很具体：提示页是用户看到的第一屏，一旦某个 OEM 主题把
+         onPrimary / onSurface 解析成透明或与背景同色，按钮文字就会"看不见"。
+         取值对齐网页 css/themes.css 的 text-primary / accent-strong，
+         让提示页和网页是同一套观感。 -->
+    <color name="welcome_text">#FF101828</color>
+    <color name="welcome_text_dim">#FF475467</color>
+    <color name="welcome_button_primary_bg">#FF2563EB</color>
+    <color name="welcome_button_primary_text">#FFFFFFFF</color>
+    <color name="welcome_button_outline">#FFC7CDD6</color>
+    <color name="welcome_button_outline_text">#FF101828</color>
 </resources>

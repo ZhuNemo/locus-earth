@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.os.Message
@@ -28,10 +29,14 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Locus Earth 的 Android 外壳。
@@ -53,6 +58,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rootView: FrameLayout
     private lateinit var fullscreenContainer: FrameLayout
     private lateinit var webView: WebView
+
+    /** 网页第一帧是否已可见 —— 启动页续命的唯一放行条件 */
+    private val pageFirstVisible = AtomicBoolean(false)
+
+    /** 启动页兜底超时：断网/极端卡顿也不许把用户锁死在启动页上 */
+    private val splashTimedOut = AtomicBoolean(false)
 
     /** 接驳用 WebView：不参与渲染，只用来把 window.open 的目标 URL 截下来 */
     private var probeWebView: WebView? = null
@@ -110,7 +121,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // 必须在 super.onCreate 之前：启动页主题要先于窗口生效，避免白屏/黑屏闪一下
-        installSplashScreen()
+        val splash = installSplashScreen()
 
         super.onCreate(savedInstanceState)
 
@@ -125,32 +136,57 @@ class MainActivity : AppCompatActivity() {
 
         AssetsLoader.init(this)
 
-        // 首次启动先弹「这是一个网页应用」，用户点「进入」后才开始建 WebView。
+        // 首次启动先给一屏「这是一个网页应用」（整页，不是弹窗），
+        // 用户点「进入」后才开始建 WebView。
         // 顺序很重要：点「退出」时不应该已经白花流量去加载地球。
-        // Activity 重建（旋转/深浅色切换）时 FragmentManager 会自动恢复这个 DialogFragment，
-        // 此时 welcome_shown 已是 true，不会重复弹出。
-        if (WelcomeDialog.shouldShow(this, fromExternalLink = false) &&
-            supportFragmentManager.findFragmentByTag(WelcomeDialog.TAG) == null
-        ) {
-            showWelcomeDialog()
+        // 这一屏挂在 Activity 根布局上，旋转/切深浅色由 configChanges 接管、
+        // Activity 不重建，所以它天然不会被系统提前收走。
+        if (WelcomeScreen.shouldShow(this, fromExternalLink = false)) {
+            showWelcomeScreen()
         } else {
+            // 直接加载网页：让启动页挡到网页画出第一帧为止
+            holdSplashUntilFirstFrame(splash)
             setupWebView()
         }
     }
 
-    /** 展示首次启动提示；两条出口都对应明确的用户意图 */
-    private fun showWelcomeDialog() {
-        val dialog = WelcomeDialog()
-        dialog.onEnter = { setupWebView() }
-        dialog.onExit = { finishAffinity() }
-        dialog.show(supportFragmentManager, WelcomeDialog.TAG)
+    /**
+     * 让启动页一直挡着，直到 WebView 画出第一帧。
+     *
+     * 商业浏览器的做法是"启动画面在用户看到内容那一刻才消失"，而不是窗口首帧。
+     * 这个应用首屏要拉 Cesium 场景，中间有几百毫秒到几秒的空档；
+     * 不挡的话观感是「启动页 → 白/黑屏 → 地球」三段跳。
+     *
+     * ⚠️ 两个实现约束，改之前先看：
+     *  1. `setKeepOnScreenCondition` 必须**在 setContentView 之后**调用 ——
+     *     它内部要 `findViewById(android.R.id.content)`，content 还没建好时会 NPE；
+     *  2. 条件只在 pre-draw 时求值，而启动页挡着时系统不再派发绘制，
+     *     所以超时兜底必须自己 invalidate 一次，否则永远等不到下一次 pre-draw。
+     */
+    private fun holdSplashUntilFirstFrame(splash: SplashScreen) {
+        splash.setKeepOnScreenCondition { !pageFirstVisible.get() && !splashTimedOut.get() }
+        rootView.postDelayed({
+            if (pageFirstVisible.get()) return@postDelayed
+            Log.w(TAG, "启动页等待 ${SPLASH_TIMEOUT_MS}ms 仍未收到首帧，放行（断网或页面卡住）")
+            splashTimedOut.set(true)
+            rootView.invalidate()
+        }, SPLASH_TIMEOUT_MS)
+    }
+
+    /** 展示首次启动的全屏提示；两条出口都对应明确的用户意图 */
+    private fun showWelcomeScreen() {
+        WelcomeScreen.show(
+            rootView,
+            onEnter = { setupWebView() },
+            onExit = { finishAffinity() },
+        )
     }
 
     /**
      * 建主 WebView 并开始加载。
      *
-     * 单独抽成方法而不是留在 onCreate 里：首次启动要等提示弹窗点了「进入」才走到这里，
-     * 用 isInitialized 兜住「Dialog 恢复 + 再次回调」造成的重复初始化。
+     * 单独抽成方法而不是留在 onCreate 里：首次启动要等提示页点了「进入」才走到这里，
+     * 用 isInitialized 兜住「重复回调」造成的重复初始化。
      */
     private fun setupWebView() {
         if (::webView.isInitialized) return
@@ -210,9 +246,15 @@ class MainActivity : AppCompatActivity() {
      * 创建主 WebView。
      * 之所以用代码创建而不是写进 XML：渲染进程崩溃后需要换一个新的实例（recreateWebView），
      * 两条路径共用同一个工厂方法最不容易走岔。
+     *
+     * 这里集中了几个"向商业浏览器看齐"的开关，逐条说明写在下面。
      */
     @SuppressLint("SetJavaScriptEnabled")
     @Suppress("DEPRECATION")
+    // bfcache 是 androidx 的实验性 API（可能在不换大版本的情况下调整签名），
+    // 这里显式 opt-in：收益明确（治 settings.html 返回时重建 Cesium 场景），
+    // 且依赖版本是锁死的，真要调整也是在升级 androidx.webkit 时才发生，到时一起改。
+    @OptIn(WebSettingsCompat.ExperimentalBackForwardCache::class)
     private fun createMainWebView(): WebView = WebView(this).apply {
         layoutParams = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -256,12 +298,34 @@ class MainActivity : AppCompatActivity() {
             // 表现就是"点了街景没反应"。放开之后每次新窗口都会走 onCreateWindow 统一裁决。
             javaScriptCanOpenWindowsAutomatically = true
             setSupportMultipleWindows(true)
+
+            // 缩放完全交给网页（Cesium 自己处理双指/双击）。
+            // 关掉 WebView 自带的缩放仲裁，触摸事件少一层判定，直接进页面，地球更跟手。
+            setSupportZoom(false)
+
+            // Back/Forward Cache（bfcache，等价于 Chrome 的同名机制）：
+            // settings.html 是整页跳转，命中 bfcache 时返回**不重新加载** Cesium 场景、
+            // 相机视角不丢 —— 这正是 README §16 里"设置页返回导致主页面重新加载"的解法。
+            // 能力由 WebView 内核版本决定，不支持的设备上原样不动。
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.BACK_FORWARD_CACHE)) {
+                WebSettingsCompat.setBackForwardCacheEnabled(this, true)
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= 26) {
+            // Cesium 场景吃内存。把渲染进程标成"重要且不可豁免"：系统要回收进程时
+            // 会先动别人，等价于浏览器里"前台标签"的优先级。
+            // 代价是应用退到后台时进程更难被回收 —— 对一个单页 3D 应用这是划算的。
+            setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false)
         }
 
         webViewClient = AppWebViewClient(
             onExternalUri = { uri -> openExternally(uri) },
             onMainFrameError = { failedUrl, error -> showErrorPage(failedUrl, error) },
             onRendererGone = { scheduleRecreateWebView() },
+            // 首帧已绘制 → 放开启动页。AtomicBoolean 只置 true，不会回退，
+            // 后续导航（含 bfcache 命中）都不会再影响启动页。
+            onFirstContentVisible = { pageFirstVisible.set(true) },
         )
 
         webChromeClient = AppWebChromeClient(
@@ -613,5 +677,8 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val TAG = "LocusEarthShell"
+
+        /** 启动页等首帧的上限。无网时不会超过它，不会把用户锁死在启动页上 */
+        const val SPLASH_TIMEOUT_MS = 6000L
     }
 }
