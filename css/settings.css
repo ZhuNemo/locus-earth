@@ -53,6 +53,11 @@
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
+    /* 图标与标题文字居中对齐：inline 流里 vertical-align 会随字号/行高漂移，
+       改成 flex 后由 align-items 精确居中，间距交给 gap（文本节点无法用兄弟选择器） */
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
 }
 .settings-title p {
     font-size: 12px;
