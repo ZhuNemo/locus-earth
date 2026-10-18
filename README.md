@@ -94,17 +94,24 @@
 |---|---|---|
 | 应用外壳（HTML / CSS / JS / 图标） | `locus-earth-app-cache-<版本>` | 缓存优先 + 后台更新，重复进入几十毫秒出页面 |
 | Cesium 引擎 | `locus-earth-cesium-<引擎版本>` | 缓存优先，升级引擎时整代淘汰 |
-| ion 资产接口（`/v1/assets/<id>/endpoint`） | 同上 | 网络优先，离线回退缓存——拿不到它 Cesium 建不出影像图层，缓存了瓦片也显示不出来 |
+| ion 资产接口（`/v1/assets/<id>/endpoint`） | 与引擎同一个缓存 | 45 分钟内缓存优先 + 后台换新，过期才网络优先、失败退回旧的那份——拿不到它 Cesium 建不出影像图层，缓存了瓦片也是黑的 |
 | 底图瓦片 | `locus-earth-tiles-v1` | 缓存优先且命中后**不再回源**，浏览过的区域断网也能看；超 2400 片按先进先出裁剪 |
+| 开关状态 | `locus-earth-flags-v1` | 几十字节，只存「缓存瓦片」的开 / 关；SW 读不到 localStorage，只能这么带 |
 
-这里有个坑值得记下来：**Cesium 取影像瓦片走的是 XHR，而 Service Worker 拦不到 XHR**，
-只在 `sw.js` 里写瓦片缓存是彻底的死代码。真正的做法是 [`js/tile-cache.js`](./js/tile-cache.js)
-把 `Resource._Implementations.loadWithXhr` 里的「影像瓦片 + blob」改道到 `fetch`，
-请求才会进 Service Worker；脚本、地形、3D Tiles 仍走引擎原实现。
+两个值得记下来的点：
 
-设置页的「缓存地图瓦片」（默认开）控制这条路走不走 `fetch`：关掉之后瓦片既不读也不写本地缓存，
-每次都从网络取。「清除瓦片缓存」会删掉整个瓦片缓存。浏览器 / WebView 自身的 HTTP 缓存
-不受网页控制（网页既查不到也删不掉），它只会让请求更快，不影响上面这套逻辑。
+1. **Service Worker 拦得到 XHR**。「SW 拦不到 XHR」是常见误传——拦不到的是 WebSocket 和
+   EventSource。Chromium / Android WebView 里，纯 XHR 的响应同样会进 Cache Storage，
+   所以 Cesium 用 XHR 取瓦片完全不影响缓存。早期版本曾据此去覆写
+   `Resource._Implementations.loadWithXhr`，实测后已删除：那层包装只会增加升级引擎时的
+   风险，而且开关得在页面和 SW 各写一遍——正是「关掉开关仍然在缓存」的根源。
+2. 瓦片回源时显式带 `cache: 'no-store'`，让浏览器不要在自己的 HTTP 缓存里再存一份。
+   否则同一张图在磁盘上存两遍，而 HTTP 那份网页既查不到也删不掉——用户点「清除瓦片缓存」
+   后觉得"占用没降"，多半就是它在作祟。
+
+设置页的「缓存地图瓦片」（默认开）现在由 `sw.js` 执行：关掉之后瓦片请求整条放行，
+不读缓存、不写缓存、也不碰 HTTP 缓存，每次真从网络取。「清除瓦片缓存」删掉整个瓦片缓存；
+系统显示的存储占用是懒统计的，可能延迟一会儿才更新。
 
 **渲染与性能**：3D 场景关闭了 WebGL 自带的 MSAA，改用 FXAA 后处理抗锯齿。
 原因是 MSAA 在移动端代价偏高：GPU 不支持硬件 MSAA 的设备上，Chromium 可能退化成

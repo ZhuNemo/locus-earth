@@ -8,9 +8,15 @@
 //   · 应用外壳资源    → 缓存优先 + 后台回源更新，未命中时等回源结果
 //   · Cesium 引擎资源 → 缓存优先，写入带版本号的独立缓存（随版本自动淘汰）
 //   · 底图瓦片（图片）→ 独立缓存，缓存优先且命中后不再回源（离线可看），
-//                       容量超限时按先进先出裁剪
-//   · ion 资产接口    → 网络优先，失败回退缓存（离线时才建得出影像图层）
+//                       容量超限时按先进先出裁剪；开关由设置页控制，
+//                       关掉时原样放行（不读也不写）
+//   · ion 资产接口    → 缓存优先（45 分钟内）+ 后台换新，离线时用旧票据兜底
 //   · 其他请求        → 网络优先，失败时回退缓存
+//
+// 一个容易搞错的事实（2026-10-18 实测确认）：**Service Worker 拦得到 XHR**。
+// 「SW 拦不到 XHR」是常见的误传 —— 拦不到的是 WebSocket 与 EventSource。
+// Chromium / Android WebView 里，纯 XHR 的响应同样会进 Cache Storage，
+// 所以 Cesium 用 XHR 取瓦片完全不影响缓存，不需要去改引擎的私有实现。
 //
 // 维护提示
 //   · 改动 index.html / settings.html 引用的资源时，必须同步更新 SHELL_URLS
@@ -19,17 +25,17 @@
 //     install，SHELL_URLS 里的新文件也就不会进缓存
 // ============================================================================
 
-// 版本号取 v34：远端那条线（"1017"）已经用到 v33，而本次改造是从 v31 直接
-// 重写的、原本写的是 v32 —— 合并时两个号撞在一起。取 v34 是因为新版本号必须
-// 比**两边都已经部署过的**号都大，否则已经装了 v33 的用户不会换缓存，
-// 旧外壳会一直留着，新策略等于没上线。
-const CACHE_VERSION = 'v34';
+// 版本号必须比**已经部署过的**都大，否则装了更高号缓存的用户不会换缓存。
+// 历史：v31（改造前）→ 远端那条线 v33 → 本次合并 v34 → 修复 v35。
+const CACHE_VERSION = 'v35';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // Cesium 引擎缓存：把版本号写进缓存名，升级后旧缓存会在 activate 时被淘汰，
 // 不再像过去那样在同一个缓存里无限累积。
-// 该值需与 index.html 的 importmap 保持一致。
-const CESIUM_VERSION = '1.118';
+// 必须与 index.html 的 importmap 完全一致 —— 那边现在钉的是补丁号 1.118.2，
+// 不是 1.118（`@1.118` 会被 unpkg 302 到 1.118.2，白白多一跳；钉死之后
+// modulepreload 的键也和 import 的键对得上，才能真正提前下载）。
+const CESIUM_VERSION = '1.118.2';
 const CESIUM_CACHE_NAME = `locus-earth-cesium-${CESIUM_VERSION}`;
 
 // 底图瓦片缓存。
@@ -50,6 +56,47 @@ const TILE_MAX_ENTRIES = 2400;
 const TILE_PRUNE_RATIO = 0.8;
 // 每写入这么多片才检查一次总量。
 const TILE_PRUNE_INTERVAL = 150;
+
+// ----------------------------------------------------------------------------
+// 瓦片缓存开关（由设置页推过来）
+// ----------------------------------------------------------------------------
+// Service Worker 读不到 localStorage，所以状态只能由页面 postMessage 告知。
+// 但消息只在页面加载那一刻发一次，而 SW 空闲会被系统回收、重启后内存是空的 ——
+// 因此还得有个地方把值存下来。这里开一个几十字节的小缓存专门放它：
+// 不参与瓦片裁剪，也不随 CACHE_VERSION 清理（换版本不该改变用户的偏好）。
+const FLAGS_CACHE_NAME = 'locus-earth-flags-v1';
+const TILE_SWITCH_URL = self.location.origin + '/__locus-tile-switch';
+
+let tileCacheEnabled = true;      // 默认开；消息到达前用它兜底
+let tileSwitchLoaded = null;      // 每个 SW 生命周期只读一次盘
+
+function loadTileSwitch() {
+  if (!tileSwitchLoaded) {
+    tileSwitchLoaded = caches
+      .open(FLAGS_CACHE_NAME)
+      .then(cache => cache.match(TILE_SWITCH_URL))
+      .then(response => (response ? response.text() : ''))
+      .then(text => {
+        if (text === 'on') tileCacheEnabled = true;
+        else if (text === 'off') tileCacheEnabled = false;
+      })
+      .catch(() => {});
+  }
+  return tileSwitchLoaded;
+}
+
+function saveTileSwitch(enabled) {
+  tileCacheEnabled = enabled;
+  return caches
+    .open(FLAGS_CACHE_NAME)
+    .then(cache =>
+      cache.put(
+        TILE_SWITCH_URL,
+        new Response(enabled ? 'on' : 'off', { headers: { 'Content-Type': 'text/plain' } })
+      )
+    )
+    .catch(() => {});
+}
 
 // 本应用所有缓存名的前缀。activate 只清理这个前缀，避免影响同一域名下
 // 其他项目的缓存（例如共享的 <user>.github.io）。
@@ -196,31 +243,65 @@ function tileCacheKey(requestURL) {
 // 这份 JSON 是影像图层的前置条件 —— Cesium 先要到它才知道瓦片地址模板。
 // 离线时若它拿不到，整个影像图层都建不出来，瓦片缓存里躺着整片城市也显示
 // 不出来。它只有几百字节，缓存它的收益是"离线能看见地图"与"离线全黑"的差别。
-// 注意里面带的 token 会过期：所以策略是网络优先、只在离线时用缓存。
+// 注意里面带的令牌会过期，所以不能像瓦片那样"缓存优先、命中就永不回源"。
+//
+// 但「每次都先等网络」在弱网下会让地球迟迟不出影像，离线时更是直接一片黑。
+// 折中：缓存 45 分钟内直接用它（省掉一个往返，也让离线可用），同时在后台换新；
+// 超过 45 分钟才网络优先 —— ion 的 endpoint 里带的是短期票据，太久不换会让
+// 新区域的瓦片被拒。
 const ION_ENDPOINT_PATH = /^\/v1\/assets\/[^/]+\/endpoint$/;
 
 function isIonEndpoint(requestURL) {
   return hostMatches(requestURL.hostname, 'cesium.com') && ION_ENDPOINT_PATH.test(requestURL.pathname);
 }
 
-// 网络优先，失败回退缓存（与外壳资源相反：这里必须优先保证 token 新鲜）。
+// 缓存 45 分钟内直接用（省一个往返、离线可用），后台顺手换新；
+// 过期才网络优先，失败退回旧的那份。
+const ION_ENDPOINT_TTL = 45 * 60 * 1000;
+const ENDPOINT_STAMP_HEADER = 'x-locus-cached-at';
+
+function endpointAge(response) {
+  const stamp = Number(response.headers.get(ENDPOINT_STAMP_HEADER));
+  return Number.isFinite(stamp) && stamp > 0 ? Date.now() - stamp : Infinity;
+}
+
+// 存的时候打上时间戳。Response 的头部是只读的，只能重建一个。
+function storeEndpoint(cache, request, response) {
+  const headers = new Headers(response.headers);
+  headers.set(ENDPOINT_STAMP_HEADER, String(Date.now()));
+  return response
+    .blob()
+    .then(body => cache.put(request, new Response(body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers
+    })))
+    .catch(() => {});
+}
+
 function serveIonEndpoint(event, request) {
-  return fetch(request)
-    .then(response => {
-      if (response && response.ok) {
-        // 存进引擎缓存：生命周期与引擎一致，由「清除 Cesium 引擎缓存」统一清掉
-        const copy = response.clone();
-        event.waitUntil(
-          caches.open(CESIUM_CACHE_NAME).then(cache => cache.put(request, copy)).catch(() => {})
-        );
+  return caches.open(CESIUM_CACHE_NAME).then(cache =>
+    cache.match(request).then(cached => {
+      const refresh = () =>
+        fetch(request, { cache: 'no-store' }).then(response => {
+          if (response && response.ok) {
+            event.waitUntil(storeEndpoint(cache, request, response.clone()));
+          }
+          return response;
+        });
+
+      if (cached && endpointAge(cached) < ION_ENDPOINT_TTL) {
+        // 命中且还新：立刻返回，后台顺手换成最新的给下次用
+        event.waitUntil(refresh().catch(() => {}));
+        return cached;
       }
-      return response;
-    })
-    .catch(() =>
-      caches.match(request).then(cached =>
+
+      // 过期或没缓存：等网络；失败就退回旧票据（离线时这是唯一的活路）
+      return refresh().catch(() =>
         cached || new Response('', { status: 408, statusText: 'Offline' })
-      )
-    );
+      );
+    })
+  );
 }
 
 function createOfflineResponse() {
@@ -344,9 +425,28 @@ function precacheShell() {
 // ----------------------------------------------------------------------------
 // 瓦片缓存：读
 // ----------------------------------------------------------------------------
+// 入口。开关状态下才进缓存逻辑；关掉时整条请求原样放行 —— 不查缓存、不写缓存，
+// 也不干预 HTTP 缓存（用户要的就是每次都从网络拿，这时替他省流量是违背意愿的）。
+function handleTileRequest(event, request, requestURL) {
+  return loadTileSwitch().then(() => {
+    if (!tileCacheEnabled) {
+      // 关掉开关：整条放行，并且**连 HTTP 缓存也不碰**。
+      // 不这么做的话，用户明明关掉了缓存，占用还是会一点点涨（浏览器自己在
+      // 存），看起来就像"开关没用"。no-store 的含义正好是"不用缓存也不用存"。
+      return fetch(request, { cache: 'no-store' });
+    }
+    return serveTile(event, request, requestURL);
+  });
+}
+
 // 缓存优先，命中就直接返回、**不再回源**。这一点和外壳资源不同：外壳需要后台
 // 回源来跟进版本，而影像瓦片基本不变，回源只会白白消耗流量，还会让"离线可看"
 // 变成"离线看运气"。真要更新影像，走设置页的「清除瓦片缓存」。
+//
+// 回源时显式带 cache: 'no-store'：否则浏览器还会在 HTTP 缓存里存一份同样的
+// 图片，占用翻倍，而那份网页既查不到也删不掉 —— 用户点「清除瓦片缓存」后
+// 看到占用没怎么降，多半就是它在作祟。这样瓦片只存在于我们自己的缓存里，
+// 删了就真的删了。
 function serveTile(event, request, requestURL) {
   const key = tileCacheKey(requestURL);
 
@@ -357,7 +457,7 @@ function serveTile(event, request, requestURL) {
       const usable = cached && !(cached.type === 'opaque' && request.mode === 'cors');
       if (usable) return cached;
 
-      return fetch(request)
+      return fetch(request, { cache: 'no-store' })
         .then(response => {
           if (response && response.ok) {
             event.waitUntil(storeTile(cache, key, response.clone()));
@@ -434,7 +534,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  const keep = [APP_CACHE_NAME, CESIUM_CACHE_NAME, TILE_CACHE_NAME];
+  const keep = [APP_CACHE_NAME, CESIUM_CACHE_NAME, TILE_CACHE_NAME, FLAGS_CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -453,8 +553,17 @@ self.addEventListener('activate', event => {
 // Service Worker 已安装时不会重跑 install，若不主动重建，
 // 离线能力会一直缺失到 sw.js 下次变更为止。
 self.addEventListener('message', event => {
-  if (event.data && event.data.type === 'REPOPULATE_SHELL') {
+  const data = event.data || {};
+
+  if (data.type === 'REPOPULATE_SHELL') {
     event.waitUntil(precacheShell());
+    return;
+  }
+
+  // 设置页 / 主页面推过来的瓦片缓存开关。
+  // 必须落盘：SW 会被系统回收，下次醒来内存是空的，只能靠这份小文件恢复。
+  if (data.type === 'TILE_CACHE_SWITCH') {
+    event.waitUntil(saveTileSwitch(data.enabled !== false));
   }
 });
 
@@ -572,12 +681,9 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // ---- 5. 底图瓦片：独立缓存，缓存优先 ----
-  // 只有图片类的跨域请求会走到这里。开关由页面侧控制：设置里关掉「缓存瓦片」
-  // 后，js/tile-cache.js 不再把瓦片改道到 fetch，请求根本不会经过这个分支，
-  // 因此这里不需要再读任何配置。
+  // ---- 5. 底图瓦片：独立缓存，缓存优先（开关关闭时整条放行）----
   if (isTileRequest(request, requestURL)) {
-    event.respondWith(serveTile(event, request, requestURL));
+    event.respondWith(handleTileRequest(event, request, requestURL));
     return;
   }
 

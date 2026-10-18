@@ -94,19 +94,26 @@ Use "Settings" in the toolbar to open `/settings.html`, where you can adjust the
 |---|---|---|
 | App shell (HTML / CSS / JS / icons) | `locus-earth-app-cache-<version>` | Cache-first + background revalidate; repeat visits paint in tens of ms |
 | Cesium engine | `locus-earth-cesium-<engine version>` | Cache-first, dropped as a whole when the engine is upgraded |
-| ion asset endpoint (`/v1/assets/<id>/endpoint`) | same as engine | Network-first, cache fallback — without it Cesium cannot even build the imagery layer |
+| ion asset endpoint (`/v1/assets/<id>/endpoint`) | same as engine | Cache-first for 45 minutes + background refresh, network-first after that with stale fallback — without it Cesium cannot even build the imagery layer |
 | Basemap tiles | `locus-earth-tiles-v1` | Cache-first and **never revalidated on a hit**, so visited areas stay viewable offline; FIFO-trimmed past 2400 tiles |
+| Switch state | `locus-earth-flags-v1` | A few dozen bytes holding the on/off flag; a worker cannot read localStorage, so it has to be handed over |
 
-One trap is worth writing down: **Cesium fetches imagery tiles over XHR, and a Service Worker cannot
-intercept XHR**, so tile caching written only inside `sw.js` would be dead code. What actually works is
-[`js/tile-cache.js`](./js/tile-cache.js), which reroutes the "imagery tile + blob" branch of
-`Resource._Implementations.loadWithXhr` through `fetch` so requests reach the Service Worker; scripts,
-terrain and 3D Tiles keep using the engine's original implementation.
+Two points worth writing down:
 
-The "Cache map tiles" switch (on by default) controls whether tiles take that `fetch` path — turn it off
-and tiles neither read nor write the local cache. "Clear tile cache" deletes the whole tile cache.
-The browser's / WebView's own HTTP cache is not reachable from web content and cannot be cleared here;
-it only makes requests faster and does not affect the logic above.
+1. **A Service Worker does intercept XHR.** The common claim that it cannot is a myth — WebSocket and
+   EventSource are the ones that slip through. In Chromium / Android WebView, plain XHR responses land
+   in Cache Storage just like fetches, so Cesium fetching tiles over XHR does not hinder caching at all.
+   An earlier version of this project rerouted `Resource._Implementations.loadWithXhr` on the wrong
+   premise; that wrapper has been removed — it only added upgrade risk and forced the on/off switch to be
+   duplicated on both sides, which is exactly why "turn caching off" still kept caching.
+2. Tile requests are revalidated with `cache: 'no-store'` so the browser does not keep a second copy in its
+   own HTTP cache. Otherwise every tile is stored twice on disk, and the HTTP-cache copy is invisible and
+   unremovable from web content — which is why "clear tile cache" appears to free nothing.
+
+The "Cache map tiles" switch (on by default) is now enforced inside `sw.js`: turning it off passes tile
+requests straight through — no cache read, no cache write, and no HTTP cache either. "Clear tile cache"
+deletes the whole tile cache; the storage figure reported by the OS/browser is computed lazily and may
+update a little later.
 
 **Rendering & performance**: the 3D scene turns off WebGL's built-in MSAA and uses FXAA post-processing instead.
 MSAA is expensive on mobile: on devices without hardware MSAA support, Chromium may fall back to

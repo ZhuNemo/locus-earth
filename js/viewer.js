@@ -1,16 +1,25 @@
 import * as Cesium from 'cesium';
+import { showToast } from './utils.js';
 
 export function initViewer(containerId, terrainProvider) {
+    // 默认底图：Sentinel-2（Ion 资产 3954）。
+    // 异步工厂 + ImageryLayer 包装：元数据就绪前 Viewer 照常创建。
+    //
+    // 离线时这一步可能失败（拿不到 ion 的 endpoint JSON），后果是图层空着 ——
+    // 表现就是"界面都在、地球全黑"。这里显式提示一句，别让用户对着黑球猜；
+    // 正常情况下 SW 会用缓存里的那份 endpoint 顶上，根本走不到 catch。
+    const baseLayerProvider = Cesium.IonImageryProvider.fromAssetId(3954).catch((error) => {
+        console.warn('默认底图（Sentinel-2）加载失败，可能是离线或 ion 不可达:', error);
+        showToast('底图未能加载：离线时只显示已经缓存过的区域');
+        throw error;
+    });
+
     const viewer = new Cesium.Viewer(containerId, {
         terrainProvider: terrainProvider,
         // 底图选择 UI 已由 basemap-picker.js 接管（右侧偏上的自定义控件），
         // 图源清单与切换逻辑在 imagery.js
         baseLayerPicker: false,
-        // 默认底图：Sentinel-2（Ion 资产 3954）。
-        // 异步工厂 + ImageryLayer 包装：元数据就绪前 Viewer 照常创建
-        baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-            Cesium.IonImageryProvider.fromAssetId(3954)
-        ),
+        baseLayer: Cesium.ImageryLayer.fromProviderAsync(baseLayerProvider),
 
         animation: false,
         timeline: false,

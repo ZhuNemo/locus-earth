@@ -297,14 +297,29 @@
 
 
     // --- 瓦片缓存开关（默认开）---
-    // 主页面每个瓦片请求都会读一次这个键（见 js/tile-cache.js），
-    // 所以在这里改完立刻生效，不需要回主页面刷新。
+    // 缓存本身完全由 sw.js 负责（实测它连 XHR 都拦得到），但 SW 读不到
+    // localStorage，所以每次改动都要主动把状态推过去。这里内联一份与
+    // js/tile-cache.js 等价的消息发送，改动时两边一起改。
     const tileCacheToggle = document.getElementById('tileCacheToggle');
+
+    function pushTileCacheSwitch(enabled) {
+        if (!('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.getRegistration()
+            .then((registration) => {
+                const target = navigator.serviceWorker.controller || (registration && registration.active);
+                if (target) target.postMessage({ type: 'TILE_CACHE_SWITCH', enabled });
+            })
+            .catch(() => {});
+    }
+
     if (tileCacheToggle) {
         tileCacheToggle.checked = localStorage.getItem(TILE_CACHE_KEY) !== 'false';
+        // 本页加载时也推一次：SW 可能刚被系统回收重启，内存里还是默认值
+        pushTileCacheSwitch(tileCacheToggle.checked);
 
         tileCacheToggle.addEventListener('change', () => {
             localStorage.setItem(TILE_CACHE_KEY, tileCacheToggle.checked ? 'true' : 'false');
+            pushTileCacheSwitch(tileCacheToggle.checked);
 
             window.dispatchEvent(new StorageEvent('storage', {
                 key: TILE_CACHE_KEY,
@@ -453,13 +468,19 @@
                 localStorage.removeItem(STORAGE_KEY);             // 主题：由 updateAll 重建默认值
                 updateAll();
                 syncExtraToggles();
+                pushTileCacheSwitch(true);                        // 开关回到默认，也要告诉 SW
             }
 
             // 6. 反馈（页内 toast，取代原生 alert）
             let message = shellRepopulated
                 ? '清理已完成，部分资源将在刷新后重新获取'
                 : '清理已完成，但离线缓存未能自动重建，请刷新页面后重试';
-            if (tileCleared) message += '；瓦片缓存已清空';
+            if (tileCleared) {
+                // 顺手说清楚"系统里看到的占用没变"是为什么：
+                // Cache Storage 删掉是真的删了，但系统的配额统计是懒计算的，
+                // 加上浏览器自己的 HTTP 缓存里可能还留着旧副本（网页删不掉它）。
+                message += '；瓦片缓存已清空（系统显示的存储占用可能延迟一会儿才更新）';
+            }
             showToastInternal(message);
             clearCacheModal.classList.remove('active');
 

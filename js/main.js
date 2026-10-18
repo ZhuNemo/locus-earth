@@ -26,15 +26,14 @@ import { initMeasureUI } from './measure-ui.js'
 import { initTimeControl } from './time-control.js';
 import { initStreetView } from './streetview.js';
 import { CONFIG } from './config.js';
-import { installTileInterceptor } from './tile-cache.js';
+import { initTileCacheSwitch } from './tile-cache.js';
 
         Ion.defaultAccessToken = CONFIG.cesiumToken;
 
-        // 瓦片缓存：Cesium 取瓦片用的是 XHR，Service Worker 拦不到 XHR，
-        // 因此必须在创建 viewer 之前把这类请求改道到 fetch。
-        // 关掉设置里的「缓存瓦片」后这个钩子会自动放行（每个请求都读一次开关），
-        // 瓦片退回原来的 XHR 路径，不写缓存也不读缓存。
-        installTileInterceptor();
+        // 瓦片缓存：Service Worker 自己拦得到瓦片请求（连 XHR 也拦得到），
+        // 页面这边只需要把「缓存地图瓦片」开关推给它 —— SW 读不到 localStorage。
+        // 关掉之后 SW 会把瓦片请求原样放行：既不读缓存，也不写缓存。
+        initTileCacheSwitch();
 
 
         (function initTheme() {

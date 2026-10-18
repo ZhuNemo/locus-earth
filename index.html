@@ -34,7 +34,7 @@
 
     <link rel="shortcut icon" href="favicon.ico" />
     
-    <link rel="stylesheet" href="https://unpkg.com/cesium@1.118/Build/Cesium/Widgets/widgets.css" />
+    <link rel="stylesheet" href="https://unpkg.com/cesium@1.118.2/Build/Cesium/Widgets/widgets.css" />
 
     <link rel="manifest" href="manifest.json">
     <script>
@@ -51,10 +51,14 @@
 
     <!-- 引擎与数据源预连接：与第三方域握手（DNS + TCP + TLS）是冷启动里最容易被
          忽略的一段固定开销，preconnect 让它在解析 HTML 的同时就开始。
-         刻意不做 Cesium 包的 modulepreload：unpkg 会先 302 到带小版本号的地址，
-         预加载的键与实际 import 的键不一定对得上，对不上就等于白下 4 MB。 -->
+         modulepreload 提前拉 Cesium 包（约 4 MB，全站最大的单个文件）：
+         不预载的话要等 main.js 解析完、发现 import 之后才开始下载，白白晚一到
+         两个往返。这里能和 import 对上键，靠的是**把版本钉到补丁号**——importmap
+         与这条 preload 用的是同一个 1.118.2 地址，unpkg 不会 302（用 @1.118
+         会被跳到 1.118.2，键就对不上了，那才是白下 4 MB）。 -->
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://api.cesium.com" crossorigin>
+    <link rel="modulepreload" href="https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js" crossorigin>
 
     <!-- Montserrat（仅拉丁字符）+ 中文沿用设备字体
          · 源：fonts.loli.net（Infvie Envoy 公益 CDN，反代 Google Fonts；
@@ -518,7 +522,7 @@
             <p>10-01 V7.0：全面修复JS逻辑问题、重写缓存机制</p>
             <p>10-04 V7.1：新地图选择器、搜索框、SVG图标</p>
             <p>10-10 V7.2：新增街景跳转、坐标转换模块，功能栏改两排布局</p>
-            <p>10-18 V7.3：底图瓦片改为本地缓存（离线也能看已浏览区域），刷新页面改为缓存优先、打开更快；设置页新增「缓存地图瓦片」开关与「清除瓦片缓存」</p>
+            <p>10-18 V7.3：底图瓦片本地缓存（浏览过的区域离线也能看），刷新改为缓存优先、打开更快；设置页新增「缓存地图瓦片」开关与「清除瓦片缓存」，关掉开关后瓦片既不读也不写缓存</p>
             <p>……</p>
         </div>
     </div>
@@ -529,8 +533,8 @@
     <script type="importmap">
         {
             "imports": {
-                "cesium": "https://unpkg.com/cesium@1.118/Build/Cesium/index.js",
-                "cesium/Build/Cesium/Widgets/widgets.css": "https://unpkg.com/cesium@1.118/Build/Cesium/Widgets/widgets.css"
+                "cesium": "https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js",
+                "cesium/Build/Cesium/Widgets/widgets.css": "https://unpkg.com/cesium@1.118.2/Build/Cesium/Widgets/widgets.css"
             }
         }
     </script>
