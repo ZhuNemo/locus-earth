@@ -133,6 +133,19 @@
             <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6h.01"/>
             </symbol>
+            <!-- 以下四枚与 js/icons.js 的 folder / robot / warn / compass 保持同一份路径 -->
+            <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3.5 7.2c0-1 .8-1.7 1.7-1.7h3.3l2 2.3h8.3c1 0 1.7.8 1.7 1.7v8.1c0 1-.8 1.7-1.7 1.7H5.2c-1 0-1.7-.8-1.7-1.7V7.2Z"/>
+            </symbol>
+            <symbol id="i-robot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4.5" y="8" width="15" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4.2" r="1.2"/><path d="M9.3 12.7h.01M14.7 12.7h.01"/><path d="M9.8 16h4.4"/><path d="M2.5 12.5v3M21.5 12.5v3"/>
+            </symbol>
+            <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3.2 2.6 19.2h18.8L12 3.2Z"/><path d="M12 9.6v4.2M12 16.6h.01"/>
+            </symbol>
+            <symbol id="i-compass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/><path d="m15.6 8.4-2 5.2-5.2 2 2-5.2 5.2-2Z"/>
+            </symbol>
         </defs>
     </svg>
 
@@ -401,10 +414,10 @@
                 </span>
             </h2>
             <p>基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 的轻量 3D 地球应用。</p>
-            <p>📍 功能：地形、卫星影像、全球建筑、光照切换、地点搜索、高精度建模、标记收藏（可导出）。</p>
-            <p>📋 进入覆盖区自动出现「建模」「街景」；更多选项见设置页。更多描述见仓库。</p>
-            <p>📁 开放源代码：<a href="https://github.com/ZhuNemo/locus-earth" target="_blank">GitHub 仓库</a>。</p>
-            <p>🤖 使用人工智能辅助开发。</p>
+            <p><svg class="ui-icon"><use href="#i-document"/></svg>功能：地形、卫星影像、全球建筑、光照切换、地点搜索、高精度建模、标记收藏（可导出）。</p>
+            <p><svg class="ui-icon"><use href="#i-menu"/></svg>进入覆盖区自动出现「建模」「街景」；更多选项见设置页，详细说明见仓库。</p>
+            <p><svg class="ui-icon"><use href="#i-folder"/></svg>开放源代码：<a href="https://github.com/ZhuNemo/locus-earth" target="_blank">GitHub 仓库</a>。</p>
+            <p><svg class="ui-icon"><use href="#i-robot"/></svg>由 AI 辅助开发。</p>
             <div class="dev-card">
                 <div class="dev-card__profile">
                     <img class="dev-card__avatar" src="https://avatars.githubusercontent.com/u/269598867?v=4&size=64"
@@ -433,7 +446,7 @@
             </p>
             <p style="font-size:13px; color:#666; margin-top:16px;">数据来源：Cesium ion · OpenStreetMap · Natural Earth</p>
             <p style="font-size:10px; color:#aaa; margin-top:12px; border-top:1px solid #eee; padding-top:12px;">
-                ⚠ <a href="#" id="activateGoogle3D" style="color:#666; text-decoration:none; border-bottom:1px dotted #ccc;">进入Google 3D地球（实验性）</a>
+                <svg class="ui-icon"><use href="#i-warn"/></svg><a href="#" id="activateGoogle3D" style="color:#666; text-decoration:none; border-bottom:1px dotted #ccc;">进入 Google 3D 地球（实验性）</a>
                 <span style="color:#666; font-size:10px;"> · 需海外网络环境</span>
             </p>
         </div>
@@ -464,23 +477,12 @@
         <div class="modal-box glass-panel">
             <button id="closeInfoGoogleBtn" class="close-btn"><svg class="ui-icon"><use href="#i-close"/></svg></button>
             <h2><svg class="ui-icon"><use href="#i-globe"/></svg>关于Google地球模式</h2>
-            <p>
-                当前处于 <strong>Google地球模式</strong>，由 Google Photorealistic 3D Tiles 提供全球 3D 模型和高清卫星影像。
-            </p>
-            <p>
-                📍 支持查看全球范围内Google地球写实 3D 模型（楼房、树木等）覆盖的所有城市及区域。可手动搜索地点。
-            </p>
-            <p>
-                🧭 使用鼠标/手指自由旋转、缩放、倾斜视角。
-            </p>
-            <p>
-                <strong>该模式：</strong>
-            </p>
-            <p>
-                作为轻量级Google Earth浏览器，能够解决原版地球耗费系统资源过大导致卡顿和死机的问题。不含路网及叠加层。
-            </p>
+            <p>当前处于 <strong>Google 地球模式</strong>，由 Google Photorealistic 3D Tiles 提供全球 3D 模型与高清卫星影像。</p>
+            <p><svg class="ui-icon"><use href="#i-pin"/></svg>支持查看 Google 地球写实 3D 模型（楼房、树木）覆盖的城市与区域，可手动搜索地点。</p>
+            <p><svg class="ui-icon"><use href="#i-compass"/></svg>用鼠标或手指自由旋转、缩放、倾斜视角。</p>
+            <p><strong>该模式</strong>是轻量级的 Google Earth 浏览器，避开原版占用资源过大导致的卡顿，且不含路网与叠加层。</p>
             <p style="font-size:12px; color:#999; margin-top:12px; border-top:1px solid #eee; padding-top:12px;">
-                ⚠️ 需海外网络环境来连接Google Maps服务器<br>
+                <svg class="ui-icon"><use href="#i-warn"/></svg>需海外网络环境连接 Google Maps 服务器<br>
                 数据来源：Google Maps Platform · Cesium ion
             </p>
         </div>

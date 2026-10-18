@@ -223,6 +223,17 @@
             line-height: 1.2;
         }
 
+        /* 正文里的行内图标（替代原 emoji）：
+           与文字共基线居中，并自带右间距；同时抵消基类给「紧随元素」的左间距，
+           避免图标后跟 <a> 时出现双倍间距。 */
+        .modal-box p > .ui-icon {
+            color: var(--text-secondary);
+            margin-right: 0.45em;
+        }
+        .modal-box p > .ui-icon + * {
+            margin-left: 0;
+        }
+
         /* 开发者卡片：头像 + 署名 + 外链按钮组 */
         .dev-card {
             margin: 14px 0;
