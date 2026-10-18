@@ -88,6 +88,26 @@ All code is open source under the MIT license, and **both the web app and the An
 ## ⚙️ Settings & Customization
 Use "Settings" in the toolbar to open `/settings.html`, where you can adjust the light/dark theme (follow system / manual), terrain loading, road network overlay, and cache.
 
+**Caching & offline**: three layers, all handled by [`sw.js`](./sw.js).
+
+| Layer | Cache name | Strategy |
+|---|---|---|
+| App shell (HTML / CSS / JS / icons) | `locus-earth-app-cache-<version>` | Cache-first + background revalidate; repeat visits paint in tens of ms |
+| Cesium engine | `locus-earth-cesium-<engine version>` | Cache-first, dropped as a whole when the engine is upgraded |
+| ion asset endpoint (`/v1/assets/<id>/endpoint`) | same as engine | Network-first, cache fallback — without it Cesium cannot even build the imagery layer |
+| Basemap tiles | `locus-earth-tiles-v1` | Cache-first and **never revalidated on a hit**, so visited areas stay viewable offline; FIFO-trimmed past 2400 tiles |
+
+One trap is worth writing down: **Cesium fetches imagery tiles over XHR, and a Service Worker cannot
+intercept XHR**, so tile caching written only inside `sw.js` would be dead code. What actually works is
+[`js/tile-cache.js`](./js/tile-cache.js), which reroutes the "imagery tile + blob" branch of
+`Resource._Implementations.loadWithXhr` through `fetch` so requests reach the Service Worker; scripts,
+terrain and 3D Tiles keep using the engine's original implementation.
+
+The "Cache map tiles" switch (on by default) controls whether tiles take that `fetch` path — turn it off
+and tiles neither read nor write the local cache. "Clear tile cache" deletes the whole tile cache.
+The browser's / WebView's own HTTP cache is not reachable from web content and cannot be cleared here;
+it only makes requests faster and does not affect the logic above.
+
 **Rendering & performance**: the 3D scene turns off WebGL's built-in MSAA and uses FXAA post-processing instead.
 MSAA is expensive on mobile: on devices without hardware MSAA support, Chromium may fall back to
 software MSAA (multiple samples per pixel, a clear hit to fill rate), and devices that do support it still
@@ -177,7 +197,7 @@ Application Links:
 |---|---|
 | **Start Date** | 2026-07-04 |
 | **Maintenance** | Personal project, built in spare time, updated irregularly |
-| **Current Version** | 7.2 |
+| **Current Version** | 7.3 |
 
 ---
 

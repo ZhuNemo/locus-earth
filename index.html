@@ -39,11 +39,22 @@
     <link rel="manifest" href="manifest.json">
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js', { scope: './' })
+            // updateViaCache: 'none' —— 让 sw.js 自身也走「不走 HTTP 缓存」。
+            // 默认值会让 sw.js 按 HTTP 缓存策略缓存，最长可达 24 小时，
+            // 结果是线上发了新版、用户却迟迟拿不到新 Service Worker，
+            // 于是新缓存策略等于没上线。
+            navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
                 .then(registration => console.log('SW registered:', registration.scope))
                 .catch(error => console.error('SW registration failed:', error));
         }
     </script>
+
+    <!-- 引擎与数据源预连接：与第三方域握手（DNS + TCP + TLS）是冷启动里最容易被
+         忽略的一段固定开销，preconnect 让它在解析 HTML 的同时就开始。
+         刻意不做 Cesium 包的 modulepreload：unpkg 会先 302 到带小版本号的地址，
+         预加载的键与实际 import 的键不一定对得上，对不上就等于白下 4 MB。 -->
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://api.cesium.com" crossorigin>
 
     <!-- Montserrat（仅拉丁字符）+ 中文沿用设备字体
          · 源：fonts.loli.net（Infvie Envoy 公益 CDN，反代 Google Fonts；
@@ -55,7 +66,14 @@
          · 字体栈统一在 css/themes.css 的 --font-ui。 -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+    <!-- 非阻塞加载：media="print" 让这份第三方 CSS 不参与首屏渲染阻塞，
+         下载完再把 media 切回 all 应用字体。字体本身是 display=swap，
+         所以最坏情况只是先显示系统字体，不会白屏、也不会影响可读性。 -->
+    <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+          media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+    </noscript>
 
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
@@ -379,7 +397,7 @@
                 <img class="about-app-icon" src="android-chrome-192x192.png" alt="" aria-hidden="true">
                 <span class="about-title">
                     <span class="about-name">Locus Earth</span>
-                    <span class="about-version">7.2</span>
+                    <span class="about-version">7.3</span>
                 </span>
             </h2>
             <p>基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 的轻量 3D 地球应用。</p>
@@ -428,7 +446,8 @@
             <h2><svg class="ui-icon"><use href="#i-gear"/></svg>使用技巧</h2>
             <p>功能栏内的搜索框可以输入地名定位，结果较多时可在下拉中上下滚动查看。</p>
             <p>右侧控件列自上而下依次为：底图选择器、指南针（显示当前朝向，点击重置为正北方向）、放大、缩小、恢复默认俯仰角。</p>
-            <p>设置页可以调整色彩模式与跟随系统、地形开关、路网叠加层，以及清除缓存与数据。</p>
+            <p>设置页可以调整色彩模式与跟随系统、地形开关、路网叠加层、瓦片缓存，以及清除缓存与数据。</p>
+            <p>「缓存地图瓦片」开启时（默认），看过的区域会存到本地：再次进入直接读缓存，打开更快；离线状态下也能看到这些区域已缓存的影像（地形、3D 建筑与搜索仍然需要联网）。占用空间可以在设置页的「清除瓦片缓存」里查看并清空。</p>
             <p>测量的悬浮圆钮可以自由拖动；点击它，测量工具条（测距 / 测面积）会在圆钮当前所在位置展开。</p>
             <p>高精度建模覆盖区域： 丹佛*、华盛顿D.C.、华盛顿州（西雅图附近）、悉尼*、波士顿*、墨尔本*、旧金山*。浏览时自动检测并提示，与3D建筑互斥（开启建筑白模时建模按钮不可用）。建模加载速度较慢，属正常现象。</p>
             <p>*：仅市中心小块区域有高精度建模覆盖</p>
@@ -497,6 +516,7 @@
             <p>10-01 V7.0：全面修复JS逻辑问题、重写缓存机制</p>
             <p>10-04 V7.1：新地图选择器、搜索框、SVG图标</p>
             <p>10-10 V7.2：新增街景跳转、坐标转换模块，功能栏改两排布局</p>
+            <p>10-18 V7.3：底图瓦片改为本地缓存（离线也能看已浏览区域），刷新页面改为缓存优先、打开更快；设置页新增「缓存地图瓦片」开关与「清除瓦片缓存」</p>
             <p>……</p>
         </div>
     </div>

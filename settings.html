@@ -15,7 +15,12 @@
     <!-- Montserrat（仅拉丁字符），国内镜像，详见 index.html 同处的说明 -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+    <!-- 非阻塞加载（与 index.html 一致）：设置页也不该被第三方字体阻塞首屏 -->
+    <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+          media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+    </noscript>
 
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
@@ -97,6 +102,18 @@
                 </label>
             </div>
 
+            <!-- 瓦片缓存：默认开启，关闭后底图瓦片每次都从网络取，不读也不写本地缓存 -->
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">缓存地图瓦片</span>
+                    <span class="setting-desc">浏览过的区域存到本地，再次进入时直接读取，断网也能看到已缓存的影像。占用空间随浏览范围增长，可在下方清除</span>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="tileCacheToggle" checked />
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-label">清除缓存与数据</span>
@@ -122,10 +139,18 @@
             </label>
 
             <label>
+                <input type="checkbox" id="clearTileCache">
+                <span class="setting-info">
+                    <span class="setting-label">清除瓦片缓存</span>
+                    <span class="setting-desc" id="tileCacheDesc">(地图影像瓦片，离线浏览依赖它)</span>
+                </span>
+            </label>
+
+            <label>
                 <input type="checkbox" id="clearCesiumCache">
                 <span class="setting-info">
                     <span class="setting-label">清除 Cesium 地球引擎缓存</span>
-                    <span class="setting-desc">(较大，清除后刷新需要重新下载引擎，建议仅在遇到错误时使用)</span>
+                    <span class="setting-desc">(较大，清除后刷新需要重新下载引擎，离线地图也要重新联网一次才能恢复，建议仅在遇到错误时使用)</span>
                 </span>
             </label>
 
@@ -141,7 +166,7 @@
                 <input type="checkbox" id="clearSettings">
                 <span class="setting-info">
                     <span class="setting-label">清除设置数据</span>
-                    <span class="setting-desc">(将恢复默认主题和默认地形开关)</span>
+                    <span class="setting-desc">(将恢复默认主题，以及地形、路网叠加、瓦片缓存三个开关的默认状态；不会删除已缓存的瓦片)</span>
                 </span>
             </label>
 

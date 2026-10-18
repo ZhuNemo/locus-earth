@@ -26,8 +26,15 @@ import { initMeasureUI } from './measure-ui.js'
 import { initTimeControl } from './time-control.js';
 import { initStreetView } from './streetview.js';
 import { CONFIG } from './config.js';
+import { installTileInterceptor } from './tile-cache.js';
 
         Ion.defaultAccessToken = CONFIG.cesiumToken;
+
+        // 瓦片缓存：Cesium 取瓦片用的是 XHR，Service Worker 拦不到 XHR，
+        // 因此必须在创建 viewer 之前把这类请求改道到 fetch。
+        // 关掉设置里的「缓存瓦片」后这个钩子会自动放行（每个请求都读一次开关），
+        // 瓦片退回原来的 XHR 路径，不写缓存也不读缓存。
+        installTileInterceptor();
 
 
         (function initTheme() {
@@ -115,9 +122,13 @@ import { CONFIG } from './config.js';
             destination: Cartesian3.fromDegrees(116.4, 39.9, 1000000)
         });
 
+        // 兜底超时：正常情况下 globe.tilesLoaded 会先到（尤其瓦片已缓存时），
+        // 这里只负责"网络很慢"时的观感。3.5s 比原来的 5s 更早放出画面 ——
+        // Cesium 的瓦片是渐进填充的，让用户先看到地球再慢慢变清楚，
+        // 比继续对着一块写着"正在加载"的黑屏体验更好。
         let loadingTimeout = setTimeout(() => {
             removeLoadingOverlay();
-        }, 5000);
+        }, 3500);
 
         function removeLoadingOverlay() {
             if (loadingOverlay.style.display === 'none') return; 

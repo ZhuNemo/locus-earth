@@ -8,6 +8,11 @@
 
     // 存储键名
     const STORAGE_KEY = 'locus-settings';
+    // 瓦片缓存开关。与 js/tile-cache.js 共用同一个键（那边是 ES Module，
+    // 本页是普通脚本，无法 import，因此读写逻辑各留一份，改动时两边一起改）。
+    const TILE_CACHE_KEY = 'tileCacheEnabled';
+    // 瓦片缓存名前缀，与 sw.js 的 TILE_CACHE_NAME 对应
+    const TILE_CACHE_PREFIX = 'locus-earth-tiles';
 
     // =============================================
     // 1. 读取 / 写入设置
@@ -291,6 +296,37 @@
         }
 
 
+    // --- 瓦片缓存开关（默认开）---
+    // 主页面每个瓦片请求都会读一次这个键（见 js/tile-cache.js），
+    // 所以在这里改完立刻生效，不需要回主页面刷新。
+    const tileCacheToggle = document.getElementById('tileCacheToggle');
+    if (tileCacheToggle) {
+        tileCacheToggle.checked = localStorage.getItem(TILE_CACHE_KEY) !== 'false';
+
+        tileCacheToggle.addEventListener('change', () => {
+            localStorage.setItem(TILE_CACHE_KEY, tileCacheToggle.checked ? 'true' : 'false');
+
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: TILE_CACHE_KEY,
+                newValue: String(tileCacheToggle.checked)
+            }));
+
+            showToastInternal(tileCacheToggle.checked
+                ? '瓦片缓存已开启，浏览过的区域下次直接读本地'
+                : '瓦片缓存已关闭，底图瓦片将每次都从网络获取');
+        });
+    }
+
+    // 把三个非主题开关的界面状态与 localStorage 对齐。
+    // 用于「清除设置数据」之后：数据恢复默认，界面也必须跟着回到默认，
+    // 否则用户看到的是"清除了但开关没动"。
+    function syncExtraToggles() {
+        if (terrainToggle) terrainToggle.checked = localStorage.getItem('terrainEnabled') !== 'false';
+        if (overlayToggle) overlayToggle.checked = localStorage.getItem('overlayEnabled') === 'true';
+        if (tileCacheToggle) tileCacheToggle.checked = localStorage.getItem(TILE_CACHE_KEY) !== 'false';
+    }
+
+
     // --- 清除缓存弹窗 ---
     const clearCacheBtn = document.getElementById('clearCacheBtn');
     const clearCacheModal = document.getElementById('clearCacheModal');
@@ -298,13 +334,48 @@
     const cancelClearBtn = document.getElementById('cancelClearBtn');
 
     const clearAppCache = document.getElementById('clearAppCache');
+    const clearTileCache = document.getElementById('clearTileCache');
     const clearCesiumCache = document.getElementById('clearCesiumCache');
     const clearBookmarks = document.getElementById('clearBookmarks');
     const clearSettings = document.getElementById('clearSettings');
+    const tileCacheDesc = document.getElementById('tileCacheDesc');
+
+    // 列出本应用某个前缀下的所有缓存名。
+    // 用 startsWith 而不是 includes：前者不会误伤同域名下名字相近的其他缓存。
+    async function findCaches(prefix) {
+        if (!('caches' in window)) return [];
+        try {
+            const names = await caches.keys();
+            return names.filter(name => name.startsWith(prefix));
+        } catch (error) {
+            console.warn('读取缓存列表失败:', error);
+            return [];
+        }
+    }
+
+    // 统计已缓存的瓦片数量，写进弹窗里的说明文字。
+    // 只数条目、不算字节：Cache Storage 不提供单条大小，逐条读 content-length
+    // 在几千条规模下会让弹窗明显卡一下，不划算。
+    async function refreshTileCacheSummary() {
+        if (!tileCacheDesc) return;
+        const names = await findCaches(TILE_CACHE_PREFIX);
+        let count = 0;
+        for (const name of names) {
+            try {
+                const cache = await caches.open(name);
+                count += (await cache.keys()).length;
+            } catch {}
+        }
+        tileCacheDesc.textContent = count > 0
+            ? `(当前已缓存 ${count.toLocaleString()} 块瓦片，清除后这些区域需要重新联网获取)`
+            : '(暂无缓存瓦片。离线时能不能看到地图，取决于这里)';
+    }
 
     // 打开弹窗
     clearCacheBtn.addEventListener('click', () => {
         clearCacheModal.classList.add('active');
+        // 数量随时在变（主页面可能还在后台加载瓦片），每次打开都重新统计
+        refreshTileCacheSummary();
     });
 
     // 取消
@@ -335,48 +406,71 @@
     confirmClearBtn.addEventListener('click', async () => {
         try {
             let shellRepopulated = true;
+            let tileCleared = false;
+            // 先记下状态：后面的「勾选状态回到默认」会把它清掉，
+            // 而刷新提示要按用户刚才的选择决定
+            const cesiumCleared = !!(clearCesiumCache && clearCesiumCache.checked);
 
-            // 1. 清除 PWA 应用缓存
+            // 1. 清除 PWA 应用缓存（界面外壳：HTML / CSS / JS / 图标）
             if (clearAppCache && clearAppCache.checked) {
-                const cacheNames = await caches.keys();
-                const appCaches = cacheNames.filter(name => name.includes('locus-earth-app'));
+                const appCaches = await findCaches('locus-earth-app');
                 await Promise.all(appCaches.map(name => caches.delete(name)));
                 // 立即重建，避免离线能力永久丧失
                 shellRepopulated = await requestShellRepopulation();
             }
 
-            // 2. 清除 Cesium 地球引擎缓存
-            if (clearCesiumCache && clearCesiumCache.checked) {
-                const cacheNames = await caches.keys();
-                const cesiumCaches = cacheNames.filter(name => name.includes('locus-earth-cesium'));
+            // 2. 清除瓦片缓存（离线地图数据）
+            if (clearTileCache && clearTileCache.checked) {
+                const tileCaches = await findCaches(TILE_CACHE_PREFIX);
+                await Promise.all(tileCaches.map(name => caches.delete(name)));
+                tileCleared = true;
+            }
+
+            // 3. 清除 Cesium 地球引擎缓存
+            if (cesiumCleared) {
+                const cesiumCaches = await findCaches('locus-earth-cesium');
                 await Promise.all(cesiumCaches.map(name => caches.delete(name)));
             }
 
-            // 3. 清除收藏夹数据
+            // 4. 清除收藏夹数据
             if (clearBookmarks && clearBookmarks.checked) {
-                localStorage.removeItem('bookmarks'); 
+                localStorage.removeItem('bookmarks');
                 window.dispatchEvent(new StorageEvent('storage', {
                     key: 'bookmarks',
                     newValue: null
                 }));
             }
 
-            // 4. 清除设置数据
+            // 5. 清除设置数据（恢复默认）
+            // 这里刻意把各项写回**默认值**而不是 removeItem：
+            // 主页面用 `!== 'false'` / `=== 'true'` 判断，removeItem 会让它收到
+            // newValue: null，从而把「恢复默认」误读成「全部关闭」——
+            // 于是清完设置，地形看着也被关掉了，下次刷新才回来。
             if (clearSettings && clearSettings.checked) {
-                localStorage.removeItem('locus-settings');
-                localStorage.removeItem('terrainEnabled');
-
-                applyTheme('light');
-                document.documentElement.setAttribute('data-theme', 'light');
+                localStorage.setItem('terrainEnabled', 'true');   // 默认开
+                localStorage.setItem('overlayEnabled', 'false');  // 默认关
+                localStorage.setItem(TILE_CACHE_KEY, 'true');     // 默认开
+                localStorage.removeItem(STORAGE_KEY);             // 主题：由 updateAll 重建默认值
+                updateAll();
+                syncExtraToggles();
             }
 
-            // 5. 反馈（页内 toast，取代原生 alert）
-            showToastInternal(shellRepopulated
+            // 6. 反馈（页内 toast，取代原生 alert）
+            let message = shellRepopulated
                 ? '清理已完成，部分资源将在刷新后重新获取'
-                : '清理已完成，但离线缓存未能自动重建，请刷新页面后重试');
+                : '清理已完成，但离线缓存未能自动重建，请刷新页面后重试';
+            if (tileCleared) message += '；瓦片缓存已清空';
+            showToastInternal(message);
             clearCacheModal.classList.remove('active');
 
-            if (clearCesiumCache && clearCesiumCache.checked) {
+            // 勾选状态回到默认：应用缓存默认勾上，大件（瓦片 / 引擎 / 数据）默认不勾，
+            // 避免下次打开时手快连带清掉
+            if (clearAppCache) clearAppCache.checked = true;
+            [clearTileCache, clearCesiumCache, clearBookmarks, clearSettings]
+                .forEach(box => { if (box) box.checked = false; });
+            refreshTileCacheSummary();
+
+            if (cesiumCleared) {
                 const reloadNow = await askConfirm(
                     'Cesium 引擎缓存已清除。为了彻底释放空间并重新加载最新引擎，是否立即刷新页面？'
                 );
