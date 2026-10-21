@@ -184,7 +184,7 @@ Application Links:
 |---|---|
 | **Start Date** | 2026-07-04 |
 | **Maintenance** | Personal project, built in spare time, updated irregularly |
-| **Current Version** | 7.3.1 |
+| **Current Version** | 8.0 |
 
 ---
 

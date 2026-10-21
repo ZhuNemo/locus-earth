@@ -615,8 +615,6 @@
             log('Cesium Viewer 初始化：跳过（引擎没加载成功）');
         }
 
-        log('');
-        log('把这段内容发回来即可定位问题。');
         button.disabled = false;
     }
 
