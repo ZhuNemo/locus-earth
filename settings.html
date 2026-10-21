@@ -28,6 +28,17 @@
     <link rel="stylesheet" href="css/toast.css" />
     <link rel="stylesheet" href="css/settings.css" />
     <link rel="stylesheet" href="css/themes.css" />
+
+    <!-- 与 index.html 同一份 importmap（版本必须一致）。
+         设置页平时用不到 Cesium，这份只服务于「兼容性诊断」里的裸标识符解析测试；
+         顺带也验证了当前 WebView 到底支不支持 import maps。 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "cesium": "https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js"
+            }
+        }
+    </script>
 </head>
 <body class="settings-body">
 
@@ -122,6 +133,23 @@
                 <button id="clearCacheBtn" class="setting-action" type="button">进入</button>
             </div>
 
+        </div>
+
+        <!-- 兼容性诊断：平时完全不可见，只在排查"卡在加载页 / 地球全黑"时用。
+             必须在壳自己的 WebView 里跑才有意义 —— 同一台手机上的 Chrome/Edge
+             与系统 WebView 内核不同，浏览器能跑不代表 WebView 能跑。 -->
+        <div class="setting-group">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-label">兼容性诊断</span>
+                    <span class="setting-desc">在当前 WebView 里实测 WebGL、模块加载与 3D 引擎初始化，用于排查卡在加载页</span>
+                </div>
+                <button id="diagRunBtn" class="setting-action" type="button">开始检测</button>
+            </div>
+            <pre id="diagOutput" hidden style="margin:0 14px 14px;padding:12px;border-radius:10px;
+                 background:rgba(127,127,127,.12);color:var(--text-secondary,#999);
+                 font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.65;
+                 white-space:pre-wrap;word-break:break-word;"></pre>
         </div>
 
         <!-- 清除缓存弹窗 -->

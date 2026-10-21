@@ -505,5 +505,117 @@
             showToastInternal('发生错误：' + error.message);
         }
     });
+    // =============================================
+    // 兼容性诊断
+    // =============================================
+    // 为什么放在设置页：排查"卡在加载页 / 地球全黑"必须在**壳自己的 WebView**
+    // 里测 —— 同一台手机上的 Chrome / Edge 与系统 WebView 是两个内核，
+    // 浏览器能跑不代表 WebView 能跑。而壳里没有地址栏、调试器也可能连不上，
+    // 设置页是唯一一个能在 App 内打开、又允许跑脚本的地方。
+    //
+    // 检测顺序刻意与主页面启动顺序一致：
+    //   WebGL 2 → ES Module → importmap 裸标识符 → Cesium 下载 → Viewer 初始化
+    // 哪一步先红，问题就在那一步。
+    const diagRunBtn = document.getElementById('diagRunBtn');
+    const diagOutput = document.getElementById('diagOutput');
+
+    function diagLog(output, lines, text) {
+        lines.push(text);
+        output.hidden = false;
+        output.textContent = lines.join('\n');
+    }
+
+    function errorText(error) {
+        if (!error) return '未知错误';
+        return String((error && (error.message || error.reason)) || error);
+    }
+
+    async function runDiagnostics(output, button) {
+        const lines = [];
+        button.disabled = true;
+        output.hidden = false;
+        output.textContent = '检测中…';
+
+        const log = (text) => diagLog(output, lines, text);
+
+        const ua = navigator.userAgent || '';
+        const chromium = (/Chrome\/(\d+)/.exec(ua) || [])[1] || '未识别';
+        log('内核：Chromium ' + chromium + (ua.indexOf('ArkWeb') >= 0 ? '（ArkWeb）' : ''));
+        log('UA：' + ua);
+
+        // 1. WebGL 2
+        let gl2 = null;
+        try {
+            gl2 = document.createElement('canvas').getContext('webgl2');
+        } catch (error) {}
+        if (!gl2) {
+            log('WebGL 2：❌ 拿不到上下文（Cesium 1.118 起只支持 WebGL 2，这足以导致黑屏）');
+        } else {
+            log('WebGL 2：✅ ' + gl2.getParameter(gl2.VERSION));
+            const extensions = gl2.getSupportedExtensions() || [];
+            log('  浮点颜色缓冲：' + (extensions.indexOf('EXT_color_buffer_float') >= 0 ? '有' : '无') +
+                '｜各向异性过滤：' + (extensions.indexOf('EXT_texture_filter_anisotropic') >= 0 ? '有' : '无'));
+        }
+
+        // 2. ES Module（挑一个不依赖 Cesium 的模块，验证模块加载本身）
+        try {
+            // 相对路径是按本脚本（js/settings.js）的位置解析的，不是页面根目录
+            await import('./tile-cache.js');
+            log('ES Module 加载：✅ 正常');
+        } catch (error) {
+            log('ES Module 加载：❌ ' + errorText(error));
+        }
+
+        // 3. importmap 裸标识符解析
+        let Cesium = null;
+        try {
+            Cesium = await import('cesium');
+            log('importmap 解析 cesium：✅ 版本 ' + (Cesium.VERSION || '?'));
+        } catch (error) {
+            log('importmap 解析 cesium：❌ ' + errorText(error));
+            // 退一步用绝对地址再试：能成就是 importmap 的问题，不能成就是网络/内核的问题
+            try {
+                Cesium = await import('https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js');
+                log('  改为绝对地址加载：✅ 成功 —— 说明当前 WebView 不支持 import maps');
+            } catch (fallbackError) {
+                log('  改为绝对地址加载：❌ ' + errorText(fallbackError));
+            }
+        }
+
+        // 4. 引擎初始化（失败多半是 WebGL 能力/驱动问题）
+        if (Cesium) {
+            const host = document.createElement('div');
+            host.style.cssText = 'position:fixed;left:-9999px;top:0;width:200px;height:150px;';
+            document.body.appendChild(host);
+            try {
+                const viewer = new Cesium.Viewer(host, {
+                    baseLayer: false,
+                    animation: false, timeline: false, geocoder: false,
+                    homeButton: false, navigationHelpButton: false,
+                    fullscreenButton: false, infoBox: false,
+                    sceneModePicker: false, baseLayerPicker: false,
+                    selectionIndicator: false
+                });
+                log('Cesium Viewer 初始化：✅ 成功');
+                viewer.destroy();
+            } catch (error) {
+                log('Cesium Viewer 初始化：❌ ' + errorText(error));
+            }
+            host.remove();
+        } else {
+            log('Cesium Viewer 初始化：跳过（引擎没加载成功）');
+        }
+
+        log('');
+        log('把这段内容发回来即可定位问题。');
+        button.disabled = false;
+    }
+
+    if (diagRunBtn && diagOutput) {
+        diagRunBtn.addEventListener('click', () => {
+            runDiagnostics(diagOutput, diagRunBtn);
+        });
+    }
+
     console.log('设置页面已初始化');
 })();
