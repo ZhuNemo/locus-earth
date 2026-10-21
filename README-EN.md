@@ -43,6 +43,8 @@
 
 All code is open source under the MIT license, and **both the web app and the Android shell live in this repository** (the shell is in [`androidapk/`](./androidapk/), see [Android Version](#-android-version-apk)). The web app needs no installation; the APK is just another way in, and you are free to build, modify, and redistribute it yourself.
 
+Want to hack on it? The project is **build-free**; trade-offs, traps and troubleshooting are in [`docs/dev-notes.en.md`](./docs/dev-notes.en.md).
+
 ---
 
 ## ✨ Key Features
@@ -82,56 +84,23 @@ All code is open source under the MIT license, and **both the web app and the An
 - **Markers / Street View / Measurement are mutually exclusive**: only one can be active at a time; switching automatically closes the other to avoid click conflicts.
 - Street View redirection needs a network connection and is unavailable when the PWA is offline.
 - On mobile, the bottom tray expands by swiping up and collapses by tapping the handle.
+- **Browser requirement**: a modern browser with WebGL 2 (any recent Chrome / Edge / Firefox / Safari).
 
 ---
 
 ## ⚙️ Settings & Customization
-Use "Settings" in the toolbar to open `/settings.html`, where you can adjust the light/dark theme (follow system / manual), terrain loading, road network overlay, and cache.
+"Settings" in the toolbar opens `/settings.html`:
 
-**Caching & offline**: three layers, all handled by [`sw.js`](./sw.js).
+- **Appearance**: light/dark theme (follow system / manual)
+- **Terrain & overlays**: 3D terrain toggle, road network and place-name overlays
+- **Cache**: "Cache map tiles" switch (on by default), plus clearing app / tile / engine cache, favorites and settings
+- **Compatibility check**: a WebGL 2 / module-loading / engine-init self-test on the current device
 
-| Layer | Cache name | Strategy |
-|---|---|---|
-| App shell (HTML / CSS / JS / icons) | `locus-earth-app-cache-<version>` | Cache-first + background revalidate; repeat visits paint in tens of ms |
-| Cesium engine | `locus-earth-cesium-<engine version>` | Cache-first, dropped as a whole when the engine is upgraded |
-| ion asset endpoint (`/v1/assets/<id>/endpoint`) | same as engine | Cache-first for 45 minutes + background refresh, network-first after that with stale fallback — without it Cesium cannot even build the imagery layer |
-| Basemap tiles | `locus-earth-tiles-v1` | Cache-first and **never revalidated on a hit**, so visited areas stay viewable offline; FIFO-trimmed past 2400 tiles |
-| Switch state | `locus-earth-flags-v1` | A few dozen bytes holding the on/off flag; a worker cannot read localStorage, so it has to be handed over |
+**Offline**: imagery tiles for areas you have visited are stored locally and stay viewable without a
+network; terrain, 3D buildings and search still need a connection.
 
-Two points worth writing down:
-
-1. **A Service Worker does intercept XHR.** The common claim that it cannot is a myth — WebSocket and
-   EventSource are the ones that slip through. In Chromium / Android WebView, plain XHR responses land
-   in Cache Storage just like fetches, so Cesium fetching tiles over XHR does not hinder caching at all.
-   An earlier version of this project rerouted `Resource._Implementations.loadWithXhr` on the wrong
-   premise; that wrapper has been removed — it only added upgrade risk and forced the on/off switch to be
-   duplicated on both sides, which is exactly why "turn caching off" still kept caching.
-2. Tile requests are revalidated with `cache: 'no-store'` so the browser does not keep a second copy in its
-   own HTTP cache. Otherwise every tile is stored twice on disk, and the HTTP-cache copy is invisible and
-   unremovable from web content — which is why "clear tile cache" appears to free nothing.
-
-The "Cache map tiles" switch (on by default) is now enforced inside `sw.js`: turning it off passes tile
-requests straight through — no cache read, no cache write, and no HTTP cache either. "Clear tile cache"
-deletes the whole tile cache; the storage figure reported by the OS/browser is computed lazily and may
-update a little later.
-
-**Rendering & performance**: the 3D scene turns off WebGL's built-in MSAA and uses FXAA post-processing instead.
-MSAA is expensive on mobile: on devices without hardware MSAA support, Chromium may fall back to
-software MSAA (multiple samples per pixel, a clear hit to fill rate), and devices that do support it still
-pay extra bandwidth and VRAM. FXAA is a single full-screen pass and costs no extra VRAM. Both switches are
-in `js/viewer.js` (`contextOptions.webgl.antialias` and `scene.postProcessStages.fxaa.enabled`); on a
-low-end device, set the FXAA line to `false` — nothing else depends on it.
-
-**Engine entry & engine compatibility (`js/cesium.js`)**: every module imports `'./cesium.js'`, a one-line
-re-export of `https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js`. The project used to rely on
-`<script type="importmap">` with the bare specifier `'cesium'`, which works in desktop Chrome / Edge but
-**breaks on Huawei's engine family** (the HarmonyOS built-in browser, and the WebView the Android shell
-uses): it does not actually resolve import maps, yet `HTMLScriptElement.supports('importmap')` still
-returns `true`. So `import ... from 'cesium'` throws `Failed to resolve module specifier`, the whole
-module graph dies, and the page stays on the loading overlay forever (diagnosed 2026-10-21 on
-Chromium 132 / HarmonyOS). The import map left in `index.html` only covers the deploy transition window,
-where Cache Storage may still hold the previous build's modules; **new code must not use bare
-specifiers**.
+Cache layers, rendering trade-offs, engine compatibility and troubleshooting are documented in
+**[`docs/dev-notes.en.md`](./docs/dev-notes.en.md)**.
 
 ---
 
@@ -182,7 +151,7 @@ the shell from Cloudflare Pages deployments are in
 ## 🚀 Tech Stack & Credits
 | | |
 |---|---|
-| **Engine** | CesiumJS 1.118 |
+| **Engine** | CesiumJS 1.118.2 |
 | **Architecture** | Native ES Modules, zero build step |
 | **Type** | PWA (Service Worker + Manifest) |
 | **AI Assistance** | DeepSeek, GitHub Copilot, Hunyuan |

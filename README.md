@@ -43,6 +43,8 @@
 
 代码以 MIT 许可开源，**网页端和 Android 壳工程都在本仓库里**（壳在 [`androidapk/`](./androidapk/)，见 [Android 版](#-android-版apk)）。网页本身不需要安装；APK 只是另一种打开方式，你也可以自行构建、修改和分发。
 
+想改代码？本项目**零构建**，实现取舍、踩过的坑和排查方法见 [`docs/dev-notes.md`](./docs/dev-notes.md)。
+
 ---
 
 ## ✨ 核心功能
@@ -82,53 +84,21 @@
 - **标记 / 街景 / 测量三者互斥**：同一时刻只能激活一个，切换时会自动关闭另一个，避免点击冲突。
 - 街景跳转需要联网，PWA 离线时不可用。
 - 移动端底部托盘可上滑展开，点击手柄收合。
+- **浏览器要求**：需要支持 WebGL 2 的现代浏览器（近几年的 Chrome / Edge / Firefox / Safari 均可）。
 
 ---
 
 ## ⚙️ 设置与自定义
-功能栏「设置」进入 `/settings.html`，可调整明暗主题（跟随系统 / 手动）、地形加载、路网叠加与缓存。
+功能栏「设置」进入 `/settings.html`：
 
-**缓存与离线**：缓存全部由 [`sw.js`](./sw.js) 管，分三层。
+- **外观**：明暗主题（跟随系统 / 手动）
+- **地形与叠加**：3D 地形开关、路网与地名叠加层
+- **缓存**：「缓存地图瓦片」开关（默认开），以及清除应用缓存 / 瓦片缓存 / 引擎缓存 / 收藏 / 设置数据
+- **兼容性诊断**：在当前设备上自检 WebGL 2、模块加载与引擎初始化
 
-| 层 | 缓存名 | 策略 |
-|---|---|---|
-| 应用外壳（HTML / CSS / JS / 图标） | `locus-earth-app-cache-<版本>` | 缓存优先 + 后台更新，重复进入几十毫秒出页面 |
-| Cesium 引擎 | `locus-earth-cesium-<引擎版本>` | 缓存优先，升级引擎时整代淘汰 |
-| ion 资产接口（`/v1/assets/<id>/endpoint`） | 与引擎同一个缓存 | 45 分钟内缓存优先 + 后台换新，过期才网络优先、失败退回旧的那份——拿不到它 Cesium 建不出影像图层，缓存了瓦片也是黑的 |
-| 底图瓦片 | `locus-earth-tiles-v1` | 缓存优先且命中后**不再回源**，浏览过的区域断网也能看；超 2400 片按先进先出裁剪 |
-| 开关状态 | `locus-earth-flags-v1` | 几十字节，只存「缓存瓦片」的开 / 关；SW 读不到 localStorage，只能这么带 |
+**离线**：浏览过的区域，影像瓦片会存到本地，断网也能看；地形、3D 建筑与搜索仍需联网。
 
-两个值得记下来的点：
-
-1. **Service Worker 拦得到 XHR**。「SW 拦不到 XHR」是常见误传——拦不到的是 WebSocket 和
-   EventSource。Chromium / Android WebView 里，纯 XHR 的响应同样会进 Cache Storage，
-   所以 Cesium 用 XHR 取瓦片完全不影响缓存。早期版本曾据此去覆写
-   `Resource._Implementations.loadWithXhr`，实测后已删除：那层包装只会增加升级引擎时的
-   风险，而且开关得在页面和 SW 各写一遍——正是「关掉开关仍然在缓存」的根源。
-2. 瓦片回源时显式带 `cache: 'no-store'`，让浏览器不要在自己的 HTTP 缓存里再存一份。
-   否则同一张图在磁盘上存两遍，而 HTTP 那份网页既查不到也删不掉——用户点「清除瓦片缓存」
-   后觉得"占用没降"，多半就是它在作祟。
-
-设置页的「缓存地图瓦片」（默认开）现在由 `sw.js` 执行：关掉之后瓦片请求整条放行，
-不读缓存、不写缓存、也不碰 HTTP 缓存，每次真从网络取。「清除瓦片缓存」删掉整个瓦片缓存；
-系统显示的存储占用是懒统计的，可能延迟一会儿才更新。
-
-**渲染与性能**：3D 场景关闭了 WebGL 自带的 MSAA，改用 FXAA 后处理抗锯齿。
-原因是 MSAA 在移动端代价偏高：GPU 不支持硬件 MSAA 的设备上，Chromium 可能退化成
-软件 MSAA（每像素多次采样，填充率明显下降），支持的设备也要额外付出带宽和显存；
-而 FXAA 只是一次全屏 pass，不额外占用显存。两个开关都在 `js/viewer.js` 里
-（`contextOptions.webgl.antialias` 和 `scene.postProcessStages.fxaa.enabled`），
-低端机上如果觉得卡，把 FXAA 那行改成 `false` 即可，没有其它影响。
-
-**引擎入口与内核兼容（`js/cesium.js`）**：所有模块统一写 `import { ... } from './cesium.js'`，
-这个文件只有一行 `export * from 'https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js'`。
-原先用的是 `<script type="importmap">` + 裸标识符 `'cesium'`，在桌面 Chrome / Edge 上一切正常，
-但**华为那一系内核**（HarmonyOS 自带浏览器，以及 App 内 WebView 用的同一套引擎）并不解析
-import map —— 虽然 `HTMLScriptElement.supports('importmap')` 照样返回 `true` ——
-于是 `import ... from 'cesium'` 直接抛 `Failed to resolve module specifier`，整张模块图崩掉，
-页面永远停在「正在加载地球数据…」。2026-10-21 在 Chromium 132 / HarmonyOS 上实测定位。
-`index.html` 里那段 importmap 现在只剩一个用途：发版后的过渡期里，Cache Storage 可能还是
-上一版模块（它们写着裸标识符），留着不至于又断一次；**新代码不要再用裸标识符**。
+缓存分层、渲染取舍、内核兼容和线上排查方法，都写在 **[`docs/dev-notes.md`](./docs/dev-notes.md)**。
 
 ---
 
@@ -175,7 +145,7 @@ Fork 后要发布自己的版本，请按 [`androidapk/README.md`](./androidapk/
 ## 🚀 技术栈与致谢
 | | |
 |---|---|
-| **引擎** | CesiumJS 1.118 |
+| **引擎** | CesiumJS 1.118.2 |
 | **架构** | 原生 ES Modules，零构建步骤 |
 | **形态** | PWA（Service Worker + Manifest） |
 | **AI 辅助** | DeepSeek、GitHub Copilot、Hunyuan |
