@@ -11,7 +11,7 @@ import {
     Color,
     Cartesian2,
     HeightReference,
-} from 'cesium';
+} from './cesium.js';
 import { registerTool as registerTool, claim as claimTool, release as releaseTool } from './tool-modes.js';
 import { showToast } from './utils.js';
 

@@ -1,4 +1,4 @@
-import { JulianDate } from 'cesium';
+import { JulianDate } from './cesium.js';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 

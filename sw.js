@@ -26,8 +26,9 @@
 // ============================================================================
 
 // 版本号必须比**已经部署过的**都大，否则装了更高号缓存的用户不会换缓存。
-// 历史：v31（改造前）→ 远端那条线 v33 → 合并 v34 → 修复 v35 → 设置页诊断 v36。
-const CACHE_VERSION = 'v36';
+// 历史：v31（改造前）→ 远端那条线 v33 → 合并 v34 → 修复 v35 → 设置页诊断 v36
+// → 去掉 importmap 依赖 v37。
+const CACHE_VERSION = 'v37';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // Cesium 引擎缓存：把版本号写进缓存名，升级后旧缓存会在 activate 时被淘汰，
@@ -104,7 +105,7 @@ const CACHE_PREFIX = 'locus-earth-';
 
 // 首屏完整资源清单。
 // 这是 index.html 与 settings.html 首屏真正会请求到的全部文件：
-// 15 个 CSS、21 个 JS、3 个图标、3 个 favicon、2 个 PWA 图标与 manifest。
+// 15 个 CSS、23 个 JS、3 个图标、3 个 favicon、2 个 PWA 图标与 manifest。
 // 刻意不含 screenshot-*.png（各约 1–2 MB，只被 manifest 的安装界面使用）。
 const SHELL_URLS = [
   './',
@@ -130,6 +131,9 @@ const SHELL_URLS = [
   './css/settings.css',
 
   // 脚本：main.js 及其整个模块图，外加设置页脚本
+  // cesium.js 是引擎的本地入口（export * 转发到 unpkg），所有模块都 import 它，
+  // 不能漏 —— 漏了离线时整张模块图会在第一步就断。
+  './js/cesium.js',
   './js/main.js',
   './js/icons.js',
   './js/search.js',

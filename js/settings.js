@@ -566,20 +566,29 @@
             log('ES Module 加载：❌ ' + errorText(error));
         }
 
-        // 3. importmap 裸标识符解析
+        // 3. Cesium 入口（走本地 shim ./cesium.js，和主页面完全同一条路）
         let Cesium = null;
         try {
-            Cesium = await import('cesium');
-            log('importmap 解析 cesium：✅ 版本 ' + (Cesium.VERSION || '?'));
+            Cesium = await import('./cesium.js');
+            log('Cesium 入口（./cesium.js）：✅ 版本 ' + (Cesium.VERSION || '?'));
         } catch (error) {
-            log('importmap 解析 cesium：❌ ' + errorText(error));
-            // 退一步用绝对地址再试：能成就是 importmap 的问题，不能成就是网络/内核的问题
+            log('Cesium 入口（./cesium.js）：❌ ' + errorText(error));
+            // 退一步用绝对地址再试：能成说明本地 shim 的转发有问题，不能成就是网络/内核的问题
             try {
                 Cesium = await import('https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js');
-                log('  改为绝对地址加载：✅ 成功 —— 说明当前 WebView 不支持 import maps');
+                log('  改为绝对地址加载：✅ 成功 —— 问题在本地 shim，不在网络');
             } catch (fallbackError) {
                 log('  改为绝对地址加载：❌ ' + errorText(fallbackError));
             }
+        }
+
+        // 3.5 顺带记录这个内核认不认 import maps。主站已不依赖它（2026-10-21 在华为内核
+        // 上定位到：supports('importmap') 返回 true，但裸标识符根本不解析），这里只作参考。
+        try {
+            await import('cesium');
+            log('import maps 解析裸标识符：✅ 可用');
+        } catch (error) {
+            log('import maps 解析裸标识符：❌ 不可用（主站已不依赖，不影响使用）');
         }
 
         // 4. 引擎初始化（失败多半是 WebGL 能力/驱动问题）

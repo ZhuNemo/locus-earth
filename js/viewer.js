@@ -1,4 +1,4 @@
-import * as Cesium from 'cesium';
+import * as Cesium from './cesium.js';
 import { showToast } from './utils.js';
 
 export function initViewer(containerId, terrainProvider) {

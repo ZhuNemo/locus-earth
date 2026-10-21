@@ -1,4 +1,4 @@
-import { Cartesian3, EllipsoidTerrainProvider, Cesium3DTileset } from 'cesium';
+import { Cartesian3, EllipsoidTerrainProvider, Cesium3DTileset } from './cesium.js';
 import { restoreDefaultBasemap } from './imagery.js';
 import { setBasemapPickerVisible } from './basemap-picker.js';
 

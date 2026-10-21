@@ -1,4 +1,4 @@
-import { Cartesian3, Math as CesiumMath } from 'cesium';
+import { Cartesian3, Math as CesiumMath } from './cesium.js';
 
 // =============================================
 // 面板收起工具（模块级，导出）

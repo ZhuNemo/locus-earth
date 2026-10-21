@@ -1,4 +1,4 @@
-import { Cartesian3, IonGeocoderService, GeocoderService } from 'cesium';
+import { Cartesian3, IonGeocoderService, GeocoderService } from './cesium.js';
 import { showToast } from './utils.js';
 
 // ============================================================================

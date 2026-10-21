@@ -414,7 +414,7 @@
                 <img class="about-app-icon" src="android-chrome-192x192.png" alt="" aria-hidden="true">
                 <span class="about-title">
                     <span class="about-name">Locus Earth</span>
-                    <span class="about-version">7.3</span>
+                    <span class="about-version">7.3.1</span>
                 </span>
             </h2>
             <p>基于 <a href="https://cesium.com/" target="_blank">Cesium</a> 的轻量 3D 地球应用。</p>
@@ -522,6 +522,7 @@
             <p>10-01 V7.0：全面修复JS逻辑问题、重写缓存机制</p>
             <p>10-04 V7.1：新地图选择器、搜索框、SVG图标</p>
             <p>10-10 V7.2：新增街景跳转、坐标转换模块，功能栏改两排布局</p>
+            <p>10-21 V7.3.1：改用本地 Cesium 入口替代 import maps —— 修复华为内核（HarmonyOS 自带浏览器 / App 内 WebView）解析不了裸标识符、整站停在加载页的问题</p>
             <p>10-18 V7.3：底图瓦片本地缓存（浏览过的区域离线也能看），刷新改为缓存优先、打开更快；设置页新增「缓存地图瓦片」开关与「清除瓦片缓存」，关掉开关后瓦片既不读也不写缓存</p>
             <p>……</p>
         </div>
@@ -530,6 +531,15 @@
     <!-- 提示浮层 -->
     <div id="toastMessage" class="toast-message"></div>
 
+    <!-- 这段 importmap 现在**只是兼容旧缓存的退路**，主站已不再依赖它：
+         2026-10-21 在华为那一系内核（HarmonyOS 自带浏览器与 App 内 WebView 同一套引擎）
+         上定位到，它虽然让 HTMLScriptElement.supports('importmap') 返回 true，
+         却根本不解析裸标识符，`import ... from 'cesium'` 直接抛
+         "Failed to resolve module specifier"，整张模块图崩掉、页面永远停在加载遮罩。
+         现在所有模块统一走 ./js/cesium.js（本地 shim，用 export * 转发到 unpkg）。
+         保留这段是因为「缓存优先」的外壳更新有先后：刚发版时页面可能是新的、
+         而 Cache Storage 里还是上一版模块，它们仍然写着裸标识符。
+         新代码请写 `from './cesium.js'`，不要再用 'cesium'。 -->
     <script type="importmap">
         {
             "imports": {

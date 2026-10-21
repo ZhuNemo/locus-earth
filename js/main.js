@@ -9,7 +9,7 @@ import {
             Ion,
             CesiumTerrainProvider,
             EllipsoidTerrainProvider, 
-        } from 'cesium';
+        } from './cesium.js';
 
 import { initViewer } from './viewer.js';
 import { initImagery } from './imagery.js';

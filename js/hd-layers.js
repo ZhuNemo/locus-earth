@@ -1,4 +1,4 @@
-import { createOsmBuildingsAsync, Cesium3DTileset, Cartesian3, Math as CesiumMath } from 'cesium';
+import { createOsmBuildingsAsync, Cesium3DTileset, Cartesian3, Math as CesiumMath } from './cesium.js';
 
 export async function initHdLayers(viewer, showToast) {
         

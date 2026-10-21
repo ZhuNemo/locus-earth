@@ -9,7 +9,7 @@ import {
     PolygonHierarchy,
     EllipsoidGeodesic,
     BoundingSphere,
-} from 'cesium';
+} from './cesium.js';
 
 export function initMeasureTools(viewer) {
 

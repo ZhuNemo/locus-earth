@@ -122,6 +122,17 @@ pay extra bandwidth and VRAM. FXAA is a single full-screen pass and costs no ext
 in `js/viewer.js` (`contextOptions.webgl.antialias` and `scene.postProcessStages.fxaa.enabled`); on a
 low-end device, set the FXAA line to `false` — nothing else depends on it.
 
+**Engine entry & engine compatibility (`js/cesium.js`)**: every module imports `'./cesium.js'`, a one-line
+re-export of `https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js`. The project used to rely on
+`<script type="importmap">` with the bare specifier `'cesium'`, which works in desktop Chrome / Edge but
+**breaks on Huawei's engine family** (the HarmonyOS built-in browser, and the WebView the Android shell
+uses): it does not actually resolve import maps, yet `HTMLScriptElement.supports('importmap')` still
+returns `true`. So `import ... from 'cesium'` throws `Failed to resolve module specifier`, the whole
+module graph dies, and the page stays on the loading overlay forever (diagnosed 2026-10-21 on
+Chromium 132 / HarmonyOS). The import map left in `index.html` only covers the deploy transition window,
+where Cache Storage may still hold the previous build's modules; **new code must not use bare
+specifiers**.
+
 ---
 
 ## 📱 Android Version (APK)
@@ -204,7 +215,7 @@ Application Links:
 |---|---|
 | **Start Date** | 2026-07-04 |
 | **Maintenance** | Personal project, built in spare time, updated irregularly |
-| **Current Version** | 7.3 |
+| **Current Version** | 7.3.1 |
 
 ---
 

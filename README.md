@@ -120,6 +120,16 @@
 （`contextOptions.webgl.antialias` 和 `scene.postProcessStages.fxaa.enabled`），
 低端机上如果觉得卡，把 FXAA 那行改成 `false` 即可，没有其它影响。
 
+**引擎入口与内核兼容（`js/cesium.js`）**：所有模块统一写 `import { ... } from './cesium.js'`，
+这个文件只有一行 `export * from 'https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js'`。
+原先用的是 `<script type="importmap">` + 裸标识符 `'cesium'`，在桌面 Chrome / Edge 上一切正常，
+但**华为那一系内核**（HarmonyOS 自带浏览器，以及 App 内 WebView 用的同一套引擎）并不解析
+import map —— 虽然 `HTMLScriptElement.supports('importmap')` 照样返回 `true` ——
+于是 `import ... from 'cesium'` 直接抛 `Failed to resolve module specifier`，整张模块图崩掉，
+页面永远停在「正在加载地球数据…」。2026-10-21 在 Chromium 132 / HarmonyOS 上实测定位。
+`index.html` 里那段 importmap 现在只剩一个用途：发版后的过渡期里，Cache Storage 可能还是
+上一版模块（它们写着裸标识符），留着不至于又断一次；**新代码不要再用裸标识符**。
+
 ---
 
 ## 📱 Android 版（APK）
@@ -198,7 +208,7 @@ Fork 或部署到自己的域名 / 本地，请改 [js/config.js](https://github
 |---|---|
 | **开始时间** | 2026-07-04 |
 | **维护** | 个人项目，业余开发，不定期更新 |
-| **当前版本** | 7.3 |
+| **当前版本** | 7.3.1 |
 
 ---
 

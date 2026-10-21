@@ -1,4 +1,4 @@
-import { ScreenSpaceEventHandler, ScreenSpaceEventType, Cartographic, Math as CesiumMath } from 'cesium';
+import { ScreenSpaceEventHandler, ScreenSpaceEventType, Cartographic, Math as CesiumMath } from './cesium.js';
 import { showToast } from './utils.js';
 import { wgs84ToGcj02, outOfChina } from './coord-transform.js';
 import { registerTool, claim, release } from './tool-modes.js';
