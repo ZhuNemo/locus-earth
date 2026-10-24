@@ -7,13 +7,15 @@
 ---
 
 <div align="left">
-<img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="50" height="50">
+<img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="45" height="45">
 <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="220">
 </div>
 
 ---
 
 <div align="left">
+<a href="https://github.com/ZhuNemo/locus-earth/actions/workflows/android.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZhuNemo/locus-earth/android.yml?label=Android%20APK" alt="Android APK build"></a>
+<a href="https://github.com/ZhuNemo/locus-earth/releases"><img src="https://img.shields.io/github/v/tag/ZhuNemo/locus-earth?label=APK" alt="APK version"></a>
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
@@ -22,6 +24,7 @@
 > 基于 Cesium 的 3D 地球，打开浏览器即可使用，无需安装或注册
 >
 > **[GitHub Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
+- 本文含AI生成内容
 
 ---
 
@@ -109,7 +112,7 @@
 
 | | |
 |---|---|
-| **获取** | 从 [Releases](https://github.com/ZhuNemo/locus-earth/releases) 下载 APK；或自行构建（方法见下方折叠说明） |
+| **获取** | 从 [Releases](https://github.com/ZhuNemo/locus-earth/releases) 下载 APK；欢迎参考工程构建你自己的App（方法见下方折叠说明） |
 | **包名 / 要求** | `dev.locusearth.app` · Android 7.0（API 24）及以上 |
 | **壳的职责** | 全屏无地址栏 · 白名单域名留在壳内 · 其余链接交给系统浏览器 · 首次启动说明「这是网页应用」 |
 | **源码位置** | [`androidapk/`](./androidapk/)（独立 Gradle 工程，与主项目同为 MIT 许可） |
@@ -148,7 +151,8 @@ Fork 后要发布自己的版本，请按 [`androidapk/README.md`](./androidapk/
 | **引擎** | CesiumJS 1.118.2 |
 | **架构** | 原生 ES Modules，零构建步骤 |
 | **形态** | PWA（Service Worker + Manifest） |
-| **AI 辅助** | DeepSeek、GitHub Copilot、Hunyuan |
+
+本项目由 **AI 辅助**开发。大语言模型：DeepSeek-V4.1-Flash、Hunyuan4、ChatGPT-4o（计入使用的模型而非 AI 产品；故GitHub Copilot、Workbuddy等聚合平台不算在内）
 
 **数据来源**：[Cesium ion](https://ion.cesium.com/) · [OpenStreetMap](https://www.openstreetmap.org/) · [Natural Earth](https://www.naturalearthdata.com/) · [天地图](https://www.tianditu.gov.cn/) · [腾讯地图](https://map.qq.com/)
 

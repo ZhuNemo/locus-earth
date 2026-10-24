@@ -1,10 +1,16 @@
 # Locus Earth · Android 外壳
+<div align="left">
+🌐 语言 / Language:
+<a>简体中文</a> | <a href="README-EN.md">English</a>
+</div>
 
 把网页版 **[Locus Earth](https://locus-earth.pages.dev)** 装进一个原生 WebView 壳的 Android 工程。
 
 **核心思路：壳里没有任何业务逻辑。** 它只解决四件事 —— 全屏无地址栏、两个域名留在壳内、
 其余链接按规则放行或出壳、首次启动说明「这是网页应用」。
 网页更新后手机端**不用重装 APK**，因为页面内容是实时从线上加载的。
+
+- 声明：本文含 AI 生成内容
 
 ```
 应用名        Locus Earth

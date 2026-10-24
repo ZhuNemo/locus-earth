@@ -1,8 +1,15 @@
 # Locus Earth 开发笔记
 
+<div align="left">
+🌐 语言 / Language:
+<a>简体中文</a> | <a href="dev-notes-en.md">English</a>
+</div>
+
 > 给要改这个仓库的人看的。README 只回答「怎么用」；这里记的是实现取舍、踩过的坑，以及线上出问题时怎么查。
 >
 > 想直接跑起来：仓库没有 `package.json`、没有构建步骤，用任意静态服务器打开根目录即可。
+
+- 声明：本文含 AI 生成内容
 
 ## 目录
 

@@ -1,10 +1,17 @@
 # Locus Earth — Developer Notes
 
+<div align="left">
+🌐 语言 / Language:
+<a href="dev-notes.md">简体中文</a> | <a>English</a>
+</div>
+
 > For people changing this repository. The README answers "how do I use it"; this file records
 > implementation trade-offs, the traps we hit, and how to diagnose problems in the wild.
 >
 > To run it: there is no `package.json` and no build step — serve the repository root with any
 > static file server.
+
+- Disclosure: this document contains AI-generated content.
 
 ## Contents
 
@@ -64,8 +71,8 @@ Everything is handled by [`sw.js`](../sw.js), in five layers:
 | App shell (HTML / CSS / JS / icons) | `locus-earth-app-cache-<version>` | Cache-first + background revalidate; repeat visits paint in tens of ms |
 | Cesium engine | `locus-earth-cesium-<engine version>` | Cache-first, dropped as a whole when the engine is upgraded |
 | ion asset endpoint (`/v1/assets/<id>/endpoint`) | same as engine | Cache-first for 45 minutes + background refresh, network-first after that with stale fallback |
-| Basemap tiles | `locus-earth-tiles-v1` | Cache-first and **never revalidated on a hit**; FIFO-trimmed past 2400 tiles |
-| Switch state | `locus-earth-flags-v1` | A few dozen bytes holding the on/off flag |
+| Basemap tiles | `locus-earth-tiles-v1` | Cache-first and **never revalidated on a hit**, so visited areas stay viewable offline; FIFO-trimmed past 2400 tiles |
+| Switch state | `locus-earth-flags-v1` | A few dozen bytes, holding only the on/off flag for "cache map tiles" |
 
 Traps worth remembering:
 
@@ -153,7 +160,8 @@ Save a copy of `index.html` and inject a plain script right after `<body>` that:
 - prints the UA, `isSecureContext`, SW and `caches` support
 - listens to `error` (capture) and `unhandledrejection`
 - snapshots `#loadingOverlay`'s `opacity/display` and whether `#cesiumContainer canvas` exists
-- probes each module with `import()`, reporting OK or the failure reason
+- probes modules one by one with `import()` — the engine entry plus every local module — reporting OK
+  or the reason it failed
 
 Give the panel a `z-index` above the loading overlay (`9999`), serve the folder with
 `python -m http.server`, and open `http://<your-ip>:<port>/file.html` on the phone.

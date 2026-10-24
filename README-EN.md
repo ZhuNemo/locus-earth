@@ -1,19 +1,21 @@
 # Locus Earth
 <div align="left">
-🌐 Language / 语言:
+🌐 语言 / Language:
 <a href="README.md">简体中文</a> | <a>English</a>
 </div>
 
 ---
 
 <div align="left">
-<img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="50" height="50">
+<img src="./android-chrome-192x192.png" alt="Locus Earth Logo" width="45" height="45">
 <img src="./locus-earth-logo.svg" alt="Locus Earth Text Logo" width="220">
 </div>
 
 ---
 
 <div align="left">
+<a href="https://github.com/ZhuNemo/locus-earth/actions/workflows/android.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZhuNemo/locus-earth/android.yml?label=Android%20APK" alt="Android APK build"></a>
+<a href="https://github.com/ZhuNemo/locus-earth/releases"><img src="https://img.shields.io/github/v/tag/ZhuNemo/locus-earth?label=APK" alt="APK version"></a>
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
@@ -22,6 +24,7 @@
 > A 3D Earth in the browser, built with Cesium. No installation or sign-up.
 >
 > **[GitHub Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
+- This document contains AI-generated content
 
 ---
 
@@ -43,7 +46,7 @@
 
 All code is open source under the MIT license, and **both the web app and the Android shell live in this repository** (the shell is in [`androidapk/`](./androidapk/), see [Android Version](#-android-version-apk)). The web app needs no installation; the APK is just another way in, and you are free to build, modify, and redistribute it yourself.
 
-Want to hack on it? The project is **build-free**; trade-offs, traps and troubleshooting are in [`docs/dev-notes.en.md`](./docs/dev-notes.en.md).
+Want to hack on it? The project is **build-free**; trade-offs, traps and troubleshooting are in [`docs/dev-notes-en.md`](./docs/dev-notes-en.md).
 
 ---
 
@@ -100,7 +103,7 @@ Want to hack on it? The project is **build-free**; trade-offs, traps and trouble
 network; terrain, 3D buildings and search still need a connection.
 
 Cache layers, rendering trade-offs, engine compatibility and troubleshooting are documented in
-**[`docs/dev-notes.en.md`](./docs/dev-notes.en.md)**.
+**[`docs/dev-notes-en.md`](./docs/dev-notes-en.md)**.
 
 ---
 
@@ -112,7 +115,7 @@ from the web.
 
 | | |
 |---|---|
-| **Get it** | Download the APK from [Releases](https://github.com/ZhuNemo/locus-earth/releases), or build it yourself |
+| **Get it** | Download the APK from [Releases](https://github.com/ZhuNemo/locus-earth/releases); you are welcome to use this project as a reference and build your own app (see the collapsible notes below) |
 | **Package / requirement** | `dev.locusearth.app` · Android 7.0 (API 24) or newer |
 | **What the shell does** | Full-screen, no address bar · keeps allow-listed domains in-app · sends other links to the system browser · explains "this is a web app" on first launch |
 | **Source** | [`androidapk/`](./androidapk/) (standalone Gradle project, MIT licensed like the main project) |
@@ -135,14 +138,14 @@ Three options:
 Signing is optional: with keystore secrets configured, CI produces a properly signed build;
 **without them the build still succeeds** (it falls back to the debug signature — installable and
 runnable, but not publishable). After forking, generate your own keystore as described in section 6 of
-[`androidapk/README.md`](./androidapk/README.md) and **never reuse someone else's key**.
+[`androidapk/README-EN.md`](./androidapk/README-EN.md) and **never reuse someone else's key**.
 
 You must allow "install from unknown sources" in system settings. Builds signed with your own key
 must be updated with **the same key**, or the system will refuse the upgrade.
 
 Full instructions on building, signing, replacing icons, adding allow-listed domains, and excluding
 the shell from Cloudflare Pages deployments are in
-**[`androidapk/README.md`](./androidapk/README.md)** (written in Chinese).
+**[`androidapk/README-EN.md`](./androidapk/README-EN.md)**.
 
 </details>
 
@@ -154,7 +157,10 @@ the shell from Cloudflare Pages deployments are in
 | **Engine** | CesiumJS 1.118.2 |
 | **Architecture** | Native ES Modules, zero build step |
 | **Type** | PWA (Service Worker + Manifest) |
-| **AI Assistance** | DeepSeek, GitHub Copilot, Hunyuan |
+
+This project is **AI-assisted**. Large language models used: DeepSeek-V4.1-Flash, Hunyuan4, ChatGPT-4o
+(counted as the models actually used, not as AI products — which is why aggregator platforms such as
+GitHub Copilot or Workbuddy are not listed).
 
 **Data Sources**: [Cesium ion](https://ion.cesium.com/) · [OpenStreetMap](https://www.openstreetmap.org/) · [Natural Earth](https://www.naturalearthdata.com/) · [Tianditu](https://www.tianditu.gov.cn/) · [Tencent Maps](https://map.qq.com/)
 
