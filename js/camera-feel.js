@@ -5,9 +5,10 @@ import {
     KeyboardEventModifier,
     Cartesian3,
     Cartographic,
+    Matrix3,
+    Quaternion,
     EasingFunction,
-    Math as CesiumMath,
-} from 'cesium';
+} from './cesium.js';
 
 // ============================================================================
 // 相机手感调校 —— 目标是让地球的操作反馈尽量接近 Google Earth
@@ -77,7 +78,39 @@ const TILT_RADIANS_PER_SCREEN = 3.0;      // 拖动满一屏高 ≈ 3.0 rad（�
 // ⚠️ 不能用「单帧距离变化」判断。触点坐标取整会带来 ±1px 抖动，在 120px
 //    的两指间距上就是 0.8%，很容易越过单帧阈值 —— 实测那样会让扭转的前几帧
 //    被跳过累计，锁轴变晚、角度凭空少掉 7°（16 帧里只落地 10 帧）。
+//
+// 缩放的定位是"常驻"：它**不参与锁轴**，每一帧都生效。于是——
+//   旋转起手 + 中途张指 = 边转边缩放（实测手感良好，用户确认不抽搐）
+//   捏合起手 = 本次手势只缩放，不会突然开始转
+// 这个不对称是刻意的，详见 touchmove 里的说明。
 const ZOOM_LATCH_LIMIT = 0.10;
+
+// ---------- 松手后的滑行 ----------
+// 只是"余味"：按 exp(-t/TAU) 衰减，TAU=0.13s ⇒ 约 0.35 秒停住。
+// 阈值有下限：慢拖松手时角速度本来就小，不该滑。
+const INERTIA_TAU = 0.10;
+const INERTIA_MAX_OMEGA = 2.5;   // rad/s，防止甩动过猛
+const INERTIA_MIN_START = 0.5;   // rad/s，低于此值不启动滑行（慢拖不该有惯性）
+const INERTIA_STOP = 0.02;       // rad/s，低于此值结束滑行
+
+// 两指几乎重合时，距离/角度都没有意义，忽略这次手势
+const MIN_PINCH_DISTANCE = 8;
+
+// ---------- 是否允许"边捏边转" ----------
+// false（默认）：一次手势里旋转与俯仰只有一个生效，先越过死区者胜 —— 最稳，
+//                三种意图绝不会互相污染。
+// true：两个轴各自独立锁轴、可同时生效。因为旋转/俯仰本来就是两个正交轴上的
+//       刚性旋转（见 rotateAround），叠加起来天然成立，不需要额外几何处理。
+// 运行时可在控制台用 __locusSetMultiAxis(true/false) 切换，方便真机试手感。
+let allowMultiAxis = false;
+
+/**
+ * 开关"边捏边转"（旋转与俯仰同时生效）。
+ * @param {boolean} enabled
+ */
+export function setMultiAxisEnabled(enabled) {
+    allowMultiAxis = enabled === true;
+}
 // 俯仰夹紧：Cesium 里俯视为负角，-90° 是垂直俯视，0 是平视地平线。
 // ⚠️ 下限必须就是 -90°（留 1e-6 避开正交点），不能"再收一点"：
 //    启动视角本身就接近 -90°，若下限设成 -89.9°，第一次改朝向就会把相机
@@ -364,12 +397,20 @@ export function initCameraFeel(viewer) {
     }, { passive: false });
 
     // ----- 8. 双指三自由度手势（缩放 / 航向旋转 / 俯仰） -----
-    // 设计要点见文件头。这里的分工是：
-    //   距离 → 缩放（指数映射，朝两指中点推进，和 Google Earth 一致）
-    //   角度 → 航向（顺时针转手指 ⇒ 画面顺时针转）
-    //   纵向 → 俯仰（向上拖 ⇒ 视线抬向地平线）
-    // 三者都做死区 + 锁轴：一次手势里，旋转和俯仰**只会有一个生效**，
-    // 先越过死区者胜出。缩放不受锁轴限制，始终可用。
+    // 分工：
+    //   两指距离     → 缩放（指数映射，沿两指中点推进）
+    //   两指连线角度 → 绕「手指下方那个地面点」的**竖直轴**旋转
+    //   两指纵向平移 → 绕「手指下方那个地面点」的**水平轴**俯仰
+    //
+    // ⚠️ 核心设计：旋转/俯仰都是把**整台相机**（位置 + 朝向）绕一个"锚点"做
+    //    刚性旋转，而不是在原地改朝向。
+    //    锚点取手势开始时两指中点下方的地面点 —— 它落在旋转轴上，所以屏幕位置
+    //    一动不动，视觉上是"地球表面在手指底下倾斜/转动"。
+    //    早期版本用 setView 原地改 pitch/heading，观感是"相机在原地扭头、地表滑走"，
+    //    不符合操作直觉，已废弃。
+    //
+    // 死区 + 锁轴：默认一次手势里旋转与俯仰只有一个生效（先越过死区者胜），
+    // 缩放始终可用；allowMultiAxis 打开后两者可同时生效。
 
     const wrapAngle = (a) => {
         while (a > Math.PI) a -= Math.PI * 2;
@@ -403,32 +444,80 @@ export function initCameraFeel(viewer) {
         };
     }
 
-    // 手势状态：null = 当前不是双指手势
-    let pinch = null;
+    /** 拾取屏幕点下方的地面点，作为手势旋转的锚点。 */
+    function pickGround(x, y) {
+        try {
+            const ray = viewer.camera.getPickRay({ x, y });
+            if (ray) {
+                const hit = scene.globe.pick(ray, scene);
+                if (hit) return hit;
+            }
+        } catch (e) {
+            // 地形瓦片未就绪时会抛错，走兜底
+        }
+        return viewer.camera.pickEllipsoid({ x, y }, scene.globe.ellipsoid);
+    }
 
-    function beginPinch(event) {
-        if (!event.touches || event.touches.length !== 2) {
-            pinch = null;
-            return;
-        }
-        const s = measurePinch(event);
-        if (s.distance < 8) {
-            // 两指几乎重合：距离太小，角度和比例都没有意义，忽略这次手势
-            pinch = null;
-            return;
-        }
-        pinch = {
-            distance: s.distance,
-            angle: s.angle,
-            midY: s.midY,
-            axis: null,          // null | 'twist' | 'tilt'
-            accumTwist: 0,
-            accumTilt: 0,
-            cumRatio: 1,         // 手势内累积缩放比例，用于判断"这是不是一次缩放"
-            // 锁轴那一刻的朝向快照。之后由手势自己累计，不再回读 camera.heading。
-            heading: 0,
-            pitch: 0,
-        };
+    // 旋转用的临时量（避免每帧分配）
+    const rotScratch = {
+        quat: new Quaternion(),
+        mat: new Matrix3(),
+        offset: new Cartesian3(),
+        position: new Cartesian3(),
+        direction: new Cartesian3(),
+        up: new Cartesian3(),
+        axis: new Cartesian3(),
+    };
+
+    /**
+     * 把相机整体绕「过 anchor、方向为 axis 的直线」刚性旋转 angle。
+     * anchor 在轴上 ⇒ 它的屏幕位置完全不动，看起来就是地表在手指下转。
+     */
+    function rotateAround(anchor, axis, angle) {
+        if (!anchor || !Number.isFinite(angle) || Math.abs(angle) < 1e-9) return;
+
+        const camera = viewer.camera;
+
+        Quaternion.fromAxisAngle(axis, angle, rotScratch.quat);
+        Matrix3.fromQuaternion(rotScratch.quat, rotScratch.mat);
+
+        Cartesian3.subtract(camera.positionWC, anchor, rotScratch.offset);
+        Matrix3.multiplyByVector(rotScratch.mat, rotScratch.offset, rotScratch.offset);
+        Cartesian3.add(anchor, rotScratch.offset, rotScratch.position);
+
+        Matrix3.multiplyByVector(rotScratch.mat, camera.directionWC, rotScratch.direction);
+        Matrix3.multiplyByVector(rotScratch.mat, camera.upWC, rotScratch.up);
+
+        camera.setView({
+            destination: rotScratch.position,
+            orientation: { direction: rotScratch.direction, up: rotScratch.up },
+        });
+    }
+
+    /**
+     * 绕锚点处的竖直轴旋转（地表法线方向）⇒ 航向变化。
+     * 顺时针转手指 ⇒ 相机逆时针绕轴 ⇒ 画面顺时针转。
+     */
+    function rotateHeading(anchor, angle) {
+        if (!anchor) return;
+        scene.globe.ellipsoid.geodeticSurfaceNormal(anchor, rotScratch.axis);
+        rotateAround(anchor, rotScratch.axis, angle);
+    }
+
+    /**
+     * 绕相机的 right 轴（水平、垂直于视线）旋转 ⇒ 俯仰变化，相当于"地表立起来"。
+     * 绕 right 转多少，pitch 就变多少（无滚转时二者严格相等），因此可以据此夹紧。
+     */
+    function rotatePitch(anchor, angle) {
+        if (!anchor) return;
+        const camera = viewer.camera;
+        const next = camera.pitch + angle;
+        const clamped = Math.min(MAX_PITCH, Math.max(MIN_PITCH, next));
+        const applied = clamped - camera.pitch;
+        if (Math.abs(applied) < 1e-6) return;
+
+        Cartesian3.normalize(camera.rightWC, rotScratch.axis);
+        rotateAround(anchor, rotScratch.axis, applied);
     }
 
     /**
@@ -453,26 +542,97 @@ export function initCameraFeel(viewer) {
         camera.move(ray.direction, height - targetHeight);
     }
 
-    /**
-     * 在**原地**改朝向：位置不动，只换 heading / pitch。
-     * 用 setView 而不是 camera.rotate，是因为 rotate 绕的是"参考系原点"，
-     * transform 为单位阵时那是地心 —— 会把相机绕地球转一大圈。
-     *
-     * ⚠️ 传入的是**绝对**朝向，由手势自己累计（见 pinch.heading / pinch.pitch）。
-     *    不要在这里读 camera.heading 再累加：俯仰接近 -90° 时 heading 是病态的，
-     *    setView → 读回 的往返会丢角度（实测 40° 的扭转只落地 25°）。
-     */
-    function applyOrientation(heading, pitch) {
-        const camera = viewer.camera;
-        const carto = camera.positionCartographic;
-        camera.setView({
-            destination: Cartesian3.fromRadians(carto.longitude, carto.latitude, carto.height),
-            orientation: {
-                heading,
-                pitch: Math.min(MAX_PITCH, Math.max(MIN_PITCH, pitch)),
-                roll: 0,
-            },
-        });
+    // ---------- 松手后的滑行 ----------
+    // 很短的余韵：角速度按 exp(-t/TAU) 衰减，TAU=0.13s ⇒ 约 0.35s 停住。
+    // ⚠️ 只在"刚才是快速划动"时触发（omega 超过阈值），慢拖松手不会滑。
+    let inertiaFrame = 0;
+
+    function stopInertia() {
+        if (inertiaFrame) {
+            cancelAnimationFrame(inertiaFrame);
+            inertiaFrame = 0;
+        }
+    }
+
+    function startInertia(state) {
+        stopInertia();
+        if (!state || !state.target) return;
+
+        // 没锁过的轴不该滑
+        let omegaHeading = state.twistLatched ? state.omegaHeading : 0;
+        let omegaPitch = state.tiltLatched ? state.omegaPitch : 0;
+
+        const clampOmega = (v) => Math.min(INERTIA_MAX_OMEGA, Math.max(-INERTIA_MAX_OMEGA, v));
+        omegaHeading = clampOmega(omegaHeading);
+        omegaPitch = clampOmega(omegaPitch);
+
+        if (Math.abs(omegaHeading) < INERTIA_MIN_START && Math.abs(omegaPitch) < INERTIA_MIN_START) {
+            return;
+        }
+
+        const anchor = state.target;
+        let last = performance.now();
+
+        const step = (now) => {
+            // 限幅：标签页切回来时 dt 可能很大，别一下甩飞
+            const dt = Math.min((now - last) / 1000, 0.05);
+            last = now;
+
+            if (Math.abs(omegaHeading) > 1e-4) rotateHeading(anchor, omegaHeading * dt);
+            if (Math.abs(omegaPitch) > 1e-4) rotatePitch(anchor, omegaPitch * dt);
+
+            const decay = Math.exp(-dt / INERTIA_TAU);
+            omegaHeading *= decay;
+            omegaPitch *= decay;
+
+            if (Math.abs(omegaHeading) < INERTIA_STOP && Math.abs(omegaPitch) < INERTIA_STOP) {
+                inertiaFrame = 0;
+                return;
+            }
+            inertiaFrame = requestAnimationFrame(step);
+        };
+
+        inertiaFrame = requestAnimationFrame(step);
+    }
+
+    // 手势状态：null = 当前不是双指手势
+    let pinch = null;
+
+    function beginPinch(event) {
+        stopInertia();
+
+        if (!event.touches || event.touches.length !== 2) {
+            pinch = null;
+            return;
+        }
+        const s = measurePinch(event);
+        if (s.distance < MIN_PINCH_DISTANCE) {
+            // 两指几乎重合：距离太小，角度和比例都没有意义，忽略这次手势
+            pinch = null;
+            return;
+        }
+        pinch = {
+            distance: s.distance,
+            angle: s.angle,
+            midY: s.midY,
+            // 旋转锚点：手势开始时两指中点下方的地面点。
+            // 整个手势期间固定不变（缩放是沿这条射线推进，锚点不会跑）。
+            target: pickGround(s.midX, s.midY),
+            twistLatched: false,
+            tiltLatched: false,
+            accumTwist: 0,   // rad
+            accumTilt: 0,    // px
+            cumRatio: 1,     // 手势内累积缩放比例，用于判断"这是不是一次缩放"
+            omegaHeading: 0, // rad/s
+            omegaPitch: 0,   // rad/s
+            lastAt: performance.now(),
+        };
+    }
+
+    /** 滑动角速度估计：单帧 d/dt 噪声大，用 EMA 压一压，滑行才不会甩得突兀。 */
+    function trackOmega(key, value) {
+        if (!pinch) return;
+        pinch[key] += (value - pinch[key]) * 0.35;
     }
 
     canvas.addEventListener('touchstart', (event) => {
@@ -484,61 +644,66 @@ export function initCameraFeel(viewer) {
         if (!event.touches || event.touches.length !== 2) return;
 
         const s = measurePinch(event);
-        if (s.distance < 8 || pinch.distance < 8) return;
+        if (s.distance < MIN_PINCH_DISTANCE || pinch.distance < MIN_PINCH_DISTANCE) return;
+
+        const now = performance.now();
+        const dt = Math.max((now - pinch.lastAt) / 1000, 1e-3);
+        pinch.lastAt = now;
 
         // ---- 缩放：始终生效 ----
         const ratio = s.distance / pinch.distance;
         applyPinchZoom(ratio, s.midX, s.midY);
-
-        // ---- 旋转 / 俯仰：先锁轴，再应用 ----
-        const dAngle = wrapAngle(s.angle - pinch.angle);
-        const dMidY = s.midY - pinch.midY;
-
-        // 全程累计（不能因为"这一帧像缩放"就跳过，那样会丢角度）
-        pinch.accumTwist += dAngle;
-        pinch.accumTilt += dMidY;
         pinch.cumRatio *= ratio;
 
-        if (!pinch.axis) {
-            if (Math.abs(pinch.cumRatio - 1) > ZOOM_LATCH_LIMIT) {
-                // 已经明显在缩放 ⇒ 这次手势就是缩放，清空角度证据，
-                // 免得后面某帧突然被误锁成旋转
-                pinch.accumTwist = 0;
-                pinch.accumTilt = 0;
-            } else if (Math.abs(pinch.accumTwist) > TWIST_DEADZONE) {
-                pinch.axis = 'twist';
-                pinch.heading = viewer.camera.heading;
-                pinch.pitch = viewer.camera.pitch;
-                // 死区只是"用来确认意图"，越过之后要把扣掉的那段还给用户，
-                // 否则转 40° 只走 34°，手感会显得发闷。
-                const excess = pinch.accumTwist - Math.sign(pinch.accumTwist) * TWIST_DEADZONE;
-                pinch.heading -= excess * TWIST_GAIN;
-                applyOrientation(pinch.heading, pinch.pitch);
-                // 本帧的 dAngle 已计入 accumTwist，重设基准避免重复应用
-                pinch.distance = s.distance;
-                pinch.angle = s.angle;
-                pinch.midY = s.midY;
-                return;
-            } else if (Math.abs(pinch.accumTilt) > TILT_DEADZONE) {
-                pinch.axis = 'tilt';
-                pinch.heading = viewer.camera.heading;
-                pinch.pitch = viewer.camera.pitch;
-                const excess = pinch.accumTilt - Math.sign(pinch.accumTilt) * TILT_DEADZONE;
-                pinch.pitch -= (excess / canvas.clientHeight) * TILT_RADIANS_PER_SCREEN;
-                applyOrientation(pinch.heading, pinch.pitch);
-                pinch.distance = s.distance;
-                pinch.angle = s.angle;
-                pinch.midY = s.midY;
-                return;
-            }
-        } else if (pinch.axis === 'twist') {
-            // 顺时针转手指（dAngle>0）⇒ 画面顺时针转 ⇒ 航向减小
-            pinch.heading -= dAngle * TWIST_GAIN;
-            applyOrientation(pinch.heading, pinch.pitch);
+        // ---- 旋转 / 俯仰 ----
+        const dAngle = wrapAngle(s.angle - pinch.angle);
+        const dMidY = s.midY - pinch.midY;
+        const dTilt = -(dMidY / canvas.clientHeight) * TILT_RADIANS_PER_SCREEN;
+
+        // 累积缩放超过阈值 ⇒ 这是一次缩放手势，别把抖动当旋转。
+        // 已经锁定的轴不受影响（继续跟随手指）。
+        //
+        // ⚠️ 这里有一个**刻意保留的不对称**，是实测手感最好的形态，别当 bug 改掉：
+        //    · 以旋转起手 ⇒ 轴先锁上 ⇒ 之后张开/收拢两指，旋转与缩放**并行**
+        //      （缩放从不参与锁轴，每帧都生效）
+        //    · 以捏合起手 ⇒ 累积比例已超阈值 ⇒ 本次手势不会再突然开始旋转
+        //    一句话："旋转要先起手，缩放随叫随到"。
+        //    反过来放开的话，捏合途中地球会突然转起来，那才是真正让人懵的。
+        //    对应测试：7.9「先转后捏」/ 7.10「先捏后转」。
+        const zoomGesture = Math.abs(pinch.cumRatio - 1) > ZOOM_LATCH_LIMIT;
+        if (zoomGesture) {
+            if (!pinch.twistLatched) pinch.accumTwist = 0;
+            if (!pinch.tiltLatched) pinch.accumTilt = 0;
         } else {
-            // 向上拖（dMidY<0）⇒ 视线抬向地平线 ⇒ pitch 增大
-            pinch.pitch -= (dMidY / canvas.clientHeight) * TILT_RADIANS_PER_SCREEN;
-            applyOrientation(pinch.heading, pinch.pitch);
+            pinch.accumTwist += dAngle;
+            pinch.accumTilt += dMidY;
+        }
+
+        const twistAllowed = allowMultiAxis || !pinch.tiltLatched;
+        const tiltAllowed = allowMultiAxis || !pinch.twistLatched;
+
+        // 扭转
+        if (pinch.twistLatched) {
+            rotateHeading(pinch.target, dAngle * TWIST_GAIN);
+            trackOmega('omegaHeading', (dAngle * TWIST_GAIN) / dt);
+        } else if (twistAllowed && Math.abs(pinch.accumTwist) > TWIST_DEADZONE) {
+            pinch.twistLatched = true;
+            // 死区只用来"确认意图"，越过之后把扣掉的那段还给用户，否则发闷
+            const excess = pinch.accumTwist - Math.sign(pinch.accumTwist) * TWIST_DEADZONE;
+            rotateHeading(pinch.target, excess * TWIST_GAIN);
+            trackOmega('omegaHeading', (excess * TWIST_GAIN) / dt);
+        }
+
+        // 俯仰
+        if (pinch.tiltLatched) {
+            rotatePitch(pinch.target, dTilt);
+            trackOmega('omegaPitch', dTilt / dt);
+        } else if (tiltAllowed && Math.abs(pinch.accumTilt) > TILT_DEADZONE) {
+            pinch.tiltLatched = true;
+            const excessPx = pinch.accumTilt - Math.sign(pinch.accumTilt) * TILT_DEADZONE;
+            const excessRad = -(excessPx / canvas.clientHeight) * TILT_RADIANS_PER_SCREEN;
+            rotatePitch(pinch.target, excessRad);
+            trackOmega('omegaPitch', excessRad / dt);
         }
 
         pinch.distance = s.distance;
@@ -547,9 +712,16 @@ export function initCameraFeel(viewer) {
     }, { passive: true });
 
     canvas.addEventListener('touchend', (event) => {
-        if (!event.touches || event.touches.length !== 2) pinch = null;
+        // 还有两指按着 ⇒ 手势没结束
+        if (event.touches && event.touches.length === 2) return;
+        if (pinch) startInertia(pinch);
+        pinch = null;
     }, { passive: true });
-    canvas.addEventListener('touchcancel', () => { pinch = null; }, { passive: true });
+
+    canvas.addEventListener('touchcancel', () => {
+        stopInertia();
+        pinch = null;
+    }, { passive: true });
 
     // ----- 9. 动态分辨率（带手势抑制） -----
     const maxScale = () => Math.min(window.devicePixelRatio || 1, 2);
@@ -600,4 +772,6 @@ export function initCameraFeel(viewer) {
             height: c.positionCartographic.height,
         };
     };
+    // 真机上调"边捏边转"用：__locusSetMultiAxis(true)
+    window.__locusSetMultiAxis = setMultiAxisEnabled;
 }
