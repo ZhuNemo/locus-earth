@@ -70,6 +70,7 @@
         }
         // 回写到 select（显示当前选中的值）
         colorModeSelect.value = finalTheme;
+        syncColorSelectUI();
 
         // 应用主题
         applyTheme(finalTheme);
@@ -97,6 +98,7 @@
             settings.colorMode = manualTheme;
         }
         colorModeSelect.disabled = settings.followSystem;
+        syncColorSelectUI();
         saveSettings(settings);
     });
 
@@ -109,7 +111,103 @@
             applyTheme(theme);
             saveSettings(settings);
         }
+        syncColorSelectUI();
     });
+
+    // 4c. 自绘下拉
+    // ------------------------------------------------------------------
+    // 原生 <select> 的弹层由系统绘制，CSS 完全无法着色（深色主题下会露出
+    // 系统灰白方块）。所以：原生 select 只当数据源保留在 DOM 里（上面的逻辑
+    // 一行都不用改），可见部分由 button + ul 代理。
+    // 所有对 select.value / .disabled 的写入都要在末尾调 syncColorSelectUI()。
+    const colorSelectWrap = document.getElementById('colorModeSelectWrap');
+    const colorTrigger = document.getElementById('colorModeTrigger');
+    const colorMenu = document.getElementById('colorModeMenu');
+    const colorValue = document.getElementById('colorModeValue');
+
+    function syncColorSelectUI() {
+        if (!colorTrigger) return;
+        const opt = colorModeSelect.options[colorModeSelect.selectedIndex];
+        colorValue.textContent = opt ? opt.textContent : '浅色';
+        Array.prototype.forEach.call(colorMenu.children, function (li) {
+            li.setAttribute('aria-selected', String(li.dataset.value === colorModeSelect.value));
+            li.classList.remove('is-active');
+        });
+        colorTrigger.disabled = colorModeSelect.disabled;
+        if (colorModeSelect.disabled) closeColorMenu();
+    }
+
+    function openColorMenu() {
+        if (colorModeSelect.disabled) return;
+        colorMenu.classList.add('is-open');
+        colorTrigger.setAttribute('aria-expanded', 'true');
+    }
+    function closeColorMenu() {
+        if (!colorMenu.classList.contains('is-open')) return;
+        colorMenu.classList.remove('is-open');
+        colorTrigger.setAttribute('aria-expanded', 'false');
+        Array.prototype.forEach.call(colorMenu.children, function (li) {
+            li.classList.remove('is-active');
+        });
+    }
+
+    if (colorTrigger) {
+        colorTrigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (colorMenu.classList.contains('is-open')) closeColorMenu();
+            else openColorMenu();
+        });
+
+        colorTrigger.addEventListener('keydown', function (e) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                openColorMenu();
+                const items = colorMenu.querySelectorAll('.select-option');
+                const idx = [...items].findIndex(li => li.getAttribute('aria-selected') === 'true');
+                const next = items[e.key === 'ArrowDown' ? Math.min(idx + 1, items.length - 1) : Math.max(idx - 1, 0)];
+                if (next) next.classList.add('is-active');
+            }
+        });
+
+        // 选择某一项
+        colorMenu.addEventListener('click', function (e) {
+            const li = e.target.closest('.select-option');
+            if (!li) return;
+            if (colorModeSelect.value !== li.dataset.value) {
+                colorModeSelect.value = li.dataset.value;
+                colorModeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            syncColorSelectUI();
+            closeColorMenu();
+            colorTrigger.focus();
+        });
+
+        // 键盘：上下移动高亮，回车/空格确认，Esc 关闭
+        colorMenu.addEventListener('keydown', function (e) {
+            const items = [...colorMenu.querySelectorAll('.select-option')];
+            const cur = items.findIndex(li => li.classList.contains('is-active'));
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const n = e.key === 'ArrowDown' ? Math.min(cur + 1, items.length - 1) : Math.max(cur - 1, 0);
+                items.forEach(li => li.classList.remove('is-active'));
+                items[n].classList.add('is-active');
+            } else if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (items[cur]) items[cur].click();
+            } else if (e.key === 'Escape') {
+                closeColorMenu();
+                colorTrigger.focus();
+            }
+        });
+
+        // 点外部 / 按 Esc 关闭
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('#colorModeSelectWrap')) closeColorMenu();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeColorMenu();
+        });
+    }
 
     // 4c. 系统主题变化监听（实时跟随）
     const systemMedia = window.matchMedia('(prefers-color-scheme: dark)');
@@ -120,6 +218,7 @@
             settings.colorMode = theme;
             applyTheme(theme);
             colorModeSelect.value = theme;
+            syncColorSelectUI();
             saveSettings(settings);
         }
     });

@@ -1,8 +1,11 @@
+        /* 头部固定在弹窗顶部（.modal-box 是 flex 列），内边距从 .modal-box 移到这里 */
         .bookmarks-header {
+            flex: 0 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            padding: 30px 56px 0 40px;     /* 与 .modal-head 的 30px 上边距一致；右侧留给关闭按钮 */
+            margin-bottom: 0;
         }
 
         .bookmarks-header h2 {
@@ -26,7 +29,7 @@
         .bookmarks-header .close-btn {
             background: none;
             border: none;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -41,8 +44,14 @@
         }
 
         .bookmarks-list {
+            flex: 1 1 auto;
+            min-height: 0;
             overflow-y: auto;
-            flex: 1;
+            overscroll-behavior: contain;
+            /* 与 .modal-body 同一套顶部渐隐（静止时首行正好在不透明区） */
+            padding: 16px 40px 8px;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
         }
 
         .bookmark-item {
@@ -73,7 +82,7 @@
 
         .bookmark-item .info .coords {
             font-size: 12px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             margin-top: 2px;
         }
 
@@ -109,39 +118,23 @@
         }
 
         .empty-message {
-            color: var(--text-muted);
+            color: var(--text-secondary);
             text-align: center;
             padding: 20px 0;
         }
 
-        .bookmarks-list {
-            padding-bottom: 72px;
-        }
+        /* 底栏不再需要 sticky：它已经是 flex 列里独立的一行 */
         .bookmarks-footer {
-            position: sticky;
-            bottom: 12px;
+            flex: 0 0 auto;
             display: flex;
             justify-content: center;
-            padding-top: 12px;
+            padding: 8px 40px 32px;
         }
 
 
-        @media (min-width: 601px) {
-            #bookmarksPanel.modal-overlay {
-                background: var(--bg-overlay);
-                backdrop-filter: blur(var(--blur-sm));
-                justify-content: center;
-                align-items: center;
-            }
-            #bookmarksPanel.modal-overlay .modal-box {
-                max-width: 480px;
-                width: 90%;
-                max-height: 80vh;
-                overflow: auto;
-                pointer-events: auto;
-                padding: 32px 40px;
-            }
-        }
+        /* 尺寸/定位/遮罩一律交给 .modal-overlay + .modal-box 的公共规则，
+           这里不再重复声明（历史上有过一份 480/90%/80vh + padding 的覆盖，
+           既与前缀重复，又叠出双份内边距）。 */
 
         #bookmarksPanel .bookmarks-header {
             padding-right: 56px;
@@ -154,13 +147,16 @@
                justify-content:center 了，居中基准却是「弹窗中线 −28px」，
                视觉上明显偏左。这里把让位改到标题行，按钮行占满真实宽度。 */
             #bookmarksPanel .bookmarks-header {
-                padding-right: 0;
+                padding: 24px 20px 0;
             }
 
             .bookmarks-header {
                 flex-wrap: wrap;
                 gap: 4px 0;
             }
+
+            .bookmarks-list { padding: 14px 20px 6px; }
+            .bookmarks-footer { padding: 6px 20px 24px; }
 
             .bookmarks-header h2 {
                 flex: 0 0 100%;

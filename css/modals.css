@@ -22,52 +22,89 @@
             pointer-events: auto;
         }
         .glass-panel {
-            background: var(--bg-glass);
-            backdrop-filter: blur(var(--blur-md)) saturate(150%);
-            -webkit-backdrop-filter: blur(var(--blur-md)) saturate(150%);
+            /* 弹窗专用玻璃：底色比普通面板略实一点保证可读性，
+               但靠更大的模糊（--blur-lg）保留毛玻璃质感——
+               透光看得到底图颜色，看不出底图细节。 */
+            background: var(--glass-modal);
+            backdrop-filter: blur(var(--blur-lg)) saturate(160%);
+            -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(160%);
             border: 1px solid var(--glass-border);
             box-shadow: var(--shadow-glass), var(--glass-highlight);
             border-radius: var(--radius-lg);
         }
         .modal-box {
-            padding: 32px 40px;
+            /* 头部固定 + 正文独立滚动：弹窗自身不再整体滚动。
+               内边距全部下放到 .modal-head / .modal-body，否则滚动区会贴着圆角。 */
+            padding: 0;
             max-width: 480px;
             width: 90%;
             max-height: 80vh;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             position: relative;
             font-family: var(--font-ui);
-            scrollbar-width: thin;
             opacity: 0;
             transform: translateY(var(--window-transition-offset)) scale(0.98);
             transition: opacity var(--window-transition-duration) var(--window-transition-timing), transform var(--window-transition-duration) var(--window-transition-timing), box-shadow var(--window-transition-duration) var(--window-transition-timing);
+        }
+
+        /* ---------- 固定头部 ---------- */
+        .modal-head {
+            flex: 0 0 auto;
+            padding: 30px 40px 4px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ---------- 可滚动正文 ----------
+           顶部 20px 用遮罩渐隐（不是盖一层色块）：
+           内容滚到标题下方时自然淡出，深浅主题都不会出现色差；
+           padding-top 与渐隐高度一致，静止时首行正好落在不透明区，不会被吃掉。 */
+        .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: 20px 40px 32px;
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 20px);
+            mask-image: linear-gradient(to bottom, transparent 0, #000 20px);
         }
         .modal-overlay.active .modal-box {
             opacity: 1;
             transform: translateY(0) scale(1);
         }
-        /* 针对 Webkit 浏览器美化滚动条 */
-        .modal-box::-webkit-scrollbar {
+        /* ---------- 自定义滚动条（弹窗正文 / 收藏列表 / 设置页共用一套） ----------
+           Webkit 走 ::-webkit-scrollbar，Firefox 走 scrollbar-width/color。
+           轨道透明、滑块细圆角，悬停才提亮，避免深色下出现一条突兀的白条。 */
+        .modal-body,
+        .bookmarks-list {
+            scrollbar-width: thin;
+            scrollbar-color: var(--control-track) transparent;
+        }
+        .modal-body::-webkit-scrollbar,
+        .bookmarks-list::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
         }
-        .modal-box::-webkit-scrollbar-thumb {
+        .modal-body::-webkit-scrollbar-track,
+        .bookmarks-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .modal-body::-webkit-scrollbar-thumb,
+        .bookmarks-list::-webkit-scrollbar-thumb {
             background: var(--control-track);
-            border-radius: var(--radius-sm);
+            border-radius: var(--radius-full);
         }
-        /* 修复：原先这里后面跟着一串本属于 .modal-box 的声明
-           （border-radius / padding / max-width / width / box-shadow /
-           position / font-family），它们被误并入这条伪元素规则；
-           再加上 background 被声明两次，最终生效的是近乎透明的玻璃色，
-           导致滚动条滑块悬停时几乎看不见。已清掉这些无效声明。 */
-        .modal-box::-webkit-scrollbar-thumb:hover {
+        .modal-body::-webkit-scrollbar-thumb:hover,
+        .bookmarks-list::-webkit-scrollbar-thumb:hover {
             background: var(--text-muted);
         }
         .modal-box h2 {
             font-size: 20px;
             font-weight: 600;
             color: var(--text-primary);
-            margin-top: 0;
-            margin-bottom: 16px;
+            margin: 0;
             /* 标题图标（内联 SVG）与文字对齐 */
             display: flex;
             align-items: center;
@@ -82,8 +119,32 @@
         .modal-box p {
             font-size: 15px;
             line-height: 1.7;
-            color: var(--text-secondary);
+            /* 弹窗底是半透明玻璃，压在卫星影像上时背景明暗不定。
+               正文用 --text-primary：浅色下近黑、深色下近白，两端都够清楚；
+               次级信息才降一档用 --text-secondary。 */
+            color: var(--text-primary);
             margin: 10px 0;
+        }
+
+        /* 弹窗内链接：统一强调色（浅色下深蓝 / 深色下浅蓝）。
+           此前没有 a 规则，走浏览器默认的 link/visited 紫蓝，
+           在半透明面板上对比度很低，深色模式几乎看不见。 */
+        .modal-box a:not(.dev-pill) {
+            color: var(--accent-text);
+            text-decoration: underline;
+            text-decoration-color: var(--accent-border);
+            text-decoration-thickness: 1px;
+            text-underline-offset: 2px;
+        }
+        .modal-box a:not(.dev-pill):hover,
+        .modal-box a:not(.dev-pill):focus-visible {
+            color: var(--accent-strong);
+            text-decoration-color: currentColor;
+        }
+        /* 按钮里嵌套的 <a>（如「问题反馈」）继承按钮文字色，不要变成链接色 */
+        .modal-box .inline-action-btn a {
+            color: inherit;
+            text-decoration: none;
         }
 
         .inline-action-btn {
@@ -156,7 +217,7 @@
         }
 
         .modal-box .text-field::placeholder {
-            color: var(--text-muted);
+            color: var(--text-secondary);
         }
 
         /* 聚焦态沿用强调色，和设置页控件保持一致 */
@@ -194,7 +255,7 @@
            ============================================================ */
         .modal-box .about-header {
             gap: 14px;
-            margin-bottom: 18px;
+            margin: 0;   /* 间距由 .modal-head 的内边距负责 */
             align-items: center;
         }
         .about-app-icon {
@@ -219,7 +280,8 @@
         .about-version {
             font-size: 13px;
             font-weight: 500;
-            color: var(--text-muted);
+            /* 原为 --text-muted，浅色玻璃上几乎看不清，降一档到 secondary */
+            color: var(--text-secondary);
             line-height: 1.2;
         }
 
@@ -272,7 +334,7 @@
         }
         .dev-card__role {
             font-size: 13px;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             line-height: 1.3;
         }
         .dev-card__links {
@@ -309,9 +371,12 @@
             position: absolute;
             top: 14px;
             right: 18px;
+            /* 必须高于 .modal-head（z-index:2）：头部是整行定位元素，
+               层级相同时会按 DOM 顺序盖在按钮上，导致按钮点不到。 */
+            z-index: 3;
             background: none;
             border: none;
-            color: var(--text-muted);
+            color: var(--text-secondary);
             cursor: pointer;
             font-family: inherit;
             border-radius: var(--radius-md);
@@ -356,7 +421,9 @@
                 flex-wrap: wrap;
             }
             .locus-header .credit { font-size: 11px; text-align: center; }
-            .modal-box { padding: 24px 20px; }
+            /* 内边距已下放到 head/body，这里只收窄两侧 */
+            .modal-head { padding: 22px 20px 2px; }
+            .modal-body { padding: 18px 20px 24px; }
             .toast-message {
                 font-size: 12px;
                 padding: 8px 16px;

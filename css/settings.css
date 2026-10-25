@@ -16,19 +16,39 @@
 
 /* --- 顶栏 --- */
 .settings-header {
+    /* 固定在顶部：页面滚动时只有正文动，标题和返回按钮始终可见 */
+    position: sticky;
+    top: 0;
     flex-shrink: 0;
     width: 100%;
-    background: var(--glass-bg);
+    /* 用更实的弹窗底（--glass-modal），滚动正文不会从标题下透出来 */
+    background: var(--glass-modal);
     backdrop-filter: blur(var(--blur-md)) saturate(150%);
     -webkit-backdrop-filter: blur(var(--blur-md)) saturate(150%);
-    border-bottom: 1px solid var(--glass-border);
     padding: 12px 24px;
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: var(--shadow-sm), var(--glass-highlight);
+    box-shadow: var(--glass-highlight);
     z-index: var(--z-floating);
     min-height: 64px;
+}
+
+/* 标题下方的渐隐带：正文滚上来时在 24px 内逐渐模糊淡出，
+   替代原来那条生硬的 1px 边框。用「遮罩 + 背景模糊」实现，
+   不叠色块，所以深浅主题都不会出现色差。 */
+.settings-header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    height: 24px;
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+    mask-image: linear-gradient(to bottom, #000, transparent);
 }
 
 .settings-header .back-btn {
@@ -192,6 +212,115 @@
     cursor: not-allowed;
 }
 
+/* ---------- 自绘下拉 ----------
+   原生 <select> 的弹层由操作系统绘制，无法用 CSS 配色（深色主题下会露出
+   系统灰/白方块）。这里把原生 select 隐藏成纯数据源，可见部分由
+   button + ul 代理，浮层复用站点的 --surface-raised 令牌。 */
+.select {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+}
+.select > select { display: none; }
+
+.select-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 112px;
+    padding: 8px 12px;
+    background: var(--bg-select);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+.select-trigger:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: var(--glass-bg-strong);
+}
+.select-trigger:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.select-trigger[aria-expanded="true"] {
+    border-color: var(--accent);
+    background: var(--glass-bg-strong);
+}
+.select-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.select-caret {
+    flex: none;
+    color: var(--text-muted);
+    transition: transform 0.18s ease;
+}
+.select-trigger[aria-expanded="true"] .select-caret { transform: rotate(180deg); }
+
+.select-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: var(--z-menu);
+    min-width: 100%;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    display: none;
+    background: var(--surface-raised);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+.select-menu.is-open {
+    display: block;
+    animation: select-pop 0.14s ease-out;
+}
+@keyframes select-pop {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.select-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.select-option:hover,
+.select-option.is-active {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+}
+.select-option[aria-selected="true"] {
+    color: var(--accent-text);
+    font-weight: 600;
+}
+/* 选中项右侧的圆点指示 */
+.select-option[aria-selected="true"]::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: currentColor;
+}
+
 .setting-action {
     flex-shrink: 0;
 }
@@ -224,9 +353,10 @@
 }
 
 .modal-content {
-    background: var(--glass-bg-strong);
-    backdrop-filter: blur(var(--blur-lg)) saturate(150%);
-    -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(150%);
+    /* 与主页面弹窗（.glass-panel）用同一套玻璃令牌，两个页面观感一致 */
+    background: var(--glass-modal);
+    backdrop-filter: blur(var(--blur-lg)) saturate(160%);
+    -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(160%);
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-glass), var(--glass-highlight);
     text-shadow: none;
@@ -257,7 +387,7 @@
 
 .modal-content::-webkit-scrollbar-thumb {
     background: var(--control-track);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-full);
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
@@ -358,12 +488,18 @@
     .setting-desc {
         font-size: 12px;
     }
-    .setting-item select {
+    .select-trigger {
         min-width: 88px;
         font-size: 13px;
-        /* 右侧留出下拉箭头（background-position 定位在小箭头处），不要压到文字 */
-        padding: 6px 30px 6px 12px;
+        padding: 6px 10px;
     }
+    /* 窄屏把设置项改成纵向堆叠（align-items:stretch），会让 .select 撑满整行；
+       菜单又取 min-width:100%，于是一个 88px 的控件挂出 346px 的浮层。
+       这里让它贴合内容宽度，浮层自然与触发器同宽。 */
+    .select {
+        align-self: flex-start;
+    }
+    .select-option { font-size: 13px; padding: 7px 9px; }
     /* 窄屏：开关类设置项的两端对齐会挤压文字，整体改成纵向堆叠 */
     .setting-item:has(.toggle-switch),
     .setting-item:has(select) {

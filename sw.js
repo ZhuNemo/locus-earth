@@ -28,7 +28,7 @@
 // 版本号必须比**已经部署过的**都大，否则装了更高号缓存的用户不会换缓存。
 // 历史：v31（改造前）→ 远端那条线 v33 → 合并 v34 → 修复 v35 → 设置页诊断 v36
 // → 去掉 importmap 依赖 v37。
-const CACHE_VERSION = 'v37';
+const CACHE_VERSION = 'v41';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // Cesium 引擎缓存：把版本号写进缓存名，升级后旧缓存会在 activate 时被淘汰，
@@ -138,6 +138,7 @@ const SHELL_URLS = [
   './js/icons.js',
   './js/search.js',
   './js/viewer.js',
+  './js/camera-feel.js',
   './js/imagery.js',
   './js/basemap-picker.js',
   './js/ui.js',

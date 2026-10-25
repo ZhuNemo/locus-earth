@@ -97,3 +97,21 @@
         @media (prefers-reduced-motion: reduce) {
             .loading-spinner { animation-duration: 2.4s; }
         }
+    
+        /* ============================================
+           页面级滚动条（设置页用；主页面无滚动）
+           轨道透明、滑块细圆角，与弹窗正文的滚动条同一套观感。
+           ============================================ */
+        html {
+            scrollbar-width: thin;
+            scrollbar-color: var(--control-track) transparent;
+        }
+        html::-webkit-scrollbar { width: 10px; height: 10px; }
+        html::-webkit-scrollbar-track { background: transparent; }
+        html::-webkit-scrollbar-thumb {
+            background: var(--control-track);
+            border-radius: var(--radius-full);
+            border: 3px solid transparent;
+            background-clip: content-box;
+        }
+        html::-webkit-scrollbar-thumb:hover { background-color: var(--text-muted); }

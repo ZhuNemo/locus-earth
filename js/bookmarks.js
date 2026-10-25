@@ -129,9 +129,17 @@ function setupEventHandlers() {
 
     // 关闭收藏夹
     closeBtn.addEventListener('click', closeBookmarksPanel);
-    // 点击面板外部关闭
+    // 点遮罩关闭。
+    // ⚠️ 不能用 `!panel.contains(e.target)` 判断：点遮罩空白处时 e.target 就是
+    // 遮罩（#bookmarksPanel）本身，contains 对自身返回 true，条件永远不成立。
+    // 这里分两种情况：点遮罩本体 → 关；点到面板之外（例如地图）→ 也关。
     document.addEventListener('click', (e) => {
-        if (panel && !panel.contains(e.target) && !bookmarksBtn.contains(e.target)) {
+        if (!panel || !panel.classList.contains('active')) return;
+        if (e.target === panel) {
+            closeBookmarksPanel();
+            return;
+        }
+        if (!panel.contains(e.target) && !bookmarksBtn.contains(e.target)) {
             closeBookmarksPanel();
         }
     });

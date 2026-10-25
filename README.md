@@ -16,6 +16,8 @@
 <div align="left">
 <a href="https://github.com/ZhuNemo/locus-earth/actions/workflows/android.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZhuNemo/locus-earth/android.yml?label=Android%20APK" alt="Android APK build"></a>
 <a href="https://github.com/ZhuNemo/locus-earth/releases"><img src="https://img.shields.io/github/v/tag/ZhuNemo/locus-earth?label=APK" alt="APK version"></a>
+<img src="https://img.shields.io/badge/CesiumJS-1.118.2-3ba7d9" alt="CesiumJS 1.118.2">
+<img src="https://img.shields.io/badge/requires-WebGL%202-blueviolet" alt="Requires WebGL 2">
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
@@ -24,7 +26,8 @@
 > 基于 Cesium 的 3D 地球，打开浏览器即可使用，无需安装或注册
 >
 > **[GitHub Pages](https://zhunemo.github.io/locus-earth/)** · **[Cloudflare Pages](https://locus-earth.pages.dev)**
-- 本文含AI生成内容
+>
+> 本文含 AI 生成内容
 
 ---
 

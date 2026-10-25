@@ -84,10 +84,26 @@
                     <span class="setting-label">色彩模式</span>
                     <span class="setting-desc">手动选择深色或浅色模式</span>
                 </div>
-                <select id="colorMode" disabled>
-                    <option value="light">浅色</option>
-                    <option value="dark">深色</option>
-                </select>
+                <!-- 自绘下拉：原生 <select> 的弹层由系统绘制、无法配色，
+                     这里保留一个隐藏的原生 select 作为数据源（settings.js 逻辑不用改），
+                     可见部分用 button + ul 代理，以便跟随站点主题。 -->
+                <div class="select" id="colorModeSelectWrap">
+                    <select id="colorMode" disabled>
+                        <option value="light">浅色</option>
+                        <option value="dark">深色</option>
+                    </select>
+                    <button type="button" class="select-trigger" id="colorModeTrigger"
+                            aria-haspopup="listbox" aria-expanded="false" aria-controls="colorModeMenu" disabled>
+                        <span class="select-value" id="colorModeValue">浅色</span>
+                        <svg class="select-caret" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <ul class="select-menu" id="colorModeMenu" role="listbox" aria-label="色彩模式">
+                        <li class="select-option" role="option" data-value="light" aria-selected="true">浅色</li>
+                        <li class="select-option" role="option" data-value="dark" aria-selected="false">深色</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- 地形开关 -->
