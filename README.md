@@ -21,6 +21,8 @@
 <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
 </div>
 
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/ZhuNemo/badge.svg)](https://hub.xerj.org/contributors/ZhuNemo)
+
 ---
 
 > 基于 Cesium 的 3D 地球，打开浏览器即可使用，无需安装或注册
