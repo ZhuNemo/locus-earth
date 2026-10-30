@@ -13,13 +13,17 @@
 
 ---
 
-<div align="left">
-<a href="https://github.com/ZhuNemo/locus-earth/actions/workflows/android.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZhuNemo/locus-earth/android.yml?label=Android%20APK" alt="Android APK build"></a>
-<a href="https://github.com/ZhuNemo/locus-earth/releases"><img src="https://img.shields.io/github/v/tag/ZhuNemo/locus-earth?label=APK" alt="APK version"></a>
-<img src="https://img.shields.io/badge/CesiumJS-1.118.2-3ba7d9" alt="CesiumJS 1.118.2">
-<img src="https://img.shields.io/badge/requires-WebGL%202-blueviolet" alt="Requires WebGL 2">
-<a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
-</div>
+<p align="center">
+  <a href="https://github.com/ZhuNemo/locus-earth/actions/workflows/android.yml"><img src="https://img.shields.io/github/actions/workflow/status/ZhuNemo/locus-earth/android.yml?label=Android%20APK" alt="Android APK build"></a>
+  <a href="https://github.com/ZhuNemo/locus-earth/releases"><img src="https://img.shields.io/github/v/tag/ZhuNemo/locus-earth?label=APK" alt="APK version"></a>
+  <br>
+  <img src="https://img.shields.io/badge/CesiumJS-1.118.2-3ba7d9" alt="CesiumJS 1.118.2">
+  <img src="https://img.shields.io/badge/requires-WebGL%202-blueviolet" alt="Requires WebGL 2">
+  <br>
+  <a href="https://github.com/ZhuNemo/locus-earth/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT"></a>
+  <br>
+  <a href="https://hub.xerj.org/contributors/ZhuNemo"><img src="https://hub.xerj.org/contributors/ZhuNemo/badge.svg" alt="XERJ Corpus Hub contributor"></a>
+</p>
 
 ---
 

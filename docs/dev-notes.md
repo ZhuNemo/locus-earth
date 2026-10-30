@@ -50,6 +50,11 @@ export * from 'https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js';
 **新代码不要写裸标识符 `'cesium'`。** `index.html` / `settings.html` 里那段 importmap 还留着，
 但只有唯一用途：发版后的过渡期里，Cache Storage 可能还是上一版模块（它们写着裸标识符），留着不至于又断一次。
 
+护栏（本机自检，`tests/` 在 .gitignore 里、不进仓库）：`node tests/no-bare-imports.test.mjs`。
+它扫 `js/` 和根目录两个页面，会先剥掉 JS / HTML 注释再匹配，所以说明文字里的示例不会被误抓；
+`js/settings.js` 里那句 `await import('cesium')` 是「兼容性诊断」故意写的探测，在脚本的白名单里 ——
+新增白名单必须写清理由。脚本自带自测，护栏本身失效会先报错而不是假通过。
+
 **升级引擎要同时改三处**（必须是同一个补丁号）：
 `js/cesium.js` 的 URL、`index.html` 的 `modulepreload`、`sw.js` 的 `CESIUM_VERSION`。
 写 `@1.118` 会被 unpkg 302 到 `1.118.2`，modulepreload 的键就对不上了，等于白下 4 MB。
@@ -98,6 +103,29 @@ MSAA 在移动端代价偏高：GPU 不支持硬件 MSAA 的设备上，Chromium
 
 冷启动的大头是 Cesium 那个约 4 MB 的 ESM 包（下载 + 解析），网页层能做的只有：
 把版本钉到补丁号（省一次 302）、`modulepreload` 提前拉、以及让导航和 endpoint 走缓存。
+
+### 线上 LCP / INP 的两个坑（2026-10-30 按 Cloudflare Web Analytics 报告修）
+
+**外链样式表会把首屏一起拖住。** `widgets.css` 原来是条普通的 `<link rel="stylesheet">`
+（unpkg，跨域）。渲染阻塞样式表只要回包慢一点，浏览器就一帧都不画 —— 连加载遮罩的黑底和 logo
+都出不来，于是 LCP 元素变成了遮罩里的 logo：P75 2054ms、P99 6217ms，「元素渲染延迟」占 32%。
+对照组很干净：settings.html 不引这张表，LCP 100% 落在良好。
+现在改成 `rel="preload" as="style"` + `onload` 再挂成 stylesheet，并留了
+`window.__cesiumCssReady` 让 `js/main.js` 建 Viewer 之前先等它（3s 兜底；控件没样式会散架，
+样式晚到还会带出一波 CLS）。**不要改回阻塞式 `<link rel="stylesheet">`**，也不要「顺手」给它
+加 `crossorigin` —— 请求模式跟 preload 对不上，会下两遍。
+
+**整页换主题不能塞进交互帧里。** 设置页的底是 `background-attachment: fixed` 的渐变，
+外加一层层 backdrop-filter 玻璃面板，`data-theme` 一改就要整页重算样式再重绘，手机上这一帧的
+呈现延迟能到 90ms 以上（报告里 `#colorMode` 的 INP 264ms，事件处理本身只有 6ms）。
+`js/settings.js` 现在统一走 `applyThemeDeferred()`：先画便宜的反馈（菜单收起、触发按钮文字更新），
+把 `applyTheme` 推到 `rAF` 之后的 `setTimeout` 里，差一帧用户看不出来。
+注意 `saveSettings()` 会**同步**派发 StorageEvent，本页的 storage 监听器就在同一个调用栈里跑，
+那里也必须走延迟通道，否则等于没改。
+
+TTFB 那 1057ms（占 LCP 46%）不在仓库能改的范围内：pages.dev 的 HTML 不走 CDN 长时间缓存，
+境外/跨境访问的第一跳就是这个量级。重复访问由 SW 的缓存优先兜掉了（TTFB ≈ 0），
+首访只能靠把阻塞资源清干净来减少「TTFB 之后」的那一段。
 
 ---
 

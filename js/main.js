@@ -80,6 +80,15 @@ import { initTileCacheSwitch } from './tile-cache.js';
         });
         
         // ----- 初始化 viewer 并异步加载地形 -----
+        // Cesium 的控件样式在 index.html 里改成了非阻塞加载（见那里的说明，是为了救 LCP）。
+        // 它没到就建 Viewer 的话，credit / 缩放控件会先按无样式渲染成一堆散块，
+        // 样式到了再排一次 —— 白闪 + 一波 CLS。这里等它，最多 3s 就放行。
+        if (window.__cesiumCssReady) {
+            try {
+                await window.__cesiumCssReady;
+            } catch (e) {}
+        }
+
         const viewer = initViewer('cesiumContainer', new EllipsoidTerrainProvider());
         const loadingOverlay = document.getElementById('loadingOverlay');
 

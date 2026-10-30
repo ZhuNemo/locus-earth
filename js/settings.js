@@ -40,11 +40,45 @@
     // =============================================
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
+        // 与 js/main.js 的 applyTheme 保持一致：让原生控件（<select> 弹层、滚动条）
+        // 跟着换色，否则深色主题下会冒出一块系统亮色。
+        document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
         const metaTheme = document.querySelector('meta[name="theme-color"]');
         if (metaTheme) {
             const colors = { light: '#ffffff', dark: '#1a1a1a' };
             metaTheme.content = colors[theme] || '#ffffff';
         }
+    }
+
+    // data-theme 一改，整页都要重算样式再重绘。设置页的底是一层
+    // `background-attachment: fixed` 的渐变（见 css/settings.css），外加若干
+    // backdrop-filter 玻璃面板，手机上这一帧的「呈现延迟」能到 90ms 以上 ——
+    // 这正是 Cloudflare 报的 #colorMode INP 264ms 的来源，而真正的事件处理只有 6ms。
+    // 所以交互路径上不再直接 applyTheme：先把「便宜」的反馈画出去（菜单收起、
+    // 触发按钮文字更新），整页重绘推到下一次绘制之后。差一帧，用户看不出来。
+    let pendingTheme = null;
+    let themeApplyScheduled = false;
+
+    function applyThemeDeferred(theme) {
+        pendingTheme = theme;
+        if (themeApplyScheduled) return;
+        if (!window.requestAnimationFrame) {
+            pendingTheme = null;
+            applyTheme(theme);
+            return;
+        }
+        themeApplyScheduled = true;
+        // rAF 回调仍在下一帧绘制之前，再套一个 setTimeout 才是绘制之后
+        requestAnimationFrame(function() {
+            setTimeout(function() {
+                themeApplyScheduled = false;
+                const next = pendingTheme;
+                pendingTheme = null;
+                // 同一帧里来了多次请求（点击的 change + saveSettings 触发的
+                // storage 回声）时，只按最后一次应用一次
+                if (next) applyTheme(next);
+            }, 0);
+        });
     }
 
     function getSystemTheme() {
@@ -90,11 +124,11 @@
         if (settings.followSystem) {
             const systemTheme = getSystemTheme();
             settings.colorMode = systemTheme; 
-            applyTheme(systemTheme);
+            applyThemeDeferred(systemTheme);
             colorModeSelect.value = systemTheme;
         } else {
             const manualTheme = colorModeSelect.value;
-            applyTheme(manualTheme);
+            applyThemeDeferred(manualTheme);
             settings.colorMode = manualTheme;
         }
         colorModeSelect.disabled = settings.followSystem;
@@ -108,7 +142,7 @@
         if (!settings.followSystem) {
             const theme = this.value;
             settings.colorMode = theme;
-            applyTheme(theme);
+            applyThemeDeferred(theme);
             saveSettings(settings);
         }
         syncColorSelectUI();
@@ -216,7 +250,7 @@
         if (settings.followSystem !== false) {
             const theme = e.matches ? 'dark' : 'light';
             settings.colorMode = theme;
-            applyTheme(theme);
+            applyThemeDeferred(theme);
             colorModeSelect.value = theme;
             syncColorSelectUI();
             saveSettings(settings);
@@ -232,7 +266,10 @@
                 colorModeSelect.disabled = settings.followSystem !== false;
                 const theme = settings.followSystem !== false ? getSystemTheme() : (settings.colorMode || 'light');
                 colorModeSelect.value = theme;
-                applyTheme(theme);
+                // 注意：saveSettings 会同步派发一次 StorageEvent，本页这个监听器
+                // 就跟着在点击处理函数里跑起来了 —— 这里再同步 applyTheme 等于
+                // 把整页重绘又塞回交互帧里。走延迟通道，和 change 那一路合并成一次。
+                applyThemeDeferred(theme);
             } catch {}
         }
     });

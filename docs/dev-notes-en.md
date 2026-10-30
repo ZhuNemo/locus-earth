@@ -60,6 +60,12 @@ previous build's modules (which contain bare specifiers), so keeping it avoids a
 gets 302-redirected to `1.118.2` by unpkg, which breaks the modulepreload key — you then download 4 MB
 for nothing.
 
+Guard (local-only; `tests/` is in .gitignore and never committed): `node tests/no-bare-imports.test.mjs`.
+It scans `js/` plus the two root pages after stripping JS and HTML comments, so examples inside prose are
+not flagged. The `await import('cesium')` in `js/settings.js` is the "compatibility check" probe and sits
+in the script's allowlist — any new allowlist entry needs a written reason. The script self-tests its own
+matcher first, so a broken guard fails loudly instead of passing silently.
+
 ---
 
 ## Caching & offline
@@ -113,6 +119,32 @@ depends on it. **Do not switch back to the default MSAA.**
 Cold-start cost is dominated by the ~4 MB Cesium ESM bundle (download + parse). All the web layer can do
 is: pin the patch version (saves a 302), preload with `modulepreload`, and let navigation and the
 endpoint be served from cache.
+
+### Two LCP / INP traps (fixed 2026-10-30, from a Cloudflare Web Analytics report)
+
+**A third-party stylesheet can hold the entire first paint.** `widgets.css` used to be a plain
+`<link rel="stylesheet">` (unpkg, cross-origin). A render-blocking stylesheet that is even slightly slow
+means the browser paints nothing at all — not the black overlay, not its logo — so the LCP element became
+the overlay logo: P75 2054 ms, P99 6217 ms, with "element render delay" at 32%. The control group is
+clean: settings.html does not load it and its LCP is 100% good. It is now `rel="preload" as="style"`
+swapped to `stylesheet` on load, with `window.__cesiumCssReady` gating `initViewer()` in `js/main.js`
+(3 s fallback; widgets without their stylesheet fall apart, and a late stylesheet adds a round of CLS).
+**Do not put the blocking `<link rel="stylesheet">` back**, and do not "helpfully" add `crossorigin` —
+the request mode then no longer matches the preload and it downloads twice.
+
+**Never repaint the whole page inside an interaction frame.** The settings page sits on a
+`background-attachment: fixed` gradient with several backdrop-filter glass panels on top, so flipping
+`data-theme` forces a full style recalc and repaint — 90 ms+ of presentation delay on mobile (the reported
+`#colorMode` INP is 264 ms while event processing is only 6 ms). `js/settings.js` now goes through
+`applyThemeDeferred()`: paint the cheap feedback first (menu closes, trigger label updates) and push
+`applyTheme` into a `setTimeout` scheduled after `requestAnimationFrame`. Note that `saveSettings()`
+dispatches a StorageEvent **synchronously**, so this page's storage listener runs inside the same task —
+it has to use the deferred path too, or the fix does nothing.
+
+The 1057 ms TTFB (46% of LCP) is not something this repo can fix: HTML on pages.dev is not CDN-cached for
+long, so the first hop from outside the edge region costs about that much. Repeat visits are covered by
+the service worker's cache-first navigation (TTFB ≈ 0); for first visits the only lever is keeping
+render-blocking resources out of the way so the stretch after TTFB stays small.
 
 ---
 

@@ -34,7 +34,25 @@
 
     <link rel="shortcut icon" href="favicon.ico" />
     
-    <link rel="stylesheet" href="https://unpkg.com/cesium@1.118.2/Build/Cesium/Widgets/widgets.css" />
+    <!-- Cesium 控件样式：**不能参与首屏渲染阻塞**。
+         它是一张外链样式表（unpkg），而渲染阻塞样式表只要回包慢，浏览器就一帧都不画 ——
+         连加载遮罩的黑底和 logo 都出不来。Cloudflare Web Analytics 报的 LCP 元素正是
+         遮罩里的 logo（P75 2054ms / P99 6217ms、元素渲染延迟占 32%），根因就是这一行：
+         settings.html 没有这张表，它的 LCP 是 100% 良好，这个对比很干净。
+         现在改成 preload → 下载完再挂成 stylesheet：HTML 一到就能画遮罩和 logo，
+         样式到了再应用。代价是 Cesium 控件会晚一点拿到样式，所以留了个
+         `__cesiumCssReady` 把手，js/main.js 建 Viewer 之前会先等它（控件没样式会散架，
+         样式晚到还会带出一波 CLS）；3s 兜底 —— 真拿不到也照常启动，
+         没有控件样式的地球也比一整块黑屏强。 -->
+    <script>
+        window.__cesiumCssReady = new Promise(function (resolve) {
+            window.__cesiumCssDone = resolve;
+            setTimeout(resolve, 3000);
+        });
+    </script>
+    <link rel="preload" as="style" href="https://unpkg.com/cesium@1.118.2/Build/Cesium/Widgets/widgets.css"
+          onload="this.onload=null;this.rel='stylesheet';window.__cesiumCssDone()"
+          onerror="window.__cesiumCssDone()" />
 
     <link rel="manifest" href="manifest.json">
     <script>
@@ -59,6 +77,14 @@
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://api.cesium.com" crossorigin>
     <link rel="modulepreload" href="https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js" crossorigin>
+
+    <!-- 加载遮罩里的 logo 就是 LCP 元素本身（地球是 canvas，不算 LCP 候选），
+         所以它必须是首屏最优先的那张图：preload 让它和 CSS 并行开下，
+         fetchpriority="high" 把它排在 4 MB 的 Cesium 包前面 ——
+         否则这条 6 KB 的请求会被那个大包挤到后面，「资源加载延迟」就是白等的。
+         尺寸按 SVG 的 231×36 写死（CSS 再用 min(231px, 62vw) 缩放），
+         让布局在图片解码前就定好，避免遮罩里再跳一次。 -->
+    <link rel="preload" as="image" href="locus-earth-logo.svg" fetchpriority="high">
 
     <!-- Montserrat（仅拉丁字符）+ 中文沿用设备字体
          · 源：fonts.loli.net（Infvie Envoy 公益 CDN，反代 Google Fonts；
@@ -330,7 +356,7 @@
         <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:16px;">
             <div style="display:flex; align-items:center; justify-content:center; gap:10px; max-width:100%;">
                 <img src="favicon-32x32.png" alt="" aria-hidden="true" width="32" height="32">
-                <img src="locus-earth-logo.svg" alt="Locus Earth" style="display:block; width:min(231px, 62vw); height:auto;">
+                <img src="locus-earth-logo.svg" alt="Locus Earth" width="231" height="36" fetchpriority="high" style="display:block; width:min(231px, 62vw); height:auto;">
             </div>
             <p style="display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; margin:0;">
                 <span class="loading-spinner" aria-hidden="true"></span>
