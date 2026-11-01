@@ -54,6 +54,19 @@ export function initViewer(containerId, terrainProvider) {
     // 低端机上如果觉得变卡，把这一行改成 false 即可，没有其它牵连。
     viewer.scene.postProcessStages.fxaa.enabled = true;
 
+    // ----- 禁用 Cesium 的「双击追踪实体」 -----
+    // Viewer 构造时内部注册了 LEFT_DOUBLE_CLICK → 若实体有 position 就把它
+    // 设成 trackedEntity，相机随即进入「绕该实体旋转」的追踪模式，而且
+    // 必须再点别的实体/地表多次才退得出（用户实测踩过：双击标记→地球绕标记转）。
+    //
+    // 为什么单独移除，而不是让 camera-feel.js 覆盖它：
+    //   ScreenSpaceEventHandler 是「每实例一份」的事件表，Viewer 内部那份
+    //   和 camera-feel.js 自己 new 的那份互不覆盖——两个 handler 会**同时**
+    //   响应双击。camera-feel 对 _isBookmark 的标记直接 return（不缩放），
+    //   但 Viewer 的追踪 handler 照跑，于是「想双击看标记，结果镜头绕标记转」。
+    //   这里把 Viewer 自带的双击动作摘掉，双击缩放仍由 camera-feel 独占。
+    viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
     // ----- 相机手感（手势映射 / 惯性 / 双击缩放 / 动态分辨率）-----
     // 全部逻辑集中在 camera-feel.js，这里只负责交接。
     // ⚠️ 别在这里再写 controller.inertia = {...}：Cesium 1.118 没有这个属性，

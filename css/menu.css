@@ -184,3 +184,93 @@
         }
         /* 原先这里还有 .menu-btn.hd-btn / .visible 两条规则，
            但侧滑菜单中并不存在带 hd-btn 类的元素，属遗留死规则，已移除。 */
+
+        /* ============================================================================
+           地图对象右键 / 长按菜单（js/context-menu.js 动态生成）
+           ----------------------------------------------------------------------------
+           · 挂在 body 上、position: fixed：地图容器有 overflow/transform 时
+             不会再被裁切。
+           · 表面走 --surface-raised：深色主题下 --glass-bg-strong 做浮层会
+             透出底图与下层文字。
+           · 只放破坏性操作，所以唯一的条目样式是 is-danger。
+           ============================================================================ */
+        .context-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: var(--z-menu);
+            min-width: 172px;
+            padding: 6px;
+            border-radius: var(--radius-md);
+            background: var(--surface-raised);
+            backdrop-filter: blur(var(--blur-md)) saturate(150%);
+            -webkit-backdrop-filter: blur(var(--blur-md)) saturate(150%);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-md), var(--glass-highlight);
+            font-family: var(--font-ui);
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.94);
+            transform-origin: top left;
+            transition: opacity 0.14s ease, transform 0.14s ease,
+                        visibility 0.14s var(--window-transition-timing);
+        }
+
+        .context-menu.is-open {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+        }
+
+        .context-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: none;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        /* 多项菜单（删除 + 导出）之间留一点分隔，避免 hover 背景贴边 */
+        .context-menu-item + .context-menu-item {
+            margin-top: 2px;
+        }
+
+        .context-menu-item .ui-icon {
+            width: 17px;
+            height: 17px;
+            color: var(--text-secondary);
+        }
+
+        /* 间距由 gap 统一控制，抵消 .ui-icon + * 自带的左间距 */
+        .context-menu-item .ui-icon + * {
+            margin-left: 0;
+        }
+
+        /* 覆盖 base.css 里 button:hover 的上浮，菜单项不该跳 */
+        .context-menu-item:hover,
+        .context-menu-item:focus-visible {
+            transform: none;
+            box-shadow: none;
+            background: var(--glass-hover);
+        }
+
+        .context-menu-item.is-danger,
+        .context-menu-item.is-danger .ui-icon {
+            color: var(--danger);
+        }
+
+        .context-menu-item.is-danger:hover,
+        .context-menu-item.is-danger:focus-visible {
+            background: var(--danger-soft);
+            color: var(--danger-strong);
+        }

@@ -23,6 +23,7 @@ import { initHdLayers } from './hd-layers.js';
 import { initGoogleMode } from './google-mode.js';
 import { initMeasureTools } from './measure.js';
 import { initMeasureUI } from './measure-ui.js'
+import { initMapContextMenu } from './context-menu.js';
 import { initTimeControl } from './time-control.js';
 import { initStreetView } from './streetview.js';
 import { CONFIG } from './config.js';
@@ -199,6 +200,9 @@ import { initTileCacheSwitch } from './tile-cache.js';
         const measureTools = initMeasureTools(viewer);
 
         initMeasureUI(viewer, measureTools);
+        // 地图对象右键 / 长按菜单：删除标记、轨迹、图形
+        // （要放在上面两个 init 之后，业务模块已经登记好各自的删除回调）
+        initMapContextMenu(viewer);
         const timeControl = initTimeControl(viewer);
 
         // 街景：进入中国境内显示按钮，点击后取点跳转腾讯街景

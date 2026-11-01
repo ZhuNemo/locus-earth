@@ -194,3 +194,33 @@
                 transform: scale(0.94);
             }
         }
+        /* ============================================================================
+           列表项类型图标（标记 / 轨迹 / 图形）
+           ----------------------------------------------------------------------------
+           图标由 js/bookmarks.js 按类型插入 symbol 引用，这里只管排版：
+           图标与名称同一行居中，名称过长时省略，不挤掉右侧按钮。
+           ============================================================================ */
+        .bookmark-item .info .name {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+        }
+
+        .bookmark-item .info .name .ui-icon {
+            width: 15px;
+            height: 15px;
+            flex: none;
+            color: var(--text-secondary);
+        }
+
+        /* 间距由 gap 统一控制，抵消 .ui-icon + * 自带的左间距 */
+        .bookmark-item .info .name .ui-icon + * {
+            margin-left: 0;
+        }
+
+        .bookmark-item .info .name > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }

@@ -116,6 +116,11 @@
             vertical-align: 0;
             color: var(--text-secondary);
         }
+        /* 标题文字现在包在 <span> 里（便于按场景换文案），
+           间距由 h2 的 gap 统一控制，抵消 .ui-icon + * 自带的左间距 */
+        .modal-box h2 .ui-icon + * {
+            margin-left: 0;
+        }
         .modal-box p {
             font-size: 15px;
             line-height: 1.7;

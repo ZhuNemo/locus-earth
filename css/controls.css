@@ -261,3 +261,23 @@
         width: 28px;
     }
 }
+
+/* ============================================================================
+   Cesium 的「选中指示器」——点击实体时那圈绿色角标，直接关掉
+   ----------------------------------------------------------------------------
+   Viewer 内部注册了一个 LEFT_CLICK 处理器：只要 pick 到东西，就把 pickedObject.id
+   塞进 viewer.selectedEntity，SelectionIndicator 随即在实体周围画出四个绿色角标
+   （DOM 为 .cesium-viewer-selectionIndicatorContainer > .cesium-selection-wrapper，
+   激活时 wrapper 会加上 -visible 类）。
+
+   本项目完全不用 selectedEntity 做任何交互（右键/长按菜单、删除都走 scene.pick），
+   所以这个框只会造成误解：让人以为"选中了要执行什么"，在标记、轨迹、图形上都一样。
+
+   ⚠️ 这不是署名 / credit，隐藏不涉及第三方署名合规（那条规则只管
+   .cesium-viewer-bottom 里的 ion / 数据源署名，别混为一谈）。
+   ⚠️ 加 !important 是因为 widget 可能给内部元素写内联 display，
+   容器层用 !important 才能稳定压住。
+   ============================================================================ */
+.cesium-viewer-selectionIndicatorContainer {
+    display: none !important;
+}
