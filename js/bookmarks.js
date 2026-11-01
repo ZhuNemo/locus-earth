@@ -13,6 +13,16 @@ import {
     HeightReference,
 } from './cesium.js';
 import { registerTool as registerTool, claim as claimTool, release as releaseTool } from './tool-modes.js';
+import { registerEntityDeleter } from './context-menu.js';
+import { askConfirm, askText } from './dialogs.js';
+import { buildKml, parseKml, looksLikeXml } from './kml.js';
+import {
+    getMeasureShapes,
+    addMeasureShapes,
+    removeMeasureShape,
+    flyToMeasureShape,
+    measureShapeSummary,
+} from './measure.js';
 import { showToast } from './utils.js';
 
 // ---------- 状态 ----------
@@ -27,21 +37,6 @@ let listContainer = null;
 let closeBtn = null;
 let bookmarksBtn = null;
 
-// 标记命名弹窗（取代原生 prompt）
-let nameModal = null;
-let nameInput = null;
-let nameError = null;
-let nameConfirmBtn = null;
-let nameCancelBtn = null;
-let nameCloseBtn = null;
-
-// 通用确认弹窗（取代原生 confirm）
-let confirmModal = null;
-let confirmMessageEl = null;
-let confirmOkBtn = null;
-let confirmCancelBtn = null;
-let confirmCloseBtn = null;
-
 // ---------- 初始化 ----------
 // 图钉由 getPinCanvas() 运行时用 Canvas 绘制，不再依赖图标文件。
 export function initBookmarks(viewer) {
@@ -53,22 +48,9 @@ export function initBookmarks(viewer) {
     closeBtn = document.getElementById('closeBookmarksBtn');
     bookmarksBtn = document.getElementById('bookmarksBtn');
 
-    // 标记命名弹窗（缺失时不致命：handleClick 会退回原生 prompt）
-    nameModal = document.getElementById('markerNameModal');
-    nameInput = document.getElementById('markerNameInput');
-    nameError = document.getElementById('markerNameError');
-    nameConfirmBtn = document.getElementById('confirmMarkerNameBtn');
-    nameCancelBtn = document.getElementById('cancelMarkerNameBtn');
-    nameCloseBtn = document.getElementById('closeMarkerNameBtn');
-    if (nameModal && nameInput) setupNameModal();
-
-    // 通用确认弹窗
-    confirmModal = document.getElementById('confirmModal');
-    confirmMessageEl = document.getElementById('confirmMessage');
-    confirmOkBtn = document.getElementById('okConfirmBtn');
-    confirmCancelBtn = document.getElementById('cancelConfirmBtn');
-    confirmCloseBtn = document.getElementById('closeConfirmBtn');
-    if (confirmModal && confirmOkBtn) setupConfirmModal();
+    // 标记命名弹窗与通用确认弹窗统一由 js/dialogs.js 承接
+    // （DOM 仍是 index.html 里的 #markerNameModal / #confirmModal，
+    //   这里不再自己绑事件，避免同一次点击触发两份回调）
 
     // 如果缺少必要元素，给出警告
     if (!panel || !listContainer || !closeBtn || !bookmarksBtn) {
@@ -87,6 +69,9 @@ export function initBookmarks(viewer) {
 
     // 设置面板底部按钮（隐藏/显示标记）
     setupFooterButton();
+
+    // 右键 / 长按菜单的删除回调
+    registerEntityDeleter('bookmark', deleteBookmarkEntity);
 
     // 地形开关切换后重新锁定所有图钉高度（椭球 ↔ 地形，锚点需要重算）
     viewerInstance.scene.terrainProviderChanged.addEventListener(() => reanchorAllBookmarks());
@@ -209,77 +194,11 @@ function closeBookmarksPanel() {
 }
 
 // ============================================================================
-// 标记命名弹窗
+// 命名弹窗
 // ----------------------------------------------------------------------------
-// 取代原来的 prompt('为这个位置命名：')。原生弹窗在 Android 外壳里会显示成
-// 「<域名> 显示」的系统对话框，且不跟随主题、不套用本项目的字体与配色。
+// 具体交互统一在 js/dialogs.js（全站共用一份实现）。这里只做语义包装：
+// 预填默认名、指定标题与图标，避免每个调用点各写一遍文案。
 // ============================================================================
-
-// 当前弹窗的收尾函数（关闭并 resolve）；同一时刻只允许一个弹窗
-let resolveNameRequest = null;
-
-function showNameError(message) {
-    if (nameError) nameError.textContent = message || '';
-    if (nameInput) nameInput.classList.toggle('is-invalid', !!message);
-}
-
-function closeNameModal() {
-    if (nameModal) nameModal.classList.remove('active');
-    if (nameInput) nameInput.classList.remove('is-invalid');
-    if (nameError) nameError.textContent = '';
-}
-
-function setupNameModal() {
-    nameConfirmBtn?.addEventListener('click', () => {
-        const value = nameInput.value.trim();
-        // 原来这里是 alert('名称不能为空')；改成弹窗内联报错，不再打断流程
-        if (!value) {
-            showNameError('名称不能为空');
-            nameInput.focus();
-            return;
-        }
-        const finish = resolveNameRequest;
-        resolveNameRequest = null;
-        closeNameModal();
-        if (finish) finish(value);
-    });
-
-    nameCancelBtn?.addEventListener('click', () => {
-        const finish = resolveNameRequest;
-        resolveNameRequest = null;
-        closeNameModal();
-        if (finish) finish(null);
-    });
-
-    nameCloseBtn?.addEventListener('click', () => nameCancelBtn?.click());
-
-    // 点遮罩空白处取消（与其它弹窗一致的交互约定）
-    nameModal?.addEventListener('click', (e) => {
-        if (e.target === nameModal) nameCancelBtn?.click();
-    });
-
-    // 输入时清掉上一次的报错
-    nameInput?.addEventListener('input', () => showNameError(''));
-
-    // 回车确定、Esc 取消：桌面端不点按钮也能走完
-    nameInput?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            nameConfirmBtn?.click();
-        } else if (e.key === 'Escape') {
-            e.preventDefault();
-            nameCancelBtn?.click();
-        }
-    });
-
-    // Esc 取消（焦点不在输入框时）
-    nameModal?.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            nameCancelBtn?.click();
-        }
-    });
-}
 
 /**
  * 弹出命名弹窗，等待用户输入。
@@ -287,149 +206,120 @@ function setupNameModal() {
  * @returns {Promise<string|null>} 用户确认的名称；取消则为 null
  */
 function askMarkerName(defaultName) {
-    // 弹窗元素缺失时退回原生 prompt，保证功能不丢（例如旧版 HTML 缓存）
-    if (!nameModal || !nameInput) return Promise.resolve(prompt('为这个位置命名：', defaultName));
-
-    // 极端情况下上一个弹窗还挂着：直接当作取消收尾，避免 Promise 永远悬着
-    if (resolveNameRequest) {
-        const stale = resolveNameRequest;
-        resolveNameRequest = null;
-        stale(null);
-    }
-
-    nameInput.value = defaultName || '';
-    showNameError('');
-    nameModal.classList.add('active');
-
-    // 选中全部文字，用户可以直接输入覆盖（在显示之后再聚焦）
-    nameInput.focus();
-    nameInput.select();
-
-    return new Promise((resolve) => {
-        resolveNameRequest = resolve;
-    });
-}
-
-// ============================================================================
-// 通用确认弹窗
-// ----------------------------------------------------------------------------
-// 取代 confirm()。同一个原因：原生确认框在 Android 外壳里是「<域名> 显示」的
-// 系统对话框，不跟随主题、不套用本站样式。
-// ============================================================================
-
-let resolveConfirmRequest = null;
-
-function closeConfirmModal() {
-    confirmModal?.classList.remove('active');
-}
-
-function setupConfirmModal() {
-    confirmOkBtn?.addEventListener('click', () => {
-        const finish = resolveConfirmRequest;
-        resolveConfirmRequest = null;
-        closeConfirmModal();
-        if (finish) finish(true);
-    });
-
-    confirmCancelBtn?.addEventListener('click', () => {
-        const finish = resolveConfirmRequest;
-        resolveConfirmRequest = null;
-        closeConfirmModal();
-        if (finish) finish(false);
-    });
-
-    confirmCloseBtn?.addEventListener('click', () => confirmCancelBtn?.click());
-
-    // 点遮罩空白处 = 取消
-    confirmModal?.addEventListener('click', (e) => {
-        if (e.target === confirmModal) confirmCancelBtn?.click();
-    });
-
-    // Esc 取消
-    confirmModal?.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            confirmCancelBtn?.click();
-        }
-    });
-}
-
-/**
- * 弹确认框并等待用户选择。
- * @param {string} message 正文
- * @returns {Promise<boolean>} 确定 = true；取消 / 关闭 = false
- */
-function askConfirm(message) {
-    // 弹窗缺失时退回原生 confirm，保证功能不丢（例如旧版 HTML 缓存）
-    if (!confirmModal) return Promise.resolve(confirm(message));
-
-    if (resolveConfirmRequest) {
-        const stale = resolveConfirmRequest;
-        resolveConfirmRequest = null;
-        stale(false);
-    }
-
-    if (confirmMessageEl) confirmMessageEl.textContent = message;
-    confirmModal.classList.add('active');
-    confirmOkBtn?.focus();
-
-    return new Promise((resolve) => {
-        resolveConfirmRequest = resolve;
+    return askText({
+        title: '为这个位置命名',
+        label: '名称',
+        icon: '#i-pin',
+        defaultValue: defaultName,
+        placeholder: '例如：家、公司、观景台',
+        maxLength: 40,
     });
 }
 
 // ---------- 渲染列表 ----------
+// 标记与「轨迹 / 图形」混在同一个列表里，靠左侧图标区分类型：
+//   pin = 标记，ruler = 轨迹（测距），area = 图形（测面积）
+// 图标一律引用 index.html 顶部的 symbol 精灵图，不另画一套。
+const ITEM_ICON = {
+    marker: '#i-pin',
+    track: '#i-ruler',
+    shape: '#i-area',
+};
+
+function typeIconFor(kind, type) {
+    if (kind === 'marker') return ITEM_ICON.marker;
+    return type === 'area' ? ITEM_ICON.shape : ITEM_ICON.track;
+}
+
+function listItemHtml({ kind, type, index, id, name, subtitle }) {
+    return `
+            <div class="bookmark-item" data-kind="${kind}" data-type="${type}" data-index="${index}"${id ? ` data-id="${id}"` : ''}>
+                <div class="info">
+                    <div class="name">
+                        <svg class="ui-icon"><use href="${typeIconFor(kind, type)}"/></svg>
+                        <span>${escapeHtml(name)}</span>
+                    </div>
+                    <div class="coords">${escapeHtml(subtitle || '')}</div>
+                </div>
+                <div class="actions">
+                    <button class="locate-btn" title="定位">定位</button>
+                    <button class="delete-btn" title="删除">删除</button>
+                </div>
+            </div>
+        `;
+}
+
 function renderBookmarksList() {
     if (!listContainer) return;
-    if (bookmarks.length === 0) {
-        listContainer.innerHTML = '<div class="empty-message">暂无收藏标记<br>利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
+
+    const shapeList = getMeasureShapes();
+    if (bookmarks.length === 0 && shapeList.length === 0) {
+        listContainer.innerHTML = '<div class="empty-message">暂无收藏内容<br>利用浏览器本地缓存存储，删除缓存即导致数据丢失</div>';
         return;
     }
 
     let html = '';
+
     bookmarks.forEach((item, index) => {
-        const lonStr = item.lon.toFixed(6);
-        const latStr = item.lat.toFixed(6);
-        html += `
-            <div class="bookmark-item" data-index="${index}">
-                <div class="info">
-                    <div class="name">${escapeHtml(item.name)}</div>
-                    <div class="coords">经度: ${lonStr}° 纬度: ${latStr}°</div>
-                </div>
-                <div class="actions">
-                    <button class="locate-btn" data-index="${index}" title="定位">定位</button>
-                    <button class="delete-btn" data-index="${index}" title="删除">删除</button>
-                </div>
-            </div>
-        `;
+        html += listItemHtml({
+            kind: 'marker',
+            type: 'marker',
+            index,
+            name: item.name,
+            subtitle: `经度: ${item.lon.toFixed(6)}° 纬度: ${item.lat.toFixed(6)}°`,
+        });
     });
+
+    shapeList.forEach((shape, index) => {
+        html += listItemHtml({
+            kind: 'measure',
+            type: shape.type,
+            index,
+            id: shape.id,
+            name: shape.name,
+            subtitle: measureShapeSummary(shape),
+        });
+    });
+
     listContainer.innerHTML = html;
 
-    // 绑定事件
+    // 点击整行定位
+    listContainer.querySelectorAll('.bookmark-item').forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return;
+            locateItem(row.dataset);
+        });
+    });
+
     listContainer.querySelectorAll('.locate-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const idx = parseInt(btn.dataset.index);
-            flyToBookmark(idx);
+            locateItem(btn.closest('.bookmark-item').dataset);
         });
     });
 
     listContainer.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const idx = parseInt(btn.dataset.index);
-            deleteBookmark(idx);
+            deleteItem(btn.closest('.bookmark-item').dataset);
         });
     });
+}
 
-    // 点击整行定位
-    listContainer.querySelectorAll('.bookmark-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            if (e.target.closest('button')) return;
-            const idx = parseInt(item.dataset.index);
-            flyToBookmark(idx);
-        });
-    });
+function locateItem(dataset) {
+    if (!dataset) return;
+    if (dataset.kind === 'measure') {
+        flyToMeasureShape(dataset.id);
+        closeBookmarksPanel(); // 与标记保持一致：定位后关闭面板
+    } else {
+        flyToBookmark(parseInt(dataset.index, 10));
+    }
+}
+
+function deleteItem(dataset) {
+    if (!dataset) return;
+    if (dataset.kind === 'measure') deleteShapeById(dataset.id);
+    else deleteBookmark(parseInt(dataset.index, 10));
 }
 
 // ---------- 工具：转义 HTML ----------
@@ -439,7 +329,7 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-// ---------- 定位到标记 ----------
+// ---------- 定位 ----------
 function flyToBookmark(index) {
     const item = bookmarks[index];
     if (!item) return;
@@ -451,19 +341,31 @@ function flyToBookmark(index) {
     closeBookmarksPanel(); // 定位后自动关闭面板
 }
 
-// ---------- 删除标记 ----------
+// ---------- 删除 ----------
+// 收藏夹面板本身就是个 .modal-overlay，与确认弹窗同层级。
+// 两个遮罩叠在一起视觉上会发灰，所以先收起面板再确认，事后恢复。
+function hidePanelForConfirm() {
+    const wasOpen = !!(panel && panel.classList && panel.classList.contains('active'));
+    if (wasOpen) panel.classList.remove('active');
+    return wasOpen;
+}
+
+function refreshPanelAfterChange(wasOpen) {
+    if (wasOpen) openBookmarksPanel();
+    else renderBookmarksList();
+}
+
 async function deleteBookmark(index) {
     const item = bookmarks[index];
     if (!item) return;
 
-    // 收藏夹面板本身就是个 .modal-overlay，与确认弹窗同层级。
-    // 两个遮罩叠在一起视觉上会发灰，所以先收起面板再确认，事后恢复。
-    const panelWasOpen = !!(panel && panel.classList && panel.classList.contains('active'));
-    if (panelWasOpen) panel.classList.remove('active');
-
-    const ok = await askConfirm(`确定要删除标记“${item.name}”吗？`);
+    const wasOpen = hidePanelForConfirm();
+    const ok = await askConfirm(`确定要删除标记「${item.name}」吗？`, {
+        title: '删除标记',
+        icon: ITEM_ICON.marker,
+    });
     if (!ok) {
-        if (panelWasOpen) openBookmarksPanel();
+        if (wasOpen) openBookmarksPanel();
         return;
     }
 
@@ -476,20 +378,50 @@ async function deleteBookmark(index) {
         console.warn('未找到对应的标记实体，可能已被移除:', item.name);
     }
 
-    // 从数组中移除
     bookmarks.splice(index, 1);
-
-    // 更新存储
     saveBookmarksToStorage();
-
-    // 刷新并恢复面板
-    if (panelWasOpen) {
-        openBookmarksPanel();
-    } else {
-        renderBookmarksList();
-    }
+    refreshPanelAfterChange(wasOpen);
 
     showToast('标记已删除', 2600, 'success');
+}
+
+/** 删除一条已保存的测量（轨迹 / 图形） */
+async function deleteShapeById(id) {
+    const shape = getMeasureShapes().find(s => s.id === id);
+    if (!shape) return;
+
+    const label = shape.type === 'area' ? '图形' : '轨迹';
+    const wasOpen = hidePanelForConfirm();
+    const ok = await askConfirm(`确定要删除${label}「${shape.name}」吗？`, {
+        title: `删除${label}`,
+        icon: shape.type === 'area' ? ITEM_ICON.shape : ITEM_ICON.track,
+    });
+    if (!ok) {
+        if (wasOpen) openBookmarksPanel();
+        return;
+    }
+
+    removeMeasureShape(id);
+    refreshPanelAfterChange(wasOpen);
+    showToast(`已删除${label}「${shape.name}」`, 2600, 'success');
+}
+
+/**
+ * 右键 / 长按菜单的删除入口。
+ * 菜单那侧已经问过「是否删除」，这里直接执行；实体由拾取得到，
+ * 用 entityId 反查下标，同名标记不会删错。
+ */
+function deleteBookmarkEntity(entity) {
+    const index = bookmarks.findIndex(b => b.entityId === entity.id);
+    if (index < 0) return;
+
+    const item = bookmarks[index];
+    viewerInstance.entities.remove(entity);
+    bookmarks.splice(index, 1);
+    saveBookmarksToStorage();
+
+    if (panel && panel.classList.contains('active')) renderBookmarksList();
+    showToast(`标记「${item.name}」已删除`, 2600, 'success');
 }
 
 // ---------- 拾取地表点 ----------
@@ -815,7 +747,10 @@ function createPin(cartesian, name, onSurface = true) {
             heightReference: HeightReference.NONE,
             disableDepthTestDistance: 50000,
         },
-        _isBookmark: true
+        // 内部标记：_isBookmark 供显隐/主题同步筛选，
+        // _locusKind 供右键 / 长按菜单识别「这是个可删除的标记」
+        _isBookmark: true,
+        _locusKind: 'bookmark'
     });
     // 遵循当前显示状态
     try { entity.show = markersVisible; } catch (e) { /* ignore */ }
@@ -935,36 +870,19 @@ function setupToolbarButton() {
 export { toggleMarkingMode, isMarkingMode };
 
 // =============================================
-// 导出 / 导入 收藏夹
+// 导出 / 导入 收藏夹（KML / XML）
+// ---------------------------------------------
+// 一份文件同时装三类内容：
+//   标记 → <Point>，轨迹 → <LineString>，图形 → <Polygon>
+// 格式细节见 js/kml.js。导入仍兼容旧版 CSV（名称,经度,纬度），
+// 老用户手里的 .csv 不会失效。
 // =============================================
 
-/**
- * CSV 字段转义：含逗号、双引号或换行的字段用双引号包裹，内部双引号翻倍。
- * 不加转义时，名称里带逗号的标记导出后会多出一列，再导入时被静默跳过。
- */
-function csvEscape(value) {
-    const s = String(value ?? '');
-    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-}
-
-/**
- * 导出当前所有标记为 CSV 字符串
- */
-function exportBookmarksToCSV() {
-    if (bookmarks.length === 0) {
-        showToast('没有可导出的标记', 3000, 'warn');
-        return null;
-    }
-    let header = '# Locus Earth 收藏夹导出\n# 格式: 名称,经度,纬度\n';
-    const rows = bookmarks.map(b => `${csvEscape(b.name)},${b.lon},${b.lat}`);
-    return header + rows.join('\n');
-}
-
 /** 文件名统一在这里定义，导出与分享两条路径共用 */
-const EXPORT_FILENAME = 'locus-earth-bookmarks.csv';
+const EXPORT_FILENAME = 'locus-earth.kml';
 
 /**
- * 导出收藏夹。
+ * 导出收藏夹（标记 + 轨迹 + 图形）。
  *
  * 为什么优先用系统分享（Web Share API）而不是直接触发下载：
  * Android WebView 对 `<a download>` + blob: 的下载是**静默丢弃**的 ——
@@ -972,19 +890,30 @@ const EXPORT_FILENAME = 'locus-earth-bookmarks.csv';
  * 原生侧即使实现了 DownloadListener 也读不到字节。
  * navigator.share(files) 由系统分享面板接管（可存到「文件」、发给自己等），
  * 是 Android 上「把文件交出去」的正规通路，且不需要任何存储权限。
- *
  * 桌面浏览器一般不支持分享文件，于是回退到原本的 blob 下载。
  */
 export async function exportBookmarks() {
-    const csv = exportBookmarksToCSV();
-    if (!csv) return;
+    const markers = bookmarks.map(b => ({
+        name: b.name,
+        lon: b.lon,
+        lat: b.lat,
+        height: b.height || 0,
+    }));
+    const shapes = getMeasureShapes();
 
-    // 前置 UTF-8 BOM，避免 Excel 打开时中文名称乱码
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    if (markers.length === 0 && shapes.length === 0) {
+        showToast('没有可导出的收藏内容', 3000, 'warn');
+        return;
+    }
+
+    const kml = buildKml({ markers, shapes });
+    const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml;charset=utf-8' });
 
     // ---- 通路一：系统分享面板 ----
     try {
-        const file = new File([blob], EXPORT_FILENAME, { type: 'text/csv' });
+        const file = new File([blob], EXPORT_FILENAME, {
+            type: 'application/vnd.google-earth.kml+xml',
+        });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file], title: 'Locus Earth 收藏夹' });
             return;
@@ -1007,7 +936,7 @@ export async function exportBookmarks() {
 }
 
 /**
- * 解析 CSV 文本为二维数组。
+ * 解析 CSV 文本为二维数组（**仅用于兼容旧版导出文件**）。
  * 支持双引号包裹的字段，字段内可含逗号、换行，以及转义的双引号（""）。
  * 不能用 split(',') / split('\n')：那样会切断被引号包裹的字段。
  */
@@ -1059,9 +988,8 @@ function parseCsvRows(text) {
 }
 
 /**
- * 解析 CSV 内容，返回标记对象数组
- * 格式: 名称,经度,纬度
- * 忽略空行和以 # 开头的注释行
+ * 解析旧版 CSV 内容，返回标记对象数组。
+ * 格式: 名称,经度,纬度；忽略空行与 # 开头的注释行。
  */
 function parseBookmarksFromCSV(text) {
     // 去掉导出时写入的 UTF-8 BOM
@@ -1090,50 +1018,107 @@ function parseBookmarksFromCSV(text) {
             continue;
         }
 
-        result.push({ name: name || '未命名标记', lon, lat });
+        result.push({ name: name || '未命名标记', lon, lat, height: 0 });
     }
     return result;
 }
 
+/** 新建一个标记（数据 + 实体 + 数组），返回新记录 */
+function addMarker(name, lon, lat, height = 0) {
+    const cartesian = Cartesian3.fromDegrees(lon, lat, height || 0);
+    const entity = createPin(cartesian, name);
+    const bookmark = {
+        id: newBookmarkId(),
+        name,
+        lon,
+        lat,
+        height: height || 0,
+        entityId: entity.id,
+    };
+    bookmarks.push(bookmark);
+    return bookmark;
+}
+
 /**
- * 导入收藏夹：从文件读取并批量添加
+ * 导入收藏夹。
+ * KML / XML 走新格式（标记 + 轨迹 + 图形），其余按旧版 CSV 解析。
  */
 export function importBookmarks(file) {
     const reader = new FileReader();
-    reader.onload = async function(e) {
-        const text = e.target.result;
-        const items = parseBookmarksFromCSV(text);
-        if (items.length === 0) {
-            showToast('文件中未找到有效标记，请检查格式（名称,经度,纬度）', 4500, 'warn');
-            return;
+    reader.onload = function (e) {
+        const text = String(e.target.result || '');
+        if (looksLikeXml(text)) {
+            importFromKml(text);
+        } else {
+            importFromCsv(text);
         }
-        // 确认导入（页内弹窗，取代原生 confirm）
-        const ok = await askConfirm(`找到 ${items.length} 个标记，确认导入？`);
-        if (!ok) return;
-
-        let addedCount = 0;
-        items.forEach(item => {
-            const cartesian = Cartesian3.fromDegrees(item.lon, item.lat, 0);
-            const entity = createPin(cartesian, item.name);
-            bookmarks.push({
-                id: newBookmarkId(),
-                name: item.name,
-                lon: item.lon,
-                lat: item.lat,
-                height: 0,
-                entityId: entity.id
-            });
-            addedCount++;
-        });
-        saveBookmarksToStorage();
-        // 如果收藏夹面板打开，刷新列表
-        if (panel && panel.classList && panel.classList.contains('active')) {
-            renderBookmarksList();
-        }
-        showToast(`已导入 ${addedCount} 个标记`, 3000, 'success');
     };
-    reader.onerror = function() {
+    reader.onerror = function () {
         showToast('读取文件失败，请重试', 4000, 'error');
     };
     reader.readAsText(file, 'UTF-8');
+}
+
+async function importFromKml(text) {
+    let parsed;
+    try {
+        parsed = parseKml(text);
+    } catch (err) {
+        showToast('XML 解析失败，请确认文件是有效的 KML', 4000, 'error');
+        return;
+    }
+
+    const markerCount = parsed.markers.length;
+    const shapeCount = parsed.shapes.length;
+    if (markerCount === 0 && shapeCount === 0) {
+        showToast('文件中未找到可导入的标记或轨迹/图形', 4200, 'warn');
+        return;
+    }
+
+    const summary = [];
+    if (markerCount) summary.push(`${markerCount} 个标记`);
+    if (shapeCount) summary.push(`${shapeCount} 个轨迹/图形`);
+
+    const ok = await askConfirm(`找到${summary.join('、')}，确认导入？`, {
+        title: '导入收藏夹',
+        icon: '#i-import',
+    });
+    if (!ok) return;
+
+    for (const item of parsed.markers) {
+        addMarker(item.name, item.lon, item.lat, item.height || 0);
+    }
+    const addedShapes = addMeasureShapes(parsed.shapes);
+
+    saveBookmarksToStorage();
+    if (panel && panel.classList && panel.classList.contains('active')) {
+        renderBookmarksList();
+    }
+
+    const done = [];
+    if (markerCount) done.push(`${markerCount} 个标记`);
+    if (addedShapes) done.push(`${addedShapes} 个轨迹/图形`);
+    showToast(`已导入 ${done.join('、')}`, 3200, 'success');
+}
+
+async function importFromCsv(text) {
+    const items = parseBookmarksFromCSV(text);
+    if (items.length === 0) {
+        showToast('文件中未找到有效标记，请检查格式（名称,经度,纬度）', 4500, 'warn');
+        return;
+    }
+
+    const ok = await askConfirm(`找到 ${items.length} 个标记，确认导入？`, {
+        title: '导入收藏夹',
+        icon: '#i-import',
+    });
+    if (!ok) return;
+
+    items.forEach(item => addMarker(item.name, item.lon, item.lat, 0));
+
+    saveBookmarksToStorage();
+    if (panel && panel.classList && panel.classList.contains('active')) {
+        renderBookmarksList();
+    }
+    showToast(`已导入 ${items.length} 个标记`, 3000, 'success');
 }

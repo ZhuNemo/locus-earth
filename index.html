@@ -130,6 +130,10 @@
             <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 6 6 18M6 6l12 12"/>
             </symbol>
+            <!-- 与 js/icons.js 的 check 同一份路径：测量「完成」按钮用 -->
+            <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5"/>
+            </symbol>
             <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 21.5s6.5-6.1 6.5-11a6.5 6.5 0 1 0-13 0c0 4.9 6.5 11 6.5 11Z"/><circle cx="12" cy="10.3" r="2.5"/>
             </symbol>
@@ -385,8 +389,8 @@
         </div>
     </div>
 
-    <!-- 隐藏的文件输入 -->
-    <input type="file" id="importFileInput" accept=".csv,.txt" style="display:none;" />
+    <!-- 隐藏的文件输入（.kml/.xml 为新格式，.csv/.txt 兼容旧版导出） -->
+    <input type="file" id="importFileInput" accept=".kml,.xml,.csv,.txt" style="display:none;" />
 
     <!-- 标记命名弹窗
          取代浏览器原生 prompt()：原生弹窗在 Android 外壳里会显示成
@@ -399,10 +403,11 @@
                 <svg class="ui-icon"><use href="#i-close"/></svg>
             </button>
             <div class="modal-head">
-                <h2 id="markerNameTitle"><svg class="ui-icon"><use href="#i-pin"/></svg>为这个位置命名</h2>
+                <!-- 标题文字与图标分开包裹：js/dialogs.js 按调用场景换文案与图标 -->
+                <h2 id="markerNameTitle"><svg class="ui-icon"><use id="markerNameIcon" href="#i-pin"/></svg><span id="markerNameTitleText">为这个位置命名</span></h2>
             </div>
             <div class="modal-body">
-                <label class="field-label" for="markerNameInput">名称</label>
+                <label id="markerNameLabel" class="field-label" for="markerNameInput">名称</label>
             <input id="markerNameInput" class="text-field" type="text" maxlength="40"
                    autocomplete="off" enterkeyhint="done" placeholder="例如：家、公司、观景台" />
             <p id="markerNameError" class="field-error" role="alert"></p>
@@ -428,7 +433,7 @@
                 <svg class="ui-icon"><use href="#i-close"/></svg>
             </button>
             <div class="modal-head">
-                <h2 id="confirmTitle"><svg class="ui-icon"><use href="#i-info"/></svg>请确认</h2>
+                <h2 id="confirmTitle"><svg class="ui-icon"><use id="confirmTitleIcon" href="#i-info"/></svg><span id="confirmTitleText">请确认</span></h2>
             </div>
             <div class="modal-body">
                 <p id="confirmMessage"></p>
@@ -451,7 +456,7 @@
                 <img class="about-app-icon" src="android-chrome-192x192.png" alt="" aria-hidden="true">
                 <span class="about-title">
                     <span class="about-name">Locus Earth</span>
-                    <span class="about-version">8.0</span>
+                    <span class="about-version">8.2</span>
                 </span>
             </h2>
             </div>
@@ -510,6 +515,7 @@
             <p>设置页可以调整色彩模式与跟随系统、地形开关、路网叠加层、瓦片缓存，以及清除缓存与数据。</p>
             <p>「缓存地图瓦片」开启时（默认），看过的区域会存到本地：再次进入直接读缓存，打开更快；离线状态下也能看到这些区域已缓存的影像（地形、3D 建筑与搜索仍然需要联网）。占用空间可以在设置页的「清除瓦片缓存」里查看并清空。</p>
             <p>测量的悬浮圆钮可以自由拖动；点击它，测量工具条（测距 / 测面积）会在圆钮当前所在位置展开。</p>
+            <p>测距满 2 个点、测面积满 3 个点后，右上角会出现「完成」按钮：点击后确认保存并命名，结果会存进「收藏夹」，与标记一起导出为 KML（XML）文件，也可再导入回来。在地图上右键（手机为长按）标记、轨迹或图形，可直接删除。</p>
             <p>高精度建模覆盖区域： 丹佛*、华盛顿D.C.、华盛顿州（西雅图附近）、悉尼*、波士顿*、墨尔本*、旧金山*。浏览时自动检测并提示，与3D建筑互斥（开启建筑白模时建模按钮不可用）。建模加载速度较慢，属正常现象。</p>
             <p>*：仅市中心小块区域有高精度建模覆盖</p>
             <p>快速确定高精度建模具体覆盖范围的方法：搜索城市名称，自动定位并手动放大，点击开启高精度模型，观察突然出现色差的地块。无反应请稍作等待。</p>
@@ -578,7 +584,8 @@
             <p>10-10 V7.2：新增街景跳转、坐标转换模块，功能栏改两排布局</p>
             <p>10-18 V7.3：底图瓦片本地缓存，设置页新增缓存瓦片开关与清除瓦片缓存</p>
             <p>10-21 V8.0：修复部分内核无法解析裸标识符、整站停在加载页的问题</p>
-            <p>10-25 V8.1：重构相机手感，自研双指手势（缩放 / 扭转旋转 / 上下俯仰）各自带死区，倾斜改为绕手指下方地面点旋转，松手有轻微滑行</p>
+            <p>10-25 V8.1：重构相机手感，自定义带死区的双指手势，优化倾斜旋转与松手滑行</p>
+            <p>11-01 V8.2：测量命名收藏及KML导入导出；支持对象快捷删除；统一弹窗逻辑</p>
             <p>……</p>
             </div>
 
@@ -626,6 +633,14 @@
 
     <!-- 测量悬浮圆钮 -->
     <div id="measureFloatingBtn" style="display: none;"><svg class="ui-icon"><use href="#i-menu"/></svg></div>
+
+    <!-- 测量「完成」按钮
+         只在当前测量达到可保存条件时出现（测距 ≥2 点 / 测面积 ≥3 点），
+         显隐由 js/measure.js 的草稿状态驱动（见 js/measure-ui.js）。
+         位置固定在右上角、头部卡片右侧；移动端让到头部下方。 -->
+    <button id="measureDoneBtn" class="measure-done-btn" type="button" style="display: none;">
+        <svg class="ui-icon"><use href="#i-check"/></svg><span>完成</span>
+    </button>
 
 
 </body>

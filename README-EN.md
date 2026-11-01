@@ -64,8 +64,9 @@ Want to hack on it? The project is **build-free**; trade-offs, traps and trouble
 - Base map switching: Sentinel-2, Blue Marble, Night Lights, Tianditu Satellite, Tencent Maps, and more.
 
 **Tools**
-- Distance and area measurement; both polylines and polygons are clamped to terrain.
-- Markers and favorites, stored locally in the browser, with import/export.
+- Distance and area measurement; both polylines and polygons are clamped to terrain. Finished shapes can be named and saved to Favorites.
+- Markers, tracks and shapes all live in Favorites, stored locally in the browser, exportable as KML (XML) and re-importable.
+- Right-click (long-press on mobile) a marker / track / shape on the map to delete it; tracks and shapes can also be exported individually as KML.
 - Place search: type a place name to jump to it.
 
 **Regional Integration**
@@ -197,7 +198,7 @@ Application Links:
 |---|---|
 | **Start Date** | 2026-07-04 |
 | **Maintenance** | Personal project, built in spare time, updated irregularly |
-| **Current Version** | 8.0 |
+| **Current Version** | 8.2 |
 
 ---
 

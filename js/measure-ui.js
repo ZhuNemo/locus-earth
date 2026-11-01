@@ -1,11 +1,13 @@
 import { showToast } from './utils.js';
 import { collapsePanelThen } from './ui.js';
 import { registerTool, claim, release } from './tool-modes.js';
+import { askConfirm, askText } from './dialogs.js';
 
 export function initMeasureUI(viewer, measureTools) {
     const measureToolbar = document.getElementById('measureToolbar');
     const measureFloatingBtn = document.getElementById('measureFloatingBtn');
     const measureBtn = document.getElementById('measureBtn');
+    const measureDoneBtn = document.getElementById('measureDoneBtn');
 
     /** 测量按钮高亮开关（与标记/街景一致） */
     function setMeasureBtnActive(active) {
@@ -15,6 +17,7 @@ export function initMeasureUI(viewer, measureTools) {
     /** 完全退出测量：关工具条、清数据、还原按钮与光标 */
     function exitMeasureMode() {
         measureTools.clear();
+        if (measureDoneBtn) measureDoneBtn.style.display = 'none';
         measureToolbar.classList.remove('is-opening');
         measureToolbar.classList.add('is-closing');
         setTimeout(() => {
@@ -68,7 +71,42 @@ export function initMeasureUI(viewer, measureTools) {
         showToast('🧹 已清除测量数据');
     });
 
-    // 3. 展开/收起动画
+    // 3. 右上角「完成」按钮
+    //    只在当前测量达到可保存条件时出现（测距 ≥2 点 / 测面积 ≥3 点）。
+    //    显隐由 measure.js 的草稿状态驱动，这里不自己推断点数。
+    if (measureDoneBtn) {
+        measureTools.onDraftChange(({ ready }) => {
+            measureDoneBtn.style.display = ready ? 'flex' : 'none';
+        });
+
+        measureDoneBtn.addEventListener('click', async () => {
+            // 先问「是否保存」，再问名字：两步都在页内弹窗里完成，
+            // 不用原生 confirm / prompt（Android 外壳里会变成系统对话框）
+            const ok = await askConfirm('是否将当前测量保存到收藏夹？', {
+                title: '保存测量',
+                icon: '#i-folder',
+                okText: '保存',
+            });
+            if (!ok) return;
+
+            const name = await askText({
+                title: '保存到收藏夹',
+                label: '名称',
+                icon: '#i-folder',
+                defaultValue: measureTools.suggestName(),
+                placeholder: '例如：园区周长、地块 A',
+                maxLength: 40,
+            });
+            if (!name) return;
+
+            const saved = measureTools.saveDraft(name);
+            if (saved) {
+                showToast(`✅ 已保存到收藏夹：${saved.name}`, 3000, 'success');
+            }
+        });
+    }
+
+    // 4. 展开/收起动画
     //    anchor：可选，显式指定工具条的锚点位置（不传则按悬浮按钮当前位置算）
     function showToolbarAtButtonPosition(anchor) {
         const { left: buttonLeft, top: buttonTop } = anchor || getFloatingButtonPosition();
@@ -109,7 +147,7 @@ export function initMeasureUI(viewer, measureTools) {
         showToast('✅ 已退出测量模式');
     });
 
-    // 4. 拖拽功能
+    // 5. 拖拽功能
     let isDragging = false;
     let hasDragged = false;
     let suppressClick = false; 
