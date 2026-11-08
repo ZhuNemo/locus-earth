@@ -1,24 +1,15 @@
 // ============================================================================
 // 地图对象右键 / 长按菜单
 // ----------------------------------------------------------------------------
-// 拦截地图上「能拿到的那个对象」的默认行为：
-//   · 桌面端   → 右键（contextmenu）
-//   · 触屏端   → 长按 520ms（期间位移超过 8px 判定为拖动，不弹菜单）
+// 桌面：contextmenu；触屏：长按 520ms（位移 > 8px 视为拖动，不弹菜单）。
+// 菜单项：删除（走 js/dialogs.js 确认框）、导出为单独 KML。
 //
-// 菜单里只放「删除」这一类破坏性操作，删之前一律走页内确认框（js/dialogs.js），
-// 确认后才交给对应模块的删除回调执行。
+// 注册表解耦：bookmarks.js 与 measure.js 互不 import，各自登记回调。
+//   registerEntityDeleter('bookmark' | 'measure-track' | 'measure-shape', fn)
+//   registerEntityExporter('measure-track' | 'measure-shape', fn)
+// 实体识别：entity._locusKind = 'bookmark' | 'measure'，measure 再看 _measureType。
 //
-// 为什么用注册表而不是直接 import 业务模块：
-//   bookmarks.js 与 measure.js 互相没有依赖，但它们都要能被这个菜单删除。
-//   若这里反向 import 两者，将来任何一方想复用菜单逻辑就会变成循环依赖。
-//   沿用 tool-modes.js 的做法：业务模块自己登记 { kind → 删除回调 }。
-//
-// 登记方式（在各自 init 里调一次即可）：
-//   registerEntityDeleter('bookmark', (entity) => { … });
-//
-// 实体如何被识别：创建实体时打上标记
-//   entity._locusKind = 'bookmark' | 'measure'
-//   entity._measureType = 'distance' | 'area'   （仅 measure）
+// ⚠️ 本模块不 stopPropagation 任何指针事件。原因与替代方案见 isTapSuppressed。
 // ============================================================================
 
 import { Cartesian2 } from './cesium.js';
@@ -30,6 +21,23 @@ const LONG_PRESS_MS = 520;
 const MOVE_TOLERANCE = 8;
 /** 打开菜单后，抑制随后的 click 事件多久（毫秒） */
 const CLICK_SUPPRESS_MS = 500;
+
+/**
+ * 一次性抑制标志：本次抬手是长按/菜单的收尾，业务侧不该当成点击。
+ *
+ * ⚠️ 不能用 window 捕获阶段 stopPropagation 掉 pointerup：Cesium 的 pointer 监听
+ *    挂在 canvas 冒泡阶段，截断后它的指针记录停在「按下」，此后单指拖拽全被判成
+ *    多指 ⇒ 地图拖不动（双指走自研 touch，不受影响）。详见 docs/pitfalls.md。
+ */
+let tapSuppressed = false;
+
+/**
+ * 本次抬手是否应被忽略。只在 pointerup 派发期间为 true。
+ * @returns {boolean}
+ */
+export function isTapSuppressed() {
+    return tapSuppressed;
+}
 
 /** kind → { 删除回调 } */
 const deleters = new Map();
@@ -120,8 +128,7 @@ export function initMapContextMenu(viewer) {
         const position = new Cartesian2(clientX - rect.left, clientY - rect.top);
         try {
             const picked = viewer.scene.pick(position);
-            // 地面图元（GroundPrimitive / GroundPolylinePrimitive）的 id 可能是内部对象，
-            // 只有实体才有 _locusKind，非实体在这里自然被过滤掉。
+            // GroundPrimitive 的 id 可能是内部对象；只有实体才有 _locusKind，非实体自然被滤掉。
             return picked && picked.id ? picked.id : null;
         } catch (e) {
             return null;
@@ -142,14 +149,14 @@ export function initMapContextMenu(viewer) {
         }
 
         const spec = MENU_SPEC[kind];
-        // 文案与图标都是本文件内的常量，不涉及外部输入
+        // 文案与图标均为本文件常量
         let itemsHtml =
             '<button type="button" class="context-menu-item is-danger" role="menuitem" data-action="delete">' +
             `<svg class="ui-icon"><use href="${spec.icon}"/></svg>` +
             `<span>${spec.label}</span>` +
             '</button>';
 
-        // 轨迹 / 图形额外提供「导出为单独 KML」（放在删除之后）
+        // 轨迹 / 图形追加导出项
         if (exporters.has(kind)) {
             itemsHtml +=
                 '<button type="button" class="context-menu-item" role="menuitem" data-action="export">' +
@@ -163,7 +170,7 @@ export function initMapContextMenu(viewer) {
         targetEntity = entity;
         targetKind = kind;
 
-        // 先定位再显示：要先有尺寸才能做越界收敛
+        // 先显示再量尺寸，才能做越界收敛
         menu.classList.add('is-open');
         menu.style.left = `${clientX}px`;
         menu.style.top = `${clientY}px`;
@@ -200,7 +207,7 @@ export function initMapContextMenu(viewer) {
         const name = entity.name || '该项';
         const spec = MENU_SPEC[kind] || {};
 
-        // ---- 导出为单独 KML：无需确认，直接交付文件 ----
+        // ---- 导出：无需确认 ----
         if (action === 'export') {
             const exporter = exporters.get(kind);
             if (!exporter) return;
@@ -214,7 +221,7 @@ export function initMapContextMenu(viewer) {
 
         // ---- 删除：走页内确认框 ----
         const ok = await askConfirm(`确定要删除「${name}」吗？`, {
-            // 标题与图标直接复用菜单项的那一套，保证「删除轨迹 / 删除图形」措辞一致
+            // 标题与图标复用菜单项，保证措辞一致
             title: spec.label || '删除',
             icon: spec.icon || '#i-warn',
         });
@@ -235,22 +242,20 @@ export function initMapContextMenu(viewer) {
     canvas.addEventListener('contextmenu', (event) => {
         // main.js 已在 document 上统一 preventDefault，这里再挡一次
         event.preventDefault();
-        // 触屏长按也会触发 contextmenu：菜单已经打开就不重复处理
+        // 触屏长按也会触发 contextmenu：已打开就不重复处理
         if (menu.classList.contains('is-open')) return;
 
-        const opened = openAt(event.clientX, event.clientY);
-        if (!opened) return;
-
-        // ⚠️ Android 的长按会先派发 contextmenu，**早于**我们 520ms 的计时器。
-        //    此时手指还没抬起，必须同样吞掉随后的 pointerup / click，
-        //    否则测距会在这个位置多打一个点、标记模式还会弹出命名框。
-        //    （press 只在非鼠标指针按下时存在，桌面右键走不到这里）
+        // ⚠️ Android 长按会**先**派发 contextmenu（早于 520ms 计时器）。此时手指
+        //    尚未抬起，同样要标记「非点击」，否则测量会多打点、标记模式会弹命名框。
+        //    press 只在非鼠标指针时存在 ⇒ 桌面右键走不到这里。
         if (press) {
             clearTimeout(pressTimer);
             pressTimer = null;
             swallowPointerUp = true;
             swallowClickUntil = Date.now() + CLICK_SUPPRESS_MS;
         }
+
+        openAt(event.clientX, event.clientY);
     });
 
     // ------------------------------------------------------------------
@@ -260,9 +265,10 @@ export function initMapContextMenu(viewer) {
         // 鼠标交给右键，这里只管手指与触控笔
         if (event.pointerType === 'mouse' || event.button !== 0) return;
 
-        // 上一轮可能因为 pointercancel 没走到 pointerup：
-        // 不清掉的话，这一次正常抬手的 pointerup 会被误吞（表现为「点地图没反应」）
+        // 上一轮可能因 pointercancel 没走到 pointerup，不清掉会误吞这一次正常抬手
+        // （表现为「点地图没反应」）。tapSuppressed 同理，新按下即新的「按下—抬起」。
         swallowPointerUp = false;
+        tapSuppressed = false;
 
         resetPress();
         press = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
@@ -270,15 +276,15 @@ export function initMapContextMenu(viewer) {
         pressTimer = setTimeout(() => {
             pressTimer = null;
             if (!press) return;
-            const opened = openAt(press.x, press.y);
-            if (!opened) {
-                press = null;
-                return;
-            }
-            // 菜单弹出来了：手指抬起不能再被当成一次「点地图」
-            // （否则测距/测面积会在原地多打一个点，标记模式还会弹命名框）
+
+            // 长按已成立：不论是否命中对象、有没有弹菜单，这次抬手都不算点击。
+            // 否则测量模式下长按空白会多打一个点。
             swallowPointerUp = true;
             swallowClickUntil = Date.now() + CLICK_SUPPRESS_MS;
+
+            const opened = openAt(press.x, press.y);
+            // 未命中：菜单不打开，按下状态直接清掉
+            if (!opened) press = null;
         }, LONG_PRESS_MS);
     });
 
@@ -291,29 +297,31 @@ export function initMapContextMenu(viewer) {
     });
 
     canvas.addEventListener('pointercancel', () => {
-        // 长按过程中被系统打断（来电、手势冲突等）：不能留着 swallow 标记，
-        // 否则下一次正常抬手的 pointerup 会被吞掉。
+        // 被系统打断（来电、手势冲突）：清掉 swallow，否则下一次正常抬手会被吞。
         resetPress();
         swallowPointerUp = false;
     });
     canvas.addEventListener('pointerleave', resetPress);
-    // 正常抬手：清掉长按计时（吞事件在下面的 window 捕获阶段做，
-    // 那里会比 Cesium 的 canvas 监听更早执行）
+    // 正常抬手：清掉长按计时（抑制在下面的 window 捕获阶段处理）
     canvas.addEventListener('pointerup', resetPress);
 
     // ------------------------------------------------------------------
-    // 全局：吞掉长按后的 pointerup / click，并在别处按下时关闭菜单
+    // 全局：把长按后的这次抬手标记为「非点击」，并在别处按下时关闭菜单
     // ------------------------------------------------------------------
-    // ⚠️ 必须挂在 window 的捕获阶段：Cesium 的 ScreenSpaceEventHandler
-    // 把 pointerup 挂在 canvas（或 document）上，只有先一步截住才能真正
-    // 阻止它被当成一次地图点击。
-    window.addEventListener('pointerup', (event) => {
+    // ⚠️ 只置标志，绝不 stopPropagation。Cesium 的 pointer 监听取不到本次抬手后，
+    //    其内部指针记录会停在「按下」，此后单指拖拽全被判成多指 —— 直到刷新页面。
+    //    详情与实测：docs/pitfalls.md 第 1.3 节。
+    window.addEventListener('pointerup', () => {
         if (!swallowPointerUp) return;
         swallowPointerUp = false;
         resetPress();
-        event.stopPropagation();
+
+        tapSuppressed = true;
+        // LEFT_UP 在本次 pointerup 内同步派发，宏任务末尾清掉即可；pointerdown 也会复位。
+        setTimeout(() => { tapSuppressed = false; }, 0);
     }, true);
 
+    // 浏览器合成的 click 仍拦一下（Cesium 不用 click，只为避免多余的点击语义/焦点变化）。
     window.addEventListener('click', (event) => {
         if (Date.now() > swallowClickUntil) return;
         if (event.target !== canvas) return;

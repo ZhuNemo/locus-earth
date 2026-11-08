@@ -34,16 +34,11 @@
 
     <link rel="shortcut icon" href="favicon.ico" />
     
-    <!-- Cesium 控件样式：**不能参与首屏渲染阻塞**。
-         它是一张外链样式表（unpkg），而渲染阻塞样式表只要回包慢，浏览器就一帧都不画 ——
-         连加载遮罩的黑底和 logo 都出不来。Cloudflare Web Analytics 报的 LCP 元素正是
-         遮罩里的 logo（P75 2054ms / P99 6217ms、元素渲染延迟占 32%），根因就是这一行：
-         settings.html 没有这张表，它的 LCP 是 100% 良好，这个对比很干净。
-         现在改成 preload → 下载完再挂成 stylesheet：HTML 一到就能画遮罩和 logo，
-         样式到了再应用。代价是 Cesium 控件会晚一点拿到样式，所以留了个
-         `__cesiumCssReady` 把手，js/main.js 建 Viewer 之前会先等它（控件没样式会散架，
-         样式晚到还会带出一波 CLS）；3s 兜底 —— 真拿不到也照常启动，
-         没有控件样式的地球也比一整块黑屏强。 -->
+    <!-- Cesium 控件样式不能阻塞首屏渲染。
+         外链样式表回包慢时浏览器一帧都不画，连加载遮罩都出不来；Cloudflare 报的
+         LCP 元素正是遮罩里的 logo（P75 2054ms / P99 6217ms）。
+         改为 preload → onload 再挂 stylesheet，并用 __cesiumCssReady 让 main.js
+         建 Viewer 前先等它（3s 兜底）。不要改回阻塞式 <link>，也别加 crossorigin。 -->
     <script>
         window.__cesiumCssReady = new Promise(function (resolve) {
             window.__cesiumCssDone = resolve;
@@ -67,38 +62,25 @@
         }
     </script>
 
-    <!-- 引擎与数据源预连接：与第三方域握手（DNS + TCP + TLS）是冷启动里最容易被
-         忽略的一段固定开销，preconnect 让它在解析 HTML 的同时就开始。
-         modulepreload 提前拉 Cesium 包（约 4 MB，全站最大的单个文件）：
-         不预载的话要等 main.js 解析完、发现 import 之后才开始下载，白白晚一到
-         两个往返。这里能和 import 对上键，靠的是**把版本钉到补丁号**——importmap
-         与这条 preload 用的是同一个 1.118.2 地址，unpkg 不会 302（用 @1.118
-         会被跳到 1.118.2，键就对不上了，那才是白下 4 MB）。 -->
+    <!-- 引擎预连接 + modulepreload：DNS/TCP/TLS 与 4 MB 的 Cesium 包提前开下。
+         ⚠️ importmap 与 preload 必须用同一个补丁号地址（1.118.2），否则 unpkg 302、键对不上。 -->
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://api.cesium.com" crossorigin>
     <link rel="modulepreload" href="https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js" crossorigin>
 
-    <!-- 加载遮罩里的 logo 就是 LCP 元素本身（地球是 canvas，不算 LCP 候选），
-         所以它必须是首屏最优先的那张图：preload 让它和 CSS 并行开下，
-         fetchpriority="high" 把它排在 4 MB 的 Cesium 包前面 ——
-         否则这条 6 KB 的请求会被那个大包挤到后面，「资源加载延迟」就是白等的。
-         尺寸按 SVG 的 231×36 写死（CSS 再用 min(231px, 62vw) 缩放），
-         让布局在图片解码前就定好，避免遮罩里再跳一次。 -->
+    <!-- 遮罩里的 logo 就是 LCP 元素（canvas 不算 LCP 候选）。preload + fetchpriority="high"
+         让它排在 4 MB 的 Cesium 包之前，否则这条 6 KB 请求会被大包挤到后面。
+         尺寸按 231×36 写死，让布局在解码前就定好，避免遮罩里再跳一次。 -->
     <link rel="preload" as="image" href="locus-earth-logo.svg" fetchpriority="high">
 
-    <!-- Montserrat（仅拉丁字符）+ 中文沿用设备字体
-         · 源：fonts.loli.net（Infvie Envoy 公益 CDN，反代 Google Fonts；
-           fonts.googleapis.com / fonts.gstatic.com 在国内不可达，不要直接引）。
-         · 该 CSS 已按 unicode-range 切好 latin / latin-ext 子集且**不含 CJK**，
-           英文走 Montserrat，中文自动回落 --font-ui 里后面的苹方 / 微软雅黑。
-         · display=swap：字体没到先用系统字体顶上，不会白屏。
-         · 镜像失效时整条字体栈退回系统字体，不影响可读性。
-         · 字体栈统一在 css/themes.css 的 --font-ui。 -->
+    <!-- Montserrat（仅拉丁）+ 中文沿用设备字体
+         源：fonts.loli.net（反代 Google Fonts；googleapis 在国内不可达，不要直接引）。
+         该 CSS 按 unicode-range 切好且不含 CJK，display=swap 避免白屏。
+         字体栈统一在 css/themes.css 的 --font-ui。 -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <!-- 非阻塞加载：media="print" 让这份第三方 CSS 不参与首屏渲染阻塞，
-         下载完再把 media 切回 all 应用字体。字体本身是 display=swap，
-         所以最坏情况只是先显示系统字体，不会白屏、也不会影响可读性。 -->
+    <!-- 非阻塞加载：media="print" 让第三方 CSS 不参与首屏渲染阻塞，
+         下载完再切回 all。字体本身 display=swap，最坏情况只是先显示系统字体。 -->
     <link rel="stylesheet" href="https://fonts.loli.net/css2?family=Montserrat:wght@400;500;600;700&display=swap"
           media="print" onload="this.media='all'">
     <noscript>
@@ -392,10 +374,8 @@
     <!-- 隐藏的文件输入（.kml/.xml 为新格式，.csv/.txt 兼容旧版导出） -->
     <input type="file" id="importFileInput" accept=".kml,.xml,.csv,.txt" style="display:none;" />
 
-    <!-- 标记命名弹窗
-         取代浏览器原生 prompt()：原生弹窗在 Android 外壳里会显示成
-         「<域名> 显示」的系统对话框，与全站设计语言完全脱节。
-         结构与其他弹窗一致：.modal-overlay > .modal-box.glass-panel + .close-btn -->
+    <!-- 标记命名弹窗（取代原生 prompt：Android 外壳里会显示成「<域名> 显示」系统框）。
+         结构与其它弹窗一致：.modal-overlay > .modal-box.glass-panel + .close-btn -->
     <div id="markerNameModal" class="modal-overlay" role="dialog" aria-modal="true"
          aria-labelledby="markerNameTitle">
         <div class="modal-box glass-panel">
@@ -422,10 +402,8 @@
 
 
 
-    <!-- 通用确认弹窗
-         取代原生 confirm()。同一原因：原生弹窗在 Android 外壳里会渲染成
-         「<域名> 显示」的系统对话框，不跟随主题，也不套用本站样式。
-         文案由 JS 注入（askConfirm），所以这里只放结构。 -->
+    <!-- 通用确认弹窗（取代原生 confirm，原因同上）。
+         文案由 askConfirm 注入，这里只放结构。 -->
     <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true"
          aria-labelledby="confirmTitle">
         <div class="modal-box glass-panel">
@@ -584,8 +562,8 @@
             <p>10-10 V7.2：新增街景跳转、坐标转换模块，功能栏改两排布局</p>
             <p>10-18 V7.3：底图瓦片本地缓存，设置页新增缓存瓦片开关与清除瓦片缓存</p>
             <p>10-21 V8.0：修复部分内核无法解析裸标识符、整站停在加载页的问题</p>
-            <p>10-25 V8.1：重构相机手感，自定义带死区的双指手势，优化倾斜旋转与松手滑行</p>
-            <p>11-01 V8.2：测量命名收藏及KML导入导出；支持对象快捷删除；统一弹窗逻辑</p>
+            <p>10-25 V8.1：重构相机手感，自定义双指手势</p>
+            <p>11-01 V8.2：新增测量命名收藏及KML导入导出、对象快捷删除，统一弹窗逻辑</p>
             <p>……</p>
             </div>
 
@@ -595,18 +573,12 @@
     <!-- 提示浮层 -->
     <div id="toastMessage" class="toast-message"></div>
 
-    <!-- 这段 importmap 现在**只是兼容旧缓存的退路**，主站已不再依赖它：
-         2026-10-21 在华为那一系内核（HarmonyOS 自带浏览器与 App 内 WebView 同一套引擎）
-         上定位到，它虽然让 HTMLScriptElement.supports('importmap') 返回 true，
-         却根本不解析裸标识符，`import ... from 'cesium'` 直接抛
-         "Failed to resolve module specifier"，整张模块图崩掉、页面永远停在加载遮罩。
-         现在所有模块统一走 ./js/cesium.js（本地 shim，用 export * 转发到 unpkg）。
-         保留这段是因为「缓存优先」的外壳更新有先后：刚发版时页面可能是新的、
-         而 Cache Storage 里还是上一版模块，它们仍然写着裸标识符。
-         新代码请写 `from './cesium.js'`，不要再用 'cesium'。
-         ⚠️ 正因为这段 importmap 会让桌面 Chrome「看起来一切正常」，裸标识符的
-         回归在本地完全测不出来（2026-10-25 又踩了一次）。所以加了静态护栏：
-         `node tests/no-bare-imports.test.mjs` —— 提交前跑一下。 -->
+    <!-- 这段 importmap 只是兼容旧缓存的退路，主站已不依赖。
+         华为系内核（HarmonyOS 浏览器 / App WebView）supports('importmap') 返回 true
+         却不解析裸标识符，`from 'cesium'` 直接抛 Failed to resolve module specifier，
+         整张模块图崩、页面停在加载遮罩。所有模块统一走 ./js/cesium.js。
+         保留它是因为外壳缓存更新有先后：新版页面 + 旧版模块时仍会用裸标识符。
+         ⚠️ 桌面 Chrome 测不出回归，提交前跑 `node tests/no-bare-imports.test.mjs`。 -->
     <script type="importmap">
         {
             "imports": {
@@ -634,10 +606,8 @@
     <!-- 测量悬浮圆钮 -->
     <div id="measureFloatingBtn" style="display: none;"><svg class="ui-icon"><use href="#i-menu"/></svg></div>
 
-    <!-- 测量「完成」按钮
-         只在当前测量达到可保存条件时出现（测距 ≥2 点 / 测面积 ≥3 点），
-         显隐由 js/measure.js 的草稿状态驱动（见 js/measure-ui.js）。
-         位置固定在右上角、头部卡片右侧；移动端让到头部下方。 -->
+    <!-- 测量「完成」按钮：仅在达到保存条件时出现（测距 ≥2 点 / 测面积 ≥3 点），
+         由 measure-ui.js 按草稿状态控制显隐。桌面右上角，移动端让到头部下方。 -->
     <button id="measureDoneBtn" class="measure-done-btn" type="button" style="display: none;">
         <svg class="ui-icon"><use href="#i-check"/></svg><span>完成</span>
     </button>

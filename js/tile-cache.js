@@ -1,15 +1,12 @@
 // ============================================================================
 // 瓦片缓存开关：把设置状态同步给 Service Worker
 // ============================================================================
-// 早先这个文件覆写过 Cesium 的 Resource._Implementations.loadWithXhr，理由是
-// 「Service Worker 拦不到 XHR」。**那个前提是错的**：实测（Chromium / Android
-// WebView）纯 XHR 的响应同样会进 Cache Storage —— 拦不到的只有 WebSocket 和
-// EventSource。也就是说只要 sw.js 里认得出瓦片 URL，缓存本来就成立，不需要碰
-// 引擎的私有 API。那层包装只会带来两件事：升级 Cesium 时要复核，以及开关必须
-// 在页面侧和 SW 侧各写一遍（正是之前「关掉开关仍然在缓存」的原因）。
+// 瓦片缓存完全由 sw.js 管，这里只把开关状态推过去（SW 读不到 localStorage）。
 //
-// 现在瓦片缓存完全归 sw.js 管，这里只做一件事：把开关状态推给它。
-// SW 读不到 localStorage，所以必须由页面主动告知；消息到达前 SW 用默认值（开）。
+// ⚠️ 早先这里覆写过 Resource._Implementations.loadWithXhr，理由是「SW 拦不到 XHR」——
+//    那个前提是错的：实测 Chromium / Android WebView 里纯 XHR 的响应同样进 Cache Storage，
+//    拦不到的只有 WebSocket 与 EventSource。那层包装只增加升级引擎的复核成本，
+//    还逼得开关在页面与 SW 各写一遍（正是「关掉开关仍在缓存」的根源）。
 // ============================================================================
 
 // 与设置页共用同一个键（settings.js 是普通脚本，无法 import 本模块，

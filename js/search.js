@@ -4,23 +4,14 @@ import { showToast } from './utils.js';
 // ============================================================================
 // 地点搜索
 // ----------------------------------------------------------------------------
-// 位于可展开面板内部、两个开关的上方，圆角横向长搜索栏（宽度自适应）。
+// 位于可展开面板内、两个开关上方，圆角横向长搜索栏（宽度自适应）。
+// 数据源：Cesium ion 的 IonGeocoderService（内部转 Pelias/OSM），复用 CONFIG.cesiumToken。
 //
-// 数据源：Cesium ion 官方地理编码服务（IonGeocoderService → 内部转发到
-// PeliasGeocoderService，底层为 Pelias/OSM），复用项目已有的
-// CONFIG.cesiumToken，无需额外密钥。
+// ⚠️ 返回结构（对照 Cesium 1.118 源码）：字段是 displayName（Pelias properties.label
+// 整串），没有 name / description；destination 通常是 Rectangle（由 bbox 构造），
+// 无 bbox 时才是 Cartesian3。Rectangle → flyTo 自动取景；Cartesian3 → 需叠高度。
 //
-// 返回值注意（已按 Cesium 1.118 源码核对，不是想当然）：
-//   · 结果对象字段是 displayName（Pelias 的 properties.label 整串），
-//     并没有 name / description 两个字段；
-//   · destination 多数情况下是 Rectangle（由 feature.bbox 构造），
-//     只有无 bbox 时才是 Cartesian3。所以定位必须分情况处理：
-//     Rectangle → camera.flyTo({ destination: rectangle }) 自动取景；
-//     Cartesian3 → 再叠一个高度，否则会贴在球面上。
-//
-// 与 Google 地球模式的关系：Google 模式虽然把相机送到固定坐标（香港），
-// 但搜索是独立相机操作，不受底图/地形影响，因此在 Google 模式下
-// 搜索仍然可用（搜到后按同一套飞行逻辑过去，平滑脱离模式预设视角）。
+// Google 地球模式下仍可用：搜索是独立相机操作，不依赖底图 / 地形。
 // ============================================================================
 
 const SEARCH_ICON_SVG = `
@@ -111,14 +102,12 @@ function closeList() {
     activeIndex = -1;
 }
 
-// 根据当前视口，把下拉的可用高度限制在「搜索框下方 → 视口底部」之间。
+// 把下拉可用高度限制在「搜索框下方 → 视口底部」之间。
 //
-// 为什么必须在运行时算，而不是写死一个 CSS max-height：
-//   移动端托盘贴底、搜索栏位于托盘顶部，下拉是向下展开的。
-//   视口高度、托盘内容高度一变，"搜索框到屏幕底"的剩余空间就变，
-//   写死的 252px 在 852 高的屏幕上只有 164px 可用，于是下拉底部
-//   冲到屏幕外、结果被裁剪且无法触达。这里实测后取内联值，
-//   保证下拉始终整块可见，超出的条目在下拉内部滚动。
+// ⚠️ 必须运行时量，不能写死 CSS max-height：移动端托盘贴底、搜索栏在托盘顶部，
+// 下方空间随视口与托盘内容变化。写死 252px 在 852 高的屏上只剩 164px 可用，
+// 下拉底部会冲出屏幕、结果被裁且无法触达。这里实测后写内联值，
+// 保证整块可见，超出条目在下拉内部滚动。
 function fitListHeight() {
     if (!listEl || !inputEl) return;
     const field = inputEl.parentElement;          // .search-field
@@ -418,14 +407,11 @@ export function initSearch(viewer) {
     buildDOM();
     bindEvents();
 
-    // 插入位置：面板内部的「两个开关之上」，但必须排在手柄（.panel-handle）之后。
+    // 插入位置：开关行之前，但必须排在手柄（.panel-handle）之后。
     //
-    // 为什么不能直接用 panel.firstChild：
-    //   移动端底部托盘收起时用 translateY(calc(100% - var(--mobile-bar-h)))
-    //   把「整块下移自身高度，只留第一个子元素（手柄）」露在视口里。
-    //   一旦把搜索栏插到 firstChild 之前，首个子元素就不再是手柄，
-    //   收起后露出来的会是搜索栏的一条，位置完全错乱。
-    //   因此这里锚定到手柄之后。
+    // ⚠️ 不能用 panel.firstChild：托盘收起时靠 translateY(calc(100% - var(--mobile-bar-h)))
+    // 下移自身高度、只留第一个子元素（手柄）露出。搜索栏若排到 firstChild 之前，
+    // 收起后露出来的就变成搜索栏的一条，位置全乱。
     const handle = panel.querySelector('.panel-handle');
     const anchorRow = panel.querySelector('.panel-row.switches');
 

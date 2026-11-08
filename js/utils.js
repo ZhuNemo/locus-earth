@@ -3,10 +3,8 @@ import { ToastIcons } from './icons.js';
 // ============================================================================
 // 全局提示（toast）
 // ----------------------------------------------------------------------------
-// 正文不再使用 emoji：调用方仍可传「📍 已开启」这种带 emoji 前缀的文案，
-// showToast 会自动把开头的 emoji 解析成同语义的内联 SVG 图标，
-// 渲染为「图标 + 文字」的 flex 结构。这样既保证全站无 emoji，
-// 又不必改遍所有调用点（未来新调用仍可沿用 emoji 写法）。
+// 正文不出现 emoji：调用方仍可传「📍 已开启」这类前缀，showToast 会把开头 emoji
+// 解析成同语义的内联 SVG，渲染为「图标 + 文字」。全站无 emoji，且不必改所有调用点。
 // ============================================================================
 
 let toastTimeout = null;
@@ -49,9 +47,7 @@ export function showToast(text, duration = 4000, forceIcon) {
     const raw = String(text ?? '');
 
     // 解析开头 emoji。
-    // ⚠️ 即使调用方已经用 forceIcon 指定了图标，也要把前缀吃掉：
-    //    否则「图标 + 文字」里会剩下一个裸 emoji（旧实现在这种情况下会漏掉，
-    //    例如 showToast('✅ 已保存', 3000, 'success') 会显示成「✓ ✅ 已保存」）。
+    // ⚠️ 即使传了 forceIcon 也要剥掉前缀，否则会渲染成「✓ ✅ 已保存」双图标。
     let iconKey = forceIcon;
     let body = raw;
     const m = raw.match(LEADING_EMOJI);
@@ -95,15 +91,11 @@ export function closeIterlog() {
 // ============================================================================
 // 文件交付（导出）
 // ----------------------------------------------------------------------------
-// 为什么优先用系统分享（Web Share API）而不是直接触发下载：
-// Android WebView 对 `<a download>` + blob: 的下载是**静默丢弃**的 ——
-// 没有 DownloadListener 时点了毫无反应，而 blob 的内容只有页面自己拿得到，
-// 原生侧即使实现了 DownloadListener 也读不到字节。
-// navigator.share(files) 由系统分享面板接管（可存到「文件」、发给自己等），
-// 是 Android 上「把文件交出去」的正规通路，且不需要任何存储权限。
-// 桌面浏览器一般不支持分享文件，于是回退到原本的 blob 下载。
+// ⚠️ Android WebView 对 `<a download>` + blob: 是静默丢弃的（无 DownloadListener
+//    时点了毫无反应，且 blob 字节只有页面拿得到）。所以优先 navigator.share(files)：
+//    走系统分享面板，不需要存储权限。桌面不支持时回退到 blob 下载。
 //
-// 收藏夹整体导出（bookmarks.js）与单个图形导出（measure.js）共用这一份实现。
+// 收藏夹整体导出（bookmarks.js）与单图形导出（measure.js）共用这份实现。
 // ============================================================================
 
 /**

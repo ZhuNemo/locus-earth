@@ -2,10 +2,8 @@ import { JulianDate } from './cesium.js';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-// 这三个 formatter 提升到模块作用域，只构造一次。
-// Intl.DateTimeFormat 的构造开销很大，原先它们写在函数体内部，
-// 而 updateControl 会被 clock.onTick 每帧触发，等于每秒构造上百次。
-// 语言保持 en-US，与界面既有显示一致（切换 zh-CN 属于另一项待定改动）。
+// 三个 formatter 提到模块作用域只构造一次：Intl.DateTimeFormat 构造开销大，
+// 而 updateControl 由 clock.onTick 每帧触发。语言保持 en-US，与界面既有显示一致。
 const FORMAT_CURRENT_TIME = new Intl.DateTimeFormat('en-US', {
     month: 'long',
     day: 'numeric',

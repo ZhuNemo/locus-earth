@@ -13,7 +13,7 @@ import {
     HeightReference,
 } from './cesium.js';
 import { registerTool as registerTool, claim as claimTool, release as releaseTool } from './tool-modes.js';
-import { registerEntityDeleter } from './context-menu.js';
+import { registerEntityDeleter, isTapSuppressed } from './context-menu.js';
 import { askConfirm, askText } from './dialogs.js';
 import { buildKml, parseKml, looksLikeXml } from './kml.js';
 import {
@@ -157,7 +157,8 @@ function setupEventHandlers() {
 
     handler.setInputAction((event) => {
         mouseUpPos = event.position;
-        if (mouseDownPos && mouseUpPos) {
+        // 长按菜单的收尾抬手不算点击（见 js/context-menu.js 的 isTapSuppressed）
+        if (mouseDownPos && mouseUpPos && !isTapSuppressed()) {
             const dx = mouseDownPos.x - mouseUpPos.x;
             const dy = mouseDownPos.y - mouseUpPos.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
@@ -194,10 +195,7 @@ function closeBookmarksPanel() {
 }
 
 // ============================================================================
-// 命名弹窗
-// ----------------------------------------------------------------------------
-// 具体交互统一在 js/dialogs.js（全站共用一份实现）。这里只做语义包装：
-// 预填默认名、指定标题与图标，避免每个调用点各写一遍文案。
+// 命名弹窗：交互在 js/dialogs.js，这里只做语义包装（预填名、标题、图标）。
 // ============================================================================
 
 /**
@@ -407,8 +405,7 @@ async function deleteShapeById(id) {
 }
 
 /**
- * 右键 / 长按菜单的删除入口。
- * 菜单那侧已经问过「是否删除」，这里直接执行；实体由拾取得到，
+ * 右键 / 长按菜单的删除入口。确认已在菜单侧做过，这里直接执行；
  * 用 entityId 反查下标，同名标记不会删错。
  */
 function deleteBookmarkEntity(entity) {
@@ -428,12 +425,9 @@ function deleteBookmarkEntity(entity) {
 /**
  * 取「当前渲染出来的地表」与视线的交点。
  *
- * 不能用 camera.pickEllipsoid()：它算的是视线与椭球面（高度恒为 0）的交点，
- * 完全无视地形。倾斜视角下，该交点与用户眼睛看到的地面点相差约
- * 「地形高程 / tan(视线俯角)」—— 山区可达数公里，图钉会落到别的山头上。
- *
- * globe.pick() 与真实渲染的地形网格求交，返回的就是屏幕上那个点；
- * 地形关闭时它自动退化成椭球面交点，因此两种模式下都正确。
+ * ⚠️ 不能用 camera.pickEllipsoid()：它算视线与 h≡0 椭球面的交点，无视地形。
+ * 倾斜视角下偏差 ≈ 地形高程 / tan(视线俯角)，山区可达数公里，图钉会落到别的山头。
+ * globe.pick() 与真实地形网格求交；地形关闭时自动退化成椭球面交点。
  *
  * @returns {{cartesian: Cartesian3, onSurface: boolean}|null}
  *          onSurface=false 表示退化成了椭球面（该处地形瓦片尚未加载）
@@ -506,13 +500,10 @@ async function handleClick(mousePosition, shiftKey) {
 // ---------- 创建图钉实体 ----------
 
 /**
- * 用 Canvas 绘制 Google Maps 风格的标准图钉（只绘制一次并缓存）。
- * 画布仍是 2x 的 80x100、billboard 显示 40x50，只调整内部图形比例：
- *   · 圆头直径 28（正圆，宽高比 1:1，无椭圆拉伸）
- *   · 尾巴长度 11 ≈ 圆头直径的 39%（短尾，平滑收束，无细长尖刺）
- *   · 圆头直径 : 总高 = 28 : 39 ≈ 1 : 1.39（落在 1.3~1.4 区间）
- * 圆头到尾巴用贝塞尔曲线过渡，且在圆的两侧切点处与圆弧相切（G1 连续）。
- * 尖端即锚点，压缩高度不会让它脱离地表。
+ * 用 Canvas 绘制 Google Maps 风格图钉（只绘一次并缓存）。
+ * 画布 2x 的 80x100，billboard 显示 40x50。比例：圆头直径 28（正圆）、
+ * 尾巴 11 ≈ 直径的 39%（短尾平滑收束）、直径 : 总高 ≈ 1 : 1.39。
+ * 圆头到尾巴用贝塞尔过渡，在切点处与圆弧相切（G1 连续）。尖端即锚点。
  */
 let pinCanvas = null;
 function getPinCanvas() {
@@ -606,22 +597,16 @@ function refreshBookmarkLabelTheme() {
 
 // ---------- 高程兜底：仅在拾取退化成椭球面时使用 ----------
 /**
- * 正常情况下 createPin() 直接锁定点击到的地表点，不会走到这里。
- * 只有当该处地形瓦片尚未加载、拾取退化成椭球面（高度 0）时，
- * 才去问地形服务要真实高程，避免图钉陷进地里。
+ * 正常由 createPin 锁定点位，走不到这里。只有该处地形瓦片未加载、拾取退化成
+ * 椭球面（高度 0）时才问地形服务要真实高程，避免图钉陷进地里。
  *
- * 不能用 heightReference: CLAMP_TO_GROUND 来兜底：它会在
- * Billboard._updateClamping() 里每帧调 scene.getHeight() 读「当前已加载
- * 瓦片」的高度，而且会把图钉吸到 3D 建筑屋顶上 —— 缩放时 LOD 一变、
- * 建筑一加载，高度就变，这正是早先「图钉漂移」的根源。
- * 这里取回高程后写死进 entity.position 并切回 NONE，之后高度恒定。
+ * ⚠️ 不能用 heightReference: CLAMP_TO_GROUND 兜底：Billboard._updateClamping()
+ * 每帧调 scene.getHeight() 读「当前已加载瓦片」的高度，且会把图钉吸到 3D 建筑屋顶 ——
+ * 缩放时 LOD 一变高度就变，这正是早先「图钉漂移」的根源。
+ * 这里取回高程写死进 entity.position 并切回 NONE，之后高度恒定。
  *
- * 采样顺序（都只取地形，不含 3D 建筑）：
- *   1. sampleTerrainMostDetailed() —— 直接问地形服务要最精细高程，
- *      与相机位置、当前 LOD、是否在视野内全部无关
- *   2. scene.sampleHeightMostDetailed() —— 场景采样兜底
- *   3. globe.getHeight() —— 同步兜底
- *   4. 0 —— 椭球面（地形关闭时的正确值）
+ * 采样顺序（均只取地形，不含 3D 建筑）：
+ *   sampleTerrainMostDetailed → scene.sampleHeightMostDetailed → globe.getHeight → 0
  */
 async function refineTerrainHeight(entity, cartesian) {
     const scene = viewerInstance && viewerInstance.scene;
@@ -701,20 +686,12 @@ function reanchorAllBookmarks() {
 
 function createPin(cartesian, name, onSurface = true) {
     // ---------- 尖端对齐（本文件的核心坑）----------
-    // Cesium 的 pixelOffset 是「屏幕像素偏移」：负 y = 屏幕向上
-    // （_computeScreenSpacePosition 直接在 y 轴朝下的窗口坐标上相加，
-    //   着色器里再乘以 mpp 转成眼空间米数，而 mpp = czm_metersPerPixel 正比于深度）。
-    // 也就是说：像素偏移在屏幕上是常量，换算到地面却正比于相机距离 ——
+    // pixelOffset 是屏幕像素偏移（负 y 向上），换算到地面正比于相机距离：
     // 相机越高，同样的 N 像素对应的地面距离越大。
-    //
-    // verticalOrigin BOTTOM 把图片底边（1x 坐标 y=50）对齐到位置点；
-    // 画布里尖端在 y=41，即本来就在锚点上方 9px，
-    // 所以这里必须用 +9（向下 9px）把尖端压回锚点。
-    // 之前写成 -9，等于把尖端又抬高了 9px，合计离锚点 18px：
-    // 表现为「尖端浮在点击点上方，相机越高浮得越远，拉到最近才看似归位」。
-    //
-    // 图片内部 9px 与 pixelOffset 9px 同属屏幕空间，二者在任意深度下精确抵消，
-    // 不存在透视误差（billboard 尺寸本身也是按 mpp 缩放的屏幕常量）。
+    // verticalOrigin BOTTOM 把图片底边对齐到锚点，而画布里尖端在底边上方 9px，
+    // 所以必须 +9（向下）把尖端压回锚点。写成 -9 会让尖端离锚点 18px：
+    // 表现为「尖端浮在点击点上方，相机越高浮得越远」。
+    // 图片内部 9px 与 pixelOffset 9px 同为屏幕空间，任意深度下精确抵消，无透视误差。
     const entity = viewerInstance.entities.add({
         position: cartesian,
         name: name,
@@ -870,12 +847,10 @@ function setupToolbarButton() {
 export { toggleMarkingMode, isMarkingMode };
 
 // =============================================
-// 导出 / 导入 收藏夹（KML / XML）
+// 导出 / 导入 收藏夹
 // ---------------------------------------------
-// 一份文件同时装三类内容：
-//   标记 → <Point>，轨迹 → <LineString>，图形 → <Polygon>
-// 格式细节见 js/kml.js。导入仍兼容旧版 CSV（名称,经度,纬度），
-// 老用户手里的 .csv 不会失效。
+// 一份 KML 装三类内容：标记 → Point，轨迹 → LineString，图形 → Polygon（格式见 js/kml.js）。
+// 导入仍兼容旧版 CSV（名称,经度,纬度），老用户的 .csv 不失效。
 // =============================================
 
 /** 文件名统一在这里定义，导出与分享两条路径共用 */
@@ -884,13 +859,10 @@ const EXPORT_FILENAME = 'locus-earth.kml';
 /**
  * 导出收藏夹（标记 + 轨迹 + 图形）。
  *
- * 为什么优先用系统分享（Web Share API）而不是直接触发下载：
- * Android WebView 对 `<a download>` + blob: 的下载是**静默丢弃**的 ——
- * 没有 DownloadListener 时点了毫无反应，而 blob 的内容只有页面自己拿得到，
- * 原生侧即使实现了 DownloadListener 也读不到字节。
- * navigator.share(files) 由系统分享面板接管（可存到「文件」、发给自己等），
- * 是 Android 上「把文件交出去」的正规通路，且不需要任何存储权限。
- * 桌面浏览器一般不支持分享文件，于是回退到原本的 blob 下载。
+ * 优先系统分享而非直接下载：Android WebView 对 `<a download>` + blob: 是静默丢弃的
+ * （无 DownloadListener 时毫无反应，且 blob 字节只有页面拿得到）。
+ * navigator.share(files) 走系统分享面板，是 Android 上把文件交出去的正规通路，
+ * 不需要存储权限。桌面不支持时回退到 blob 下载。
  */
 export async function exportBookmarks() {
     const markers = bookmarks.map(b => ({

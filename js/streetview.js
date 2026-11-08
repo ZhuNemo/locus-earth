@@ -2,31 +2,17 @@ import { ScreenSpaceEventHandler, ScreenSpaceEventType, Cartographic, Math as Ce
 import { showToast } from './utils.js';
 import { wgs84ToGcj02, outOfChina } from './coord-transform.js';
 import { registerTool, claim, release } from './tool-modes.js';
+import { isTapSuppressed } from './context-menu.js';
 
 // ============================================================================
 // 腾讯街景：入口按钮 + 取点跳转
 // ----------------------------------------------------------------------------
-// 设计取舍（详见项目记忆 2026-10-10）：
-//   · 只做「新标签页跳转」，不引入腾讯 JS SDK（会与 Cesium 争 WebGL 上下文、
-//     劫持触摸/窗口事件），也不用 iframe（移动端手势冲突且跨域不可控）。
-//   · ⚠️ 腾讯官方网页街景 `map.qq.com/?type=street` 已基本不可用（实测任何坐标
-//     都是空白；Bellingcat 记载 "street view available in mobile app only"）。
-//     因此改跳 **qq-map.netlify.app** —— 社区维护的第三方查看器（非官方），
-//     它用 three.js 自己渲染腾讯全景瓦片，实测可用。
-//   · 跳转前先调 `sv.map.qq.com/xf` **反查最近街景点 svid**，带上 pano 参数
-//     即可直达街景画面（否则只能落到地图视图，用户还得自己点蓝线）。
-//     该接口自带 `Access-Control-Allow-Origin: *`，纯前端可直接 fetch。
-//   · 关键：反查接口要的是 GCJ-02，而 Cesium 取到的是 WGS84，
-//     因此要用 coord-transform.js 的**正向加密** wgs84ToGcj02()。
+// 只做新标签页跳转：不引腾讯 SDK（抢 WebGL 上下文、劫持触摸），不用 iframe（手势冲突）。
+// 官方网页街景已不可用，改跳社区查看器 qq-map.netlify.app。
+// ⚠️ 跳转前打 sv.map.qq.com/xf 反查 svid 才能直达；接口要 GCJ-02，先 wgs84ToGcj02()。
+// ⚠️ 非公开接口，三态：found 直达 / none 不跳 / unknown 降级。详见 docs/pitfalls.md 7.1。
 //
-// ⚠️ 反查用的是**社区逆向出的非公开接口**，无稳定性承诺（随时可能加签名/下线）。
-//    因此全程「尽力而为」，并区分三种结果（见 LookupStatus）：
-//      found   → 带 pano 直达全景
-//      none    → 接口明确说「这里没有采集点」⇒ **不跳转**，只提示（跳过去也没东西看）
-//      unknown → 查询失败、覆盖未知 ⇒ 降级跳转，提示措辞不承诺有蓝线
-//
-// 显示逻辑：进入中国大陆范围（腾讯街景覆盖区）时按钮出现，
-// 与「高精度建模」按钮互斥占位（两者不会同时出现）。
+// 按钮在中国大陆范围内出现，与「高精度建模」互斥占位。
 // ============================================================================
 
 // 中国大陆判定框（与 coord-transform.js 的 outOfChina 同源，略放宽以覆盖边缘城市）
@@ -65,17 +51,14 @@ export function isInChinaMainland(lng, lat) {
 /**
  * 拼接 qq-map 查看器 URL。
  *
- * ⚠️ center 参数是「纬度,经度」顺序，与常见的「经度,纬度」相反。
- * ⚠️ 输入必须是 GCJ-02；若传入的是 WGS84，请先调用 wgs84ToGcj02()。
+ * ⚠️ center 是「纬度,经度」，与常见的「经度,纬度」相反；入参必须是 GCJ-02。
  *
- * 参数说明（均来自该站源码的 URLSearchParams 解析）：
- *   base  底图类型（roadmap / satellite / hybrid / terrain / google）
- *   cov   覆盖层：all = 腾讯采集线 + 社区补生成线 / qqcached / ccf / 空
- *   zoom  地图缩放级别（该站默认 4，这里给 18 = 街道级）
- *   pano  街景场景 ID。**可选**：不带则只打开地图视图，用户需自己点蓝线。
+ * 参数（取自该站 URLSearchParams）：base 底图类型（roadmap / satellite / hybrid /
+ * terrain / google）/ cov 覆盖层（all = 腾讯采集线 + 社区补生成线；可选 qqcached /
+ * ccf / 空）/ zoom 缩放级别（该站默认 4，这里 18）/ pano 场景 ID（可选，不带只开地图）。
  *
- * @param {number} gcjLng GCJ-02 经度
- * @param {number} gcjLat GCJ-02 纬度
+ * @param {number} gcjLng
+ * @param {number} gcjLat
  * @param {{pano?: string, heading?: number, pitch?: number}} [opts]
  * @returns {string} 可直接 window.open 的 URL
  */
@@ -106,11 +89,10 @@ export function buildStreetViewUrlFromWgs84(lng, lat, opts) {
 
 /**
  * 反查结果状态。
- * ⚠️ 必须区分这三种情形——它们对用户的含义完全不同：
- *   'found'    确认有街景，可带 pano 直达全景
- *   'none'     接口正常应答但附近**确实没有**采集点 → 该处真的没蓝线可点，
- *              不该跳转（跳过去只会看到一个空白区域，让用户以为功能坏了）
- *   'unknown'  超时 / 网络失败 / 接口改版 → 覆盖情况**未知**，保留跳转做降级
+ * ⚠️ 三态含义不同，不能合并：
+ *   found   确认有街景，可带 pano 直达
+ *   none    接口正常但附近确实没采集点 ⇒ 不跳转（跳过去只有空白）
+ *   unknown 超时 / 失败 / 改版 ⇒ 覆盖未知，降级跳转
  */
 export const LookupStatus = {
     FOUND: 'found',
@@ -121,12 +103,11 @@ export const LookupStatus = {
 /**
  * 按 GCJ-02 坐标反查最近街景点。
  *
- * ⚠️ 响应体是 **GBK** 编码（`Content-Type: application/javascript;charset=GBK`），
- *    直接用 `.json()` 会得到乱码，必须先取 arrayBuffer 再 TextDecoder('gbk')。
- * ⚠️ 非公开接口。调用方应依据返回的 status 决定「跳转 / 不跳转」。
+ * ⚠️ 响应体是 GBK，直接 .json() 会乱码：先 arrayBuffer 再 TextDecoder('gbk')。
+ * ⚠️ 非公开接口，调用方按 status 决定跳不跳。
  *
- * @param {number} gcjLng GCJ-02 经度
- * @param {number} gcjLat GCJ-02 纬度
+ * @param {number} gcjLng
+ * @param {number} gcjLat
  * @param {number} [radius=200] 搜索半径（米），接口上限 200
  * @returns {Promise<{status: 'found'|'none'|'unknown', svid?: string, road?: string}>}
  */
@@ -165,8 +146,7 @@ export async function lookupPano(gcjLng, gcjLat, radius = 200) {
     }
 }
 
-// 复用的地表拾取：与 bookmarks.js / measure.js 完全一致，
-// 必须用 globe.pick（真实地形），不能用 pickEllipsoid（椭球面）。
+// 地表拾取：与 bookmarks.js / measure.js 一致，用 globe.pick（真实地形）。
 function pickSurfacePoint(windowPosition) {
     const scene = viewerInstance.scene;
     const camera = viewerInstance.camera;
@@ -185,13 +165,9 @@ function pickSurfacePoint(windowPosition) {
 
 /**
  * 在指定屏幕位置打开街景。
+ * 取点 → 转 GCJ-02 → 反查 svid → 分流：found 直达 / none 只提示 / unknown 降级跳转。
  *
- * 流程：取点 → 转 GCJ-02 → 反查 svid → 按结果分流：
- *   · found   → 带 pano 新标签页直达全景
- *   · none    → **不跳转**，只提示「该处暂无覆盖」
- *   · unknown → 降级跳转（不带 pano），提示措辞避免误导
- *
- * @param {import('cesium').Cartesian2} windowPosition 屏幕坐标
+ * @param {import('cesium').Cartesian2} windowPosition
  */
 async function openStreetViewAt(windowPosition) {
     const picked = pickSurfacePoint(windowPosition);
@@ -211,14 +187,13 @@ async function openStreetViewAt(windowPosition) {
 
     const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat);
 
-    // 不带图标：原放大镜 emoji 全站仅此一处，按约定直接删除、不为它新增 SVG。
+    // 无图标：不为单个 emoji 新增 SVG（全站约定）
     showToast('正在查找最近的街景点…');
     const result = await lookupPano(gcjLng, gcjLat);
 
-    // 情形一：确认无街景 —— 不跳转。跳过去也只是一片没有蓝线的空白区域，
-    // 反而让用户怀疑功能坏了；留在地图上、给一句明确提示更有用。
+    // 情形一：确认无街景 —— 不跳转，只提示（过去也只有空白，像功能坏了）。
     if (result.status === LookupStatus.NONE) {
-        // 同上：原禁止 emoji 仅此一处，删除、不新增 SVG
+        // 同上，不新增 SVG
         showToast('该位置附近没有街景覆盖，换个靠近道路的位置试试');
         return;
     }
@@ -232,9 +207,8 @@ async function openStreetViewAt(windowPosition) {
         // 情形二：反查成功，直达全景
         showToast(result.road ? `🧭 已打开街景（${result.road}）` : '🧭 已在新标签页打开街景');
     } else {
-        // 情形三：查询失败（网络/超时/接口变更），覆盖情况未知 —— 仍跳转做降级，
-        // 但不说"可点击蓝色路线"，因为我们也无法保证那里有路线。
-        // 同上：原地图 emoji 仅此一处，删除、不新增 SVG
+        // 情形三：查询失败，覆盖未知 —— 仍跳转做降级，措辞不承诺有蓝线。
+        // 同上
         showToast('未能确认街景覆盖，已打开地图视图');
     }
 }
@@ -339,13 +313,14 @@ function activatePickMode() {
             if (!pickModeArmed) return;
             const up = e.position;
             if (!downPos) return;
+            // 长按菜单的收尾抬手不算取点（见 js/context-menu.js 的 isTapSuppressed）
+            if (isTapSuppressed()) return;
             const dx = downPos.x - up.x;
             const dy = downPos.y - up.y;
             if (Math.sqrt(dx * dx + dy * dy) >= 5) return; // 拖动，不算点击
 
-            // 先退出取点模式：pickModeArmed 置 false 后，后续点击会被上面的
-            // 守卫拦掉，不会在反查（异步）期间重复触发。
-            // deactivatePickMode 不调 release，所以这里要显式释放互斥锁。
+            // 先退出取点模式，避免异步反查期间重复触发。deactivatePickMode 不调
+            // release，所以这里显式释放互斥锁。
             deactivatePickMode();
             release('streetview');
 

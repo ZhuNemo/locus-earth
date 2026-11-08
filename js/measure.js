@@ -12,25 +12,21 @@ import {
     HeadingPitchRange,
 } from './cesium.js';
 import { showToast, saveBlobFile, safeFileName } from './utils.js';
-import { registerEntityDeleter, registerEntityExporter } from './context-menu.js';
+import { registerEntityDeleter, registerEntityExporter, isTapSuppressed } from './context-menu.js';
 import { buildSingleKml } from './kml.js';
 import { isDialogOpen } from './dialogs.js';
 
 // ============================================================================
 // 测量（测距 = 轨迹 / 测面积 = 图形）
 // ----------------------------------------------------------------------------
-// 状态分两层：
-//   · draft  —— 正在画的那一条：点存在内存里，实体用 CallbackProperty 每帧重算，
-//               所以拖动视角时标签与几何始终跟着最新点集。
-//   · shapes —— 已保存到收藏夹的测量：实体一次性建好（静态坐标），
-//               数据写进 localStorage，可导出 / 导入 / 单独删除。
+// 两层状态：
+//   draft  —— 正在画：点存内存，实体用 CallbackProperty 每帧重算，拖视角时跟着走。
+//   shapes —— 已保存：静态坐标，落 localStorage，可导出 / 导入 / 单独删除。
+// 「完成」按钮把 draft 落成 shape。
 //
-// 之前只有一个 currentEntity，画完就再也留不住；现在两者分开，
-// 「完成」按钮把 draft 落成 shape，之后可以继续画下一条。
-//
-// ⚠️ 贴地约定（与多边形成对）：多边形不设 height / extrudedHeight、也不开
-//    perPositionHeight ⇒ 走 GroundPrimitive 贴地形渲染；配对折线必须显式
-//    clampToGround: true，否则折线是顶点之间的弦，倾斜视角下轮廓与填充脱节。
+// ⚠️ 贴地成对：多边形不设 height/extrudedHeight、不开 perPositionHeight ⇒ 走
+//    GroundPrimitive 贴地形；配对折线必须 clampToGround: true，否则折线是顶点间的弦，
+//    倾斜视角下轮廓与填充脱节。
 // ============================================================================
 
 const STORAGE_KEY = 'measureShapes';
@@ -200,19 +196,10 @@ function ensureDraftEntity() {
             width: 2,
             material,
 
-            // ⚠️ 必须与多边形的贴地渲染方式保持一致，否则填充与轮廓会错位。
-            //
-            // 两条渲染路径本来就不一样：
-            //   • 多边形：没有 height/extrudedHeight、也没开 perPositionHeight
-            //     ⇒ 走 GroundPrimitive，**贴地形表面渲染**，顶点高度被忽略，
-            //       边界会跟着地形起伏走。
-            //   • 折线：默认是普通渲染，把顶点**连成直线**。即使顶点高度
-            //     取自真实地形（见 pickSurfacePoint），两个顶点之间也只是一条
-            //     弦，不会跟着中间的地形起伏 —— 相当于仍是一块悬空的平面。
-            //
-            // clampToGround: true 把折线交给 GroundPolylinePrimitive，
-            // 与多边形共用同一套贴地逻辑，边界严格重合。
-            // 若当前场景不支持，Cesium 会自动退回普通渲染，不报错、不崩溃。
+            // ⚠️ 必须与多边形的贴地方式一致，否则填充与轮廓错位：
+            // 多边形无 height/extrudedHeight、未开 perPositionHeight ⇒ GroundPrimitive 贴地形；
+            // 折线默认把顶点连成弦，不随中间地形起伏。clampToGround: true 交给
+            // GroundPolylinePrimitive，与多边形共用贴地逻辑；场景不支持时自动退回普通渲染。
             clampToGround: true,
         },
         polygon: type === 'area' ? {
@@ -242,10 +229,8 @@ function ensureDraftEntity() {
 // ---------------------------------------------------------------------------
 // 拾取地表点
 // ---------------------------------------------------------------------------
-// ⚠️ 不能用 camera.pickEllipsoid()：它求的是视线与椭球面（高度恒为 0）的交点，
-// 完全无视地形高程 —— 而地形层（Cesium World Terrain）默认开启。
-// globe.pick() 直接与真实渲染出来的地形网格求交，返回的就是屏幕上看到的那个点。
-// 地形关闭时它自动退化成椭球面交点，两种模式下都正确。
+// ⚠️ 不能用 camera.pickEllipsoid()：它求视线与 h≡0 椭球面的交点，无视地形高程。
+// globe.pick() 直接与渲染出的地形网格求交；地形关闭时自动退化成椭球面交点。
 function pickSurfacePoint(windowPosition) {
     const scene = viewer.scene;
     const camera = viewer.camera;
@@ -303,7 +288,7 @@ function setupHandler(type) {
 
     handler = new ScreenSpaceEventHandler(viewer.canvas);
 
-    // 移动端防误触：记录按下和松开的位置，距离小于 5 像素才视为点击
+    // 防误触：按下与抬起的位移 < 5px 才算点击
     let mouseDownPos = null;
 
     handler.setInputAction((event) => {
@@ -312,7 +297,8 @@ function setupHandler(type) {
 
     handler.setInputAction((event) => {
         const mouseUpPos = event.position;
-        if (mouseDownPos && mouseUpPos) {
+        // 长按菜单的收尾抬手不算加点（见 js/context-menu.js 的 isTapSuppressed）。
+        if (mouseDownPos && mouseUpPos && !isTapSuppressed()) {
             const dx = mouseDownPos.x - mouseUpPos.x;
             const dy = mouseDownPos.y - mouseUpPos.y;
             if (Math.sqrt(dx * dx + dy * dy) < 5) {
@@ -377,9 +363,8 @@ function saveDraft(name) {
     if (draft.entity) viewer.entities.remove(draft.entity);
     draft = null;
 
-    // 收尾：拆掉拾取 handler，光标还原。
-    // 与「清除」一致 —— 想再画一条就再点一次「测距 / 测面积」，
-    // 否则保存完继续点地图会出现"点了没反应"的困惑（草稿已被置空）。
+    // 收尾：拆 handler、还原光标。想再画一条重新点「测距 / 测面积」
+    // （草稿已置空，否则继续点地图会「没反应」）。
     if (handler) {
         handler.destroy();
         handler = null;
@@ -595,13 +580,11 @@ export function flyToMeasureShape(id) {
 export function initMeasureTools(viewerInstance) {
     viewer = viewerInstance;
 
-    // 右键 / 长按菜单的删除回调
-    // ⚠️ 菜单按「可删除对象的种类」查表，轨迹与图形是两个不同的 key
-    //    （菜单文案要区分「删除轨迹」/「删除图形」），两者共用同一个删除实现。
+    // 菜单按 kind 查表：轨迹与图形是两个 key（文案要区分），共用同一个实现。
     registerEntityDeleter('measure-track', deleteMeasureEntity);
     registerEntityDeleter('measure-shape', deleteMeasureEntity);
 
-    // 「导出为单独 KML」：同样按轨迹 / 图形两个 key 登记，共用一个实现
+    // 导出：同样两个 key，共用一个实现
     registerEntityExporter('measure-track', exportMeasureEntity);
     registerEntityExporter('measure-shape', exportMeasureEntity);
 

@@ -1,14 +1,11 @@
 import { Cartesian3, Math as CesiumMath } from './cesium.js';
 
 // =============================================
-// 面板收起工具（模块级，导出）
+// 面板收起工具（模块级导出）
 // ---------------------------------------------
-// 放在 initUI 之外导出，是为了让 measure-ui.js 等模块也能复用，
-// 而不必依赖 initUI 的调用时机 —— main.js 里 initMeasureUI() 早于 initUI()。
-// 元素按 id 实时查询、不缓存引用，避免拿到过期节点。
-//
-// options.waitForTransition = true 时等面板收起动画走完再执行回调，
-// 用于「先收起主面板、功能条再出现」这类有先后顺序的需求。
+// 在 initUI 之外导出，供 measure-ui.js 复用：main.js 里 initMeasureUI() 早于 initUI()。
+// 元素按 id 实时查询，不缓存引用，避免拿到过期节点。
+// waitForTransition = true 时等收起动画走完再回调，用于「先收面板、功能条再出现」。
 export function collapsePanelThen(callback, { waitForTransition = false } = {}) {
     const panel = document.getElementById('expandablePanel');
     const headerBtn = document.getElementById('toggleHeaderBtn');
@@ -37,16 +34,11 @@ export function collapsePanelThen(callback, { waitForTransition = false } = {}) 
 }
 
 /**
- * 读取面板当前「transform 过渡」的声明时长（桌面 0.28s / 移动端 0.42s）。
+ * 读取面板 transform 过渡的声明时长（桌面 0.28s / 移动端 0.42s）。
  *
- * 这里刻意不监听 transitionend：它在下面几种情况下根本不会触发，
- * 回调就会被永久卡住 ——
- *   · 浏览器跳过该属性的动画（元素不可见、后台标签页、无合成器）；
- *   · 过渡被后续状态变更打断；
- *   · 起止值相同（例如面板高度为 0）。
- * 实测 headless Chrome 里 transitionstart 会晚到 500ms 以上，
- * transitionend 更是不可靠。改用样式表里声明的时长做延迟：
- * 时长本身就是"视觉上收完"的定义，改 CSS 也不必改 JS。
+ * ⚠️ 不监听 transitionend：元素不可见 / 后台标签页 / 无合成器 / 过渡被打断 /
+ * 起止值相同，它都不会触发，回调会永久卡住。用 CSS 声明的时长做延迟，
+ * 改动画也不必改 JS。
  */
 function panelCollapseDuration(panel) {
     const cs = getComputedStyle(panel);
@@ -127,13 +119,10 @@ export function initUI(viewer, {
         });
 
         // ------------------------------------------------------------------
-        // 移动端托盘：连续拖拽手势（下滑收起 / 上滑展开）
+        // 移动端托盘：拖拽收起 / 展开
         // ------------------------------------------------------------------
-        // 设计要点：
-        //   · 只用 touch 事件（桌面鼠标不参与），避免误伤点击。
-        //   · 拖拽期间写 --drag-y 让面板 1:1 跟手（CSS 里 .dragging 关掉了过渡）。
-        //   · 松开时按"位移 + 速度"决定吸附到展开还是收起，手感更自然。
-        //   · 展开态起始只能往上顶一点点（阻尼），主体是下滑；收起态反之。
+        // 只用 touch（鼠标不参与，避免误伤点击）；拖拽期间写 --drag-y 让面板 1:1 跟手
+        // （.dragging 关掉 CSS 过渡）；松手按「位移 + 速度」吸附；展开态上滑有阻尼。
         const collapsedOffset = () => panelHandle.getBoundingClientRect().height; // 收起时露出的手柄高
         let dragging = false;
         let startY = 0;
@@ -305,11 +294,9 @@ export function initUI(viewer, {
     // 2. 建筑白模切换（开关形式）
     // =============================================
     toggleBuildingsBtn.addEventListener('click', () => {
-        // #buildingsToggleBtn 是 <div>，不具备原生 disabled 语义：
-        // 给它赋 .disabled 只是挂了个普通属性，浏览器不会拦截点击，
-        // :disabled 选择器也匹配不到它，所以灰化只是视觉效果。
-        // 高精度建模开启期间必须在这里真正拦住。
-        // 该标志由 hd-layers.js 的 setBuildingsBtnEnabled() 统一维护。
+        // #buildingsToggleBtn 是 <div>，没有原生 disabled：赋 .disabled 只是挂个普通
+        // 属性，浏览器不拦点击、:disabled 也匹配不到，灰化纯属视觉。
+        // 高精度建模期间必须在这里手动拦一次。标志由 hd-layers.js 维护。
         if (toggleBuildingsBtn.disabled) return;
 
         if (hd.isInHdArea && hd.hdTilesetsVisible) {

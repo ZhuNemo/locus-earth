@@ -41,11 +41,9 @@ export async function initHdLayers(viewer, showToast) {
             }
         }
 
-        // #buildingsToggleBtn 是 <div>（index.html 中 role="button"），不是表单控件。
-        // 因此给它赋 .disabled 没有任何原生效果：浏览器不会拦截点击，
-        // :disabled 选择器也永远匹配不到它 —— 灰化只是 opacity/cursor 的视觉效果。
-        // 这里把「可点击标志 + aria-disabled + 视觉」集中到一处维护，
-        // 点击侧由 ui.js 读取该标志来真正拦截。
+        // #buildingsToggleBtn 是 <div>（role="button"），赋 .disabled 没有原生效果：
+        // 浏览器不拦点击、:disabled 也匹配不到，灰化只是视觉。
+        // 这里集中维护「可点击标志 + aria-disabled + 视觉」，点击拦截在 ui.js。
         function setBuildingsBtnEnabled(enabled) {
             toggleBuildingsBtn.disabled = !enabled;
             toggleBuildingsBtn.setAttribute('aria-disabled', String(!enabled));

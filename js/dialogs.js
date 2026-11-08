@@ -1,21 +1,14 @@
 // ============================================================================
 // 通用对话框（确认 / 命名输入）
 // ----------------------------------------------------------------------------
-// 取代浏览器原生 confirm() / prompt()：原生弹窗在 Android 外壳里会渲染成
-// 「<域名> 显示」的系统对话框，不跟随主题，也不套用本站的字体与配色。
+// 取代原生 confirm() / prompt()：在 Android 外壳里它们会渲染成「<域名> 显示」
+// 的系统弹窗，不跟随主题，也套不上本站字体与配色。
 //
-// 全站只维护这一份实现，DOM 仍然是 index.html 里既有的
-// #confirmModal / #markerNameModal（.modal-overlay + .modal-box.glass-panel），
-// 本模块只负责「填文案 → 等结果 → 收起」。
-// 任何需要确认或命名的模块都 import 这里，不要再各写一份。
+// 全站唯一实现，复用 index.html 既有的 #confirmModal / #markerNameModal，
+// 只负责「填文案 → 等结果 → 收起」。需要确认或命名的模块一律 import 这里。
 //
-// 用法：
-//   const ok = await askConfirm('确定要删除吗？');
-//   const name = await askText({ title: '保存到收藏夹', defaultValue: '轨迹 1' });
-//
-// 返回值约定：
-//   askConfirm → boolean（确定 true / 取消、关闭、点遮罩 false）
-//   askText    → string | null（确认后的文本 / 取消 null）
+//   const ok   = await askConfirm('确定要删除吗？');       // boolean
+//   const name = await askText({ title: '…', defaultValue: '轨迹 1' });  // string | null
 // ============================================================================
 
 const $ = (id) => document.getElementById(id);
@@ -30,8 +23,7 @@ let textValidator = null;
 let bound = false;
 
 // ---------------------------------------------------------------------------
-// 绑定（懒执行：模块被 import 时 DOM 一定已就绪，但仍等到真正用的时候再绑，
-// 避免在 node 等无 DOM 环境下 import 本模块就抛错）
+// 懒绑定：等真正用到时才绑 DOM，避免在无 DOM 环境（node）import 即抛错。
 // ---------------------------------------------------------------------------
 function ensureBound() {
     if (bound) return true;
@@ -67,8 +59,7 @@ function ensureBound() {
         }
     });
 
-    // 统一处理 Esc：先关最近打开的那个弹窗。
-    // 用 document 级监听而不是元素上的，是因为焦点不一定落在弹窗内部。
+    // Esc 关最近打开的那个弹窗。用 document 级监听：焦点不一定在弹窗内部。
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
         if (confirmModal.classList.contains('active')) {

@@ -36,11 +36,8 @@ export function initMeasureUI(viewer, measureTools) {
     }
 
     // 1. 打开测量菜单
-    //    顺序要求：先收起主面板，等收起动画结束再展开测量工具条；
-    //    否则工具条会和面板同时在屏幕上，互相压叠（「真实光照」同理）。
-    //
-    //    互斥：测量会占用地图左键（画线/画多边形），必须先挤掉标记与街景，
-    //    否则三者的拾取 handler 会同时响应同一次点击。
+    // 先收主面板、等动画结束再展开工具条，否则两者会互相压叠。
+    // 互斥：测量占用地图左键，必须先挤掉标记与街景。
     measureBtn.addEventListener('click', () => {
         claim('measure');
         setMeasureBtnActive(true);

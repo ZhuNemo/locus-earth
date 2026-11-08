@@ -22,9 +22,8 @@
             pointer-events: auto;
         }
         .glass-panel {
-            /* 弹窗专用玻璃：底色比普通面板略实一点保证可读性，
-               但靠更大的模糊（--blur-lg）保留毛玻璃质感——
-               透光看得到底图颜色，看不出底图细节。 */
+            /* 弹窗玻璃：底色比普通面板实一点保证可读，靠更大的模糊保留质感
+               —— 透得到底图颜色，看不出底图细节。 */
             background: var(--glass-modal);
             backdrop-filter: blur(var(--blur-lg)) saturate(160%);
             -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(160%);

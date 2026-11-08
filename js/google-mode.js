@@ -4,11 +4,8 @@ import { setBasemapPickerVisible } from './basemap-picker.js';
 
 export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
 
-        // activateGoogle3D 处理器说明：
-        // 进入谷歌模式会 imageryLayers.removeAll() 清空全部影像图层，
-        // 因此无论是正常退出还是加载失败降级，都必须把底图放回来，
-        // 否则会留下一个全黑的球。恢复逻辑统一在 imagery.js 的
-        // restoreDefaultBasemap()（重建哨兵2并复位叠加层状态）。
+        // 进入谷歌模式会 imageryLayers.removeAll()，正常退出与失败降级都必须
+        // 恢复底图，否则留下全黑的球。恢复统一走 imagery.js 的 restoreDefaultBasemap()。
 
         // 激活谷歌3D地球（从“关于”弹窗中触发）
         document.getElementById('activateGoogle3D').addEventListener('click', async function(e) {

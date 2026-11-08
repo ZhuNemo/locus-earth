@@ -182,8 +182,6 @@
             background: var(--accent-soft);
             color: var(--accent-text);
         }
-        /* 原先这里还有 .menu-btn.hd-btn / .visible 两条规则，
-           但侧滑菜单中并不存在带 hd-btn 类的元素，属遗留死规则，已移除。 */
 
         /* ============================================================================
            地图对象右键 / 长按菜单（js/context-menu.js 动态生成）

@@ -50,12 +50,10 @@
         }
     }
 
-    // data-theme 一改，整页都要重算样式再重绘。设置页的底是一层
-    // `background-attachment: fixed` 的渐变（见 css/settings.css），外加若干
-    // backdrop-filter 玻璃面板，手机上这一帧的「呈现延迟」能到 90ms 以上 ——
-    // 这正是 Cloudflare 报的 #colorMode INP 264ms 的来源，而真正的事件处理只有 6ms。
-    // 所以交互路径上不再直接 applyTheme：先把「便宜」的反馈画出去（菜单收起、
-    // 触发按钮文字更新），整页重绘推到下一次绘制之后。差一帧，用户看不出来。
+    // data-theme 一改，整页要重算样式再重绘：fixed 渐变底 + 多层 backdrop-filter，
+    // 手机上这一帧的呈现延迟可到 90ms+（Cloudflare 报 #colorMode INP 264ms，而事件处理本身只有 6ms）。
+    // 所以交互路径上不直接 applyTheme：先画便宜的反馈（菜单收起、按钮文字），
+    // 整页重绘推到下一次绘制之后。差一帧，用户看不出来。
     let pendingTheme = null;
     let themeApplyScheduled = false;
 
@@ -150,10 +148,9 @@
 
     // 4c. 自绘下拉
     // ------------------------------------------------------------------
-    // 原生 <select> 的弹层由系统绘制，CSS 完全无法着色（深色主题下会露出
-    // 系统灰白方块）。所以：原生 select 只当数据源保留在 DOM 里（上面的逻辑
-    // 一行都不用改），可见部分由 button + ul 代理。
-    // 所有对 select.value / .disabled 的写入都要在末尾调 syncColorSelectUI()。
+    // 原生 <select> 弹层由系统绘制，CSS 无法着色（深色主题下会露出系统灰白方块）。
+    // 所以原生 select 只当数据源留在 DOM 里（上面的逻辑不用改），可见部分由 button + ul 代理。
+    // 所有对 select.value / .disabled 的写入末尾都要调 syncColorSelectUI()。
     const colorSelectWrap = document.getElementById('colorModeSelectWrap');
     const colorTrigger = document.getElementById('colorModeTrigger');
     const colorMenu = document.getElementById('colorModeMenu');
@@ -294,9 +291,8 @@
     // =============================================
     // 6. 地形开关
     // =============================================
-    // 设置页是独立页面，settings.js 为普通脚本（非 module，无法 import），
-    // 因此这里内联一份与 js/utils.js 相同语义的 emoji → SVG 映射，
-    // 保证设置页提示同样不出现 emoji，且与主页面表现一致。
+    // settings.js 是普通脚本（非 module，无法 import），这里内联一份与 js/utils.js
+    // 同语义的 emoji → SVG 映射，保证设置页提示也不出现 emoji。
     const TOAST_EMOJI_MAP = {
         '📍': 'pin', '📌': 'pin',
         '🌍': 'globe', '🌏': 'globe', '🌎': 'globe',
@@ -359,8 +355,8 @@
     // ========================================================================
     // 页内确认弹窗（取代原生 confirm）
     // ------------------------------------------------------------------------
-    // 原生确认框在 Android 外壳里是「<域名> 显示」的系统对话框，不跟随主题，
-    // 也不套用本站样式。这里复用本页 .modal / .modal-content 结构。
+    // 原生确认框在 Android 外壳里是「<域名> 显示」的系统对话框，不跟主题、不套本站样式。
+    // 这里复用本页 .modal / .modal-content 结构。
     // ========================================================================
     let resolveConfirmRequest = null;
 
@@ -535,10 +531,8 @@
     });
 
     // 请求 Service Worker 重新预热应用外壳缓存。
-    // Service Worker 已安装时不会重跑 install，缓存被删除后若不主动重建，
-    // 离线能力会一直缺失到 sw.js 下次变更为止。
-    // 用 getRegistration() 而不是 navigator.serviceWorker.ready：
-    // 后者在尚未注册 Service Worker 时会永远挂起，把整个流程卡住。
+    // SW 已安装时不会重跑 install，缓存被删后要主动重建，否则离线能力一直缺失。
+    // ⚠️ 用 getRegistration() 而非 serviceWorker.ready：后者在未注册时永远挂起。
     async function requestShellRepopulation() {
         if (!('serviceWorker' in navigator)) return false;
         try {
@@ -593,10 +587,8 @@
             }
 
             // 5. 清除设置数据（恢复默认）
-            // 这里刻意把各项写回**默认值**而不是 removeItem：
-            // 主页面用 `!== 'false'` / `=== 'true'` 判断，removeItem 会让它收到
-            // newValue: null，从而把「恢复默认」误读成「全部关闭」——
-            // 于是清完设置，地形看着也被关掉了，下次刷新才回来。
+            // ⚠️ 写回默认值而不是 removeItem：主页面用 `!== 'false'` / `=== 'true'` 判断，
+            // removeItem 会送出 newValue: null，把「恢复默认」误读成「全部关闭」。
             if (clearSettings && clearSettings.checked) {
                 localStorage.setItem('terrainEnabled', 'true');   // 默认开
                 localStorage.setItem('overlayEnabled', 'false');  // 默认关
@@ -644,12 +636,11 @@
     // =============================================
     // 兼容性诊断
     // =============================================
-    // 为什么放在设置页：排查"卡在加载页 / 地球全黑"必须在**壳自己的 WebView**
-    // 里测 —— 同一台手机上的 Chrome / Edge 与系统 WebView 是两个内核，
-    // 浏览器能跑不代表 WebView 能跑。而壳里没有地址栏、调试器也可能连不上，
-    // 设置页是唯一一个能在 App 内打开、又允许跑脚本的地方。
+    // 为什么放设置页：排查「卡在加载页 / 地球全黑」必须在壳自己的 WebView 里测 ——
+    // 同机 Chrome 与系统 WebView 是两个内核，而壳里没地址栏、调试器难连，
+    // 设置页是唯一能在 App 内打开又允许跑脚本的地方。
     //
-    // 检测顺序刻意与主页面启动顺序一致：
+    // 检测顺序与主页面启动顺序一致：
     //   WebGL 2 → ES Module → importmap 裸标识符 → Cesium 下载 → Viewer 初始化
     // 哪一步先红，问题就在那一步。
     const diagRunBtn = document.getElementById('diagRunBtn');

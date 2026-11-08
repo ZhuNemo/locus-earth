@@ -3,12 +3,9 @@ import { showToast } from './utils.js';
 import { initCameraFeel } from './camera-feel.js';
 
 export function initViewer(containerId, terrainProvider) {
-    // 默认底图：Sentinel-2（Ion 资产 3954）。
-    // 异步工厂 + ImageryLayer 包装：元数据就绪前 Viewer 照常创建。
-    //
-    // 离线时这一步可能失败（拿不到 ion 的 endpoint JSON），后果是图层空着 ——
-    // 表现就是"界面都在、地球全黑"。这里显式提示一句，别让用户对着黑球猜；
-    // 正常情况下 SW 会用缓存里的那份 endpoint 顶上，根本走不到 catch。
+    // 默认底图：Sentinel-2（ion 资产 3954）。异步工厂 + ImageryLayer 包装，
+    // 元数据就绪前 Viewer 照常创建。
+    // 离线时可能拿不到 endpoint JSON，图层会空着（界面对、地球全黑）。SW 有缓存时走不到 catch。
     const baseLayerProvider = Cesium.IonImageryProvider.fromAssetId(3954).catch((error) => {
         console.warn('默认底图（Sentinel-2）加载失败，可能是离线或 ion 不可达:', error);
         showToast('底图未能加载：离线时只显示已经缓存过的区域');
@@ -33,13 +30,10 @@ export function initViewer(containerId, terrainProvider) {
         sceneMode: Cesium.SceneMode.SCENE3D,
         locale: 'zh-CN',
 
-        // ================= 抗锯齿：刻意关掉 MSAA，改用 FXAA =================
-        // 背景：这一项**不写**的话，浏览器按 WebGL 规范默认 antialias=true。
-        // 而 Chromium 在 GPU 不支持硬件 MSAA 的设备上可能退化成"软件 MSAA"
-        // —— 按像素多次采样，填充率直接崩（Cocos Creator 当年就是被这个坑到
-        // 强制关掉的）。支持硬件 MSAA 的设备则会拿到 4x MSAA，带宽和显存代价
-        // 同样不低。两种结果对"连续拖动的地球"都不划算：掉帧比锯齿更显眼。
-        // 所以这里显式关掉上下文自带的 MSAA，抗锯齿交给下面的 FXAA。
+        // ================= 抗锯齿：关 MSAA，改用 FXAA =================
+        // 不写这项时 WebGL 默认 antialias=true。Chromium 在无硬件 MSAA 的设备上可能退化成
+        // 软件 MSAA（每像素多次采样，填充率崩），支持硬件的则拿 4x MSAA，带宽与显存都不低。
+        // 对连续拖动的地球来说掉帧比锯齿更显眼，所以显式关掉，交给下面的 FXAA。
         contextOptions: {
             webgl: {
                 antialias: false
@@ -47,29 +41,20 @@ export function initViewer(containerId, terrainProvider) {
         }
     });
 
-    // ----- 抗锯齿：FXAA（后处理） -----
-    // 代价只有一次全屏廉价 pass，不额外占显存，对标记点、折线这类细边缘有效。
-    // 要知道的副作用：开了它 Cesium 会走后处理纹理路径（先画离屏纹理再 blit 到屏幕），
-    // 此时起作用的是 scene.msaaSamples（默认 1 = 关）而不是上下文自带的 antialias。
-    // 低端机上如果觉得变卡，把这一行改成 false 即可，没有其它牵连。
+    // FXAA：一次全屏廉价 pass，不额外占显存。
+    // ⚠️ 开了它 Cesium 走后处理纹理路径，此时起作用的是 scene.msaaSamples（默认 1=关），
+    //    不再是上下文自带的 antialias。低端机卡就把这一行改 false，无其它牵连。
     viewer.scene.postProcessStages.fxaa.enabled = true;
 
-    // ----- 禁用 Cesium 的「双击追踪实体」 -----
-    // Viewer 构造时内部注册了 LEFT_DOUBLE_CLICK → 若实体有 position 就把它
-    // 设成 trackedEntity，相机随即进入「绕该实体旋转」的追踪模式，而且
-    // 必须再点别的实体/地表多次才退得出（用户实测踩过：双击标记→地球绕标记转）。
-    //
-    // 为什么单独移除，而不是让 camera-feel.js 覆盖它：
-    //   ScreenSpaceEventHandler 是「每实例一份」的事件表，Viewer 内部那份
-    //   和 camera-feel.js 自己 new 的那份互不覆盖——两个 handler 会**同时**
-    //   响应双击。camera-feel 对 _isBookmark 的标记直接 return（不缩放），
-    //   但 Viewer 的追踪 handler 照跑，于是「想双击看标记，结果镜头绕标记转」。
-    //   这里把 Viewer 自带的双击动作摘掉，双击缩放仍由 camera-feel 独占。
+    // ----- 禁用「双击追踪实体」 -----
+    // ⚠️ Viewer 构造时内部注册 LEFT_DOUBLE_CLICK：实体有 position 就设 trackedEntity，
+    //    相机进入绕该实体旋转的追踪模式，很难退出。
+    //    必须摘掉而不是让 camera-feel 覆盖：ScreenSpaceEventHandler 每实例一份，
+    //    两个 handler 会同时响应同一次双击。双击缩放仍由 camera-feel 独占。
     viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
-    // ----- 相机手感（手势映射 / 惯性 / 双击缩放 / 动态分辨率）-----
-    // 全部逻辑集中在 camera-feel.js，这里只负责交接。
-    // ⚠️ 别在这里再写 controller.inertia = {...}：Cesium 1.118 没有这个属性，
+    // ----- 相机手感（手势 / 惯性 / 双击缩放 / 动态分辨率），逻辑全在 camera-feel.js -----
+    // ⚠️ 别在这里写 controller.inertia = {...}：Cesium 1.118 没有该属性，
     //    惯性是 inertiaSpin / inertiaZoom / inertiaTranslate 三个标量。
     initCameraFeel(viewer);
 
