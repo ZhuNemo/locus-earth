@@ -63,7 +63,10 @@ export async function initHdLayers(viewer, showToast) {
 
         
 
-        // ----- 高精度模型加载与管理 -----
+        // ----- 高精度模型：按需加载 -----
+        // ⚠️ 早期这里在启动时就把 7 座城市的 ion 3D Tileset 全部创建（Promise.allSettled），
+        //    而这些资产用户可能一辈子都不点。每个 tileset 至少要一次资产 endpoint + 根
+        //    tileset.json，实例还会常驻内存。现在只建用户真正点开的那一座，其余零成本。
         const hdCityAssets = [
             { id: 354307, name: '丹佛' },
             { id: 57588, name: '华盛顿D.C.' },
@@ -73,42 +76,58 @@ export async function initHdLayers(viewer, showToast) {
             { id: 69380, name: '墨尔本' },
             { id: 1415196, name: '旧金山' },
         ];
-        const hdTilesets = [];
+        const hdTilesets = new Map();   // 城市名 → tileset（已建）
+        const hdLoading = new Map();    // 城市名 → Promise（连点去重）
+        let currentAreaName = null;
 
-        async function loadHdCities() {
-            // 使用并行加载，任何一个失败都不影响其他
-            const results = await Promise.allSettled(
-                hdCityAssets.map(async (item) => {
-                    const tileset = await Cesium3DTileset.fromIonAssetId(item.id);
+        function loadCity(name) {
+            if (hdTilesets.has(name)) return Promise.resolve(hdTilesets.get(name));
+            if (hdLoading.has(name)) return hdLoading.get(name);
+
+            const asset = hdCityAssets.find((item) => item.name === name);
+            if (!asset) return Promise.resolve(null);
+
+            const task = Cesium3DTileset.fromIonAssetId(asset.id)
+                .then((tileset) => {
                     tileset.show = false;
                     viewer.scene.primitives.add(tileset);
-                    return { name: item.name, tileset };
-                })
-            );
-            // 处理结果
-            for (const result of results) {
-                if (result.status === 'fulfilled') {
-                    const { name, tileset } = result.value;
-                    hdTilesets.push(tileset);
+                    hdTilesets.set(name, tileset);
                     console.log(`高精度模型加载: ${name}`);
-                } else {
-                    console.warn(`加载失败:`, result.reason);
-                }
-            }
+                    return tileset;
+                })
+                .catch((error) => {
+                    console.warn(`高精度模型加载失败: ${name}`, error);
+                    return null;
+                })
+                .finally(() => hdLoading.delete(name));
+
+            hdLoading.set(name, task);
+            return task;
         }
 
-        // 非阻塞加载（不等待完成）
-        loadHdCities().catch(e => console.warn('高精度模型加载失败', e));
-        
-        
-
-        function setHdTilesetsVisible(visible) {
+        async function setHdTilesetsVisible(visible) {
             hdTilesetsVisible = visible;
-            for (const tileset of hdTilesets) {
-                tileset.show = visible;
+
+            if (!visible) {
+                hdTilesets.forEach((tileset) => { tileset.show = false; });
+                return;
             }
+
+            // 只加载相机所在的那一座城；不在覆盖区时按钮本就是隐藏的
+            const name = currentAreaName;
+            if (!name) return;
+
+            const tileset = await loadCity(name);
+            if (!tileset) {
+                // 失败要把状态与按钮一起回滚，别留一个高亮着却没有内容的按钮
+                hdTilesetsVisible = false;
+                hdToggleBtn.classList.remove('active');
+                setBuildingsBtnEnabled(true);
+                showToast('⚠️ 高精度模型加载失败（可能离线或资产不可用）');
+                return;
+            }
+            tileset.show = hdTilesetsVisible;
         }
-        setHdTilesetsVisible(false);
         
         // 初始化标记功能
 
@@ -129,17 +148,20 @@ export async function initHdLayers(viewer, showToast) {
             const lat = CesiumMath.toDegrees(carto.latitude);
             
 
-            let inArea = false;
+            let areaName = null;
             for (const area of hdAreas) {
                 const dist = Cartesian3.distance(
                     Cartesian3.fromDegrees(area.lon, area.lat),
                     Cartesian3.fromDegrees(lon, lat)
                 );
                 if (dist < area.radius) {
-                    inArea = true;
+                    areaName = area.name;
                     break;
                 }
             }
+            // 相机所在城市 = 需要按需加载的那一座；离开后置空
+            currentAreaName = areaName;
+            const inArea = areaName !== null;
 
             // 进入覆盖区
             if (inArea && !isInHdArea) {
@@ -164,7 +186,6 @@ export async function initHdLayers(viewer, showToast) {
                 // 如果高精度模型是开启的（可能残留），强制关闭
                 if (hdTilesetsVisible) {
                     setHdTilesetsVisible(false);
-                    hdTilesetsVisible = false;
                 }
                 // 根据3D建筑状态决定高精度按钮是否可点击（互斥）
                 // 如果3D建筑开启，高精度按钮灰；否则可点
@@ -198,7 +219,6 @@ export async function initHdLayers(viewer, showToast) {
                 // 如果高精度模型是开启的，自动关闭
                 if (hdTilesetsVisible) {
                     setHdTilesetsVisible(false);
-                    hdTilesetsVisible = false;
                     showToast('📍 已离开高精度建模覆盖区域，已自动关闭高精度模型');
                 }
                 wasOsmDisabledByHd = false;
@@ -235,10 +255,10 @@ export async function initHdLayers(viewer, showToast) {
                 wasOsmDisabledByHd = true; // 记录是因为高精度而关闭
             }
 
-            // 切换高精度状态
+            // 切换高精度状态。首次开启才会去拉这座城市的 tileset（见 loadCity），
+            // 失败时函数内部会把状态与按钮回滚。
             const newState = !hdTilesetsVisible;
             setHdTilesetsVisible(newState);
-            hdTilesetsVisible = newState;
 
             if (newState) {
                 // 高精度开启

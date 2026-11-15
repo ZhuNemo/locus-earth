@@ -103,6 +103,53 @@ window.addEventListener('pointerup', () => {
 
 **为什么只在手机上偶发**：长按分支要求 `event.pointerType !== 'mouse'`，桌面右键走 `contextmenu`、`press` 为 `null`，根本进不了这段逻辑。
 
+### 1.4 「真实光照」不只是 `globe.enableLighting`
+
+地表与模型看的是**同一个** `scene.light`，但开关是分开的：
+
+- 地表有没有昼夜分界由 `globe.enableLighting` 决定，可分界本身取的是 `scene.light` 的漫反射
+  （`GlobeFS`：`diffuseIntensity = clamp(czm_getLambertDiffuse(czm_lightDirectionEC, n) * 5.0 + 0.3, 0.0, 1.0)`），
+  不是直接取太阳方向。
+- 建筑 / 3D Tiles 没有开关，永远用 `scene.light`。
+
+所以「关光照」只写 `globe.enableLighting = false`，太阳仍留在 `scene.light` 上 —— 地面均匀了，
+模型却照旧被单向照射，朝向太阳的反面发黑（2026-11 用户报的现象）。`scene.light = undefined` 也不行：
+`UniformState.update` 里是 `frameState.light ?? defaultLight`，会退回到内置的 `SunLight`。
+
+正确做法（`js/globe-light.js`）：关光照时把 `scene.light` 换成 `DirectionalLight`，方向每帧跟
+`camera.directionWC`（机头灯）。**强度要抄太阳灯的 `intensity`** —— `SunLight` 默认是 `2`，
+写 1 会让模型整体暗一半。
+
+「相机拉近后昼夜分界自动消失」是引擎自带行为，不是项目代码：`Globe.lightingFadeOutDistance` /
+`lightingFadeInDistance` 默认 `1e7` / `2e7` 米，着色器算
+`fade = clamp((cameraDist - fadeOut) / (fadeIn - fadeOut), 0, 1)`，再
+`diffuseIntensity = mix(1.0, diffuseIntensity, fade)`，所以低于约一万公里 `fade = 0`、分界被拉平成全亮。
+
+要「怎么缩放都不淡出」就把 `fade` 顶死在 1：取 `fadeOut = -1`、`fadeIn = 0` ⇒ `fade = cameraDist + 1 ≥ 1`。
+
+**但 `fade` 不是只管分界。** 同一个量还控制「地面大气」那条渲染分支：
+
+```glsl
+vec3 finalAtmosphereColor = finalColor.rgb + groundAtmosphereColor.rgb * transmittance;
+#ifndef HDR
+    finalAtmosphereColor.rgb = vec3(1.0) - exp(-fExposure * finalAtmosphereColor.rgb);  // 整幅重映射
+#endif
+finalColor.rgb = mix(finalColor.rgb, finalAtmosphereColor.rgb, fade);
+```
+
+只顶死 `fade` 而不动大气，近地整幅图会被洗亮掉色 —— 1000 km 同机位实测：
+RGB `70/77/59`、饱和度 `41%` → `110/127/118`、`24%`，看起来发灰发白。
+
+所以这两个开关必须**成对**处理（`js/globe-light.js` 的 `apply()`）：
+
+- 开光照 / 遮罩：`fadeOut = -1`、`fadeIn = 0`（分界任何高度都在）**且** `globe.showGroundAtmosphere = false`
+  （避开上面那条分支）。地表只剩「影像 × 灯色 × 漫反射」，实测与关光照时逐像素一致。
+- 关光照：两个都还原成引擎默认，否则默认模式自己在近地也会被洗白。
+
+代价两条，都是有意的：① 开光照时行星表面不再叠「近地面大气雾」（边缘的蓝色光晕来自
+`scene.atmosphere`，仍在）；② 遮罩模式必须用太阳当灯（分界就是这盏灯的漫反射，换机头灯等于
+「每个可见面都正对光源」，近地立刻没有分界），所以遮罩打开时模型也跟太阳走。
+
 ---
 
 ## 2. 相机与触控手势
@@ -331,6 +378,20 @@ Android WebView 对 `<a download>` + `blob:` 是**静默丢弃**的：没有 `Do
 `#buildingsToggleBtn` 这类 `<div role="button">` 赋 `.disabled` 没有原生效果：浏览器不拦点击，`:disabled` 也匹配不到，灰化只是视觉。
 
 配套做法：`hd-layers.js` 集中维护「可点击标志 + `aria-disabled` + 视觉」，`ui.js` 在 click 里读标志真正拦截。
+
+### 5.7 时间轴的四个坑
+
+时间轴从「一条假 range + 写死在 50% 的红线」改成「两条可拖刻度带」（`js/time-control.js`）。改这四条之前先看这里：
+
+**① 拖动必须先把 `clock.shouldAnimate` 置 false。** 光照开关（`ui.js` 的 `switchLighting`）会把 `shouldAnimate` 设成 true 让时钟跟随系统时间；此时 `clock.onTick` 每帧按真实时间推进 `currentTime`，用户拖出来的时刻下一帧就被冲回「现在」，表现为「拖了没反应」。手动拨时间与跟随系统时间互斥，`Now` 按钮再把它设回 `globe.enableLighting`。
+
+**② 刻度带位移要取整。** 1px 宽的刻度线落在半像素上会被抗锯齿摊成两半灰，密集刻度看上去「有的又短又淡」。`translate3d` 的 x 用 `Math.round()`，代价是小于 1px 的平滑位移没有了——刻度带本来就该一格一格跳。
+
+**③ 日期条按整天步进。** 允许小数天等于把「时刻」也一起拖走，两条带会互相打架。时刻条反过来是 24 小时循环，跨 0 点绕回 23:59 而不改日期；注意 `setMinutes()` 遇到 1440 会进位到次日，先夹在 `0..1439`。
+
+**④ `hour12: false` 不是 24 小时制。** `Intl` 的 en-US 在 `hour12: false` 下走 h24，`0:30` 显示成 `24:30`。要 24 小时制必须显式写 `hourCycle: 'h23'`。
+
+另外两条格式化约束：日期与时刻要分开用两个 `Intl.DateTimeFormat`（合成一个 `{ month, day, hour, minute }` 时 en-US 会输出 `November 15 at 11:32`，连接词是 "at"）；月份名要用 `timeZone: 'UTC'` 格式化，因为标签位置来自 UTC 天序号，用本地时区会在负时区把 1 月 1 日读成上一年 12 月。
 
 ---
 

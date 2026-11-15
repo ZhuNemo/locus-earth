@@ -187,6 +187,8 @@ export function initMapContextMenu(viewer) {
         }
         menu.style.left = `${left}px`;
         menu.style.top = `${top}px`;
+        // 展开原点落在按下的那一点：菜单向左 / 向上翻转时也朝手指方向长出来
+        menu.style.transformOrigin = `${clientX - left}px ${clientY - top}px`;
 
         return true;
     }

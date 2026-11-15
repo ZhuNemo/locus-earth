@@ -20,6 +20,10 @@ let tencentProvider = null;
 let tiandituProvider = null;
 let tiandituLabelProvider = null;
 
+// 上次选过的底图。Sentinel-2 走 ion（按流式数据计费），用户既然选了天地图/腾讯，
+// 下次启动就不该再建一遍 Sentinel-2 —— 建了立刻被替换，纯浪费一次请求与几屏瓦片。
+const BASEMAP_KEY = 'locus-basemap';
+
 // ---------- 底图清单（basemap-picker.js 据此渲染菜单） ----------
 // icon 使用 2x 源图，CSS 里缩到 56px，高分屏依然锐利
 export const BASEMAPS = [
@@ -124,15 +128,55 @@ function updateOverlay() {
 }
 
 // ---------- 初始化 ----------
+function savedBasemapId() {
+    try {
+        const id = localStorage.getItem(BASEMAP_KEY);
+        if (BASEMAPS.some((b) => b.id === id)) return id;
+    } catch {}
+    return 'sentinel-2';
+}
+
+/**
+ * 启动时创建底图 provider，交给 initViewer 的 baseLayer。
+ * 必须在 Viewer 构造之前调用（Viewer 的 baseLayer 只取一次）。
+ * @returns {Promise<object>} ImageryProvider
+ */
+export function createInitialBasemap() {
+    ensureProviders();
+
+    const id = savedBasemapId();
+    const entry = BASEMAPS.find((b) => b.id === id) || BASEMAPS[0];
+    currentBasemapId = entry.id;
+    // 天地图启动时叠加层由 initImagery 按开关补，这里只对齐"上一个底图"标记，
+    // 免得初始化后就弹一句"路网已开启"。
+    previousIsTDT = entry.id === 'tianditu';
+
+    return Promise.resolve()
+        .then(() => entry.create())
+        .catch((error) => {
+            console.warn(`初始底图「${entry.name}」加载失败，回退 Sentinel-2:`, error);
+            currentBasemapId = 'sentinel-2';
+            previousIsTDT = false;
+            return null;
+        })
+        .then((provider) => {
+            if (provider) return provider;
+            return Cesium.IonImageryProvider.fromAssetId(3954).catch((error) => {
+                console.warn('默认底图（Sentinel-2）加载失败，可能是离线或 ion 不可达:', error);
+                showToast('底图未能加载：离线时只显示已经缓存过的区域');
+                throw error;
+            });
+        });
+}
+
 export function initImagery(viewer) {
     viewerInstance = viewer;
     ensureProviders();
 
-    // viewer.js 以 Sentinel-2（Ion 3954）作为 baseLayer 创建，
-    // 这里把引用接过来，供后续切换时移除
+    // viewer.js 用 createInitialBasemap() 的 provider 作 baseLayer 创建，
+    // 这里把引用接过来，供后续切换时移除。
     currentBaseLayer = viewer.imageryLayers.get(0) || null;
-    currentBasemapId = 'sentinel-2';
-    previousIsTDT = false;
+    previousIsTDT = currentBasemapId === 'tianditu';
 
     // 任何原因导致图层离开集合时（例如谷歌模式里的 imageryLayers.removeAll()），
     // 必须把引用置空。否则 updateOverlay() 会以为叠加层仍然存在，
@@ -179,6 +223,9 @@ export function setBasemap(id) {
             }
             currentBaseLayer = layers.addImageryProvider(provider, 0);
             currentBasemapId = id;
+            try {
+                localStorage.setItem(BASEMAP_KEY, id);
+            } catch {}
             updateOverlay();
             if (entry.warning) {
                 showToast(entry.warning);
@@ -190,25 +237,30 @@ export function setBasemap(id) {
         });
 }
 
-// ---------- 恢复默认底图 ----------
+// ---------- 恢复底图（不重置用户的选择）----------
 // 谷歌模式退出 / 降级时调用：进入谷歌模式会 imageryLayers.removeAll()，
 // 所以这里必须重建底图并复位内部状态，否则会留下全黑的球。
+// 重建的是「当前底图」而不是写死 Sentinel-2：用户本来在天地图上，
+// 退出谷歌模式却去拉 ion 的 Sentinel-2，纯属白烧配额。
 export function restoreDefaultBasemap() {
     if (!viewerInstance) return Promise.resolve();
     const layers = viewerInstance.imageryLayers;
     layers.removeAll(true);
     overlayLayer = null;
     currentBaseLayer = null;
-    currentBasemapId = 'sentinel-2';
 
-    return Cesium.IonImageryProvider.fromAssetId(3954)
+    const entry = BASEMAPS.find((b) => b.id === currentBasemapId) || BASEMAPS[0];
+    currentBasemapId = entry.id;
+
+    return Promise.resolve()
+        .then(() => entry.create())
         .then((provider) => {
             currentBaseLayer = layers.addImageryProvider(provider, 0);
-            previousIsTDT = false;
+            previousIsTDT = entry.id === 'tianditu';
             updateOverlay();
-            console.log('已恢复哨兵2底图');
+            console.log(`已恢复底图：${entry.name}`);
         })
         .catch((e) => {
-            console.error('哨兵2底图恢复失败:', e);
+            console.error(`底图「${entry.name}」恢复失败:`, e);
         });
 }

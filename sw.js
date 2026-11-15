@@ -5,6 +5,7 @@
 //   导航请求     → 缓存优先 + 后台更新；无缓存才等网络，失败返回离线提示页
 //   应用外壳资源 → 缓存优先 + 后台回源更新
 //   Cesium 引擎  → 缓存优先，独立缓存（带版本号，随版本淘汰）
+//   地形瓦片     → 独立缓存，命中后不回首；超 800 片 FIFO 裁剪（复用瓦片开关）
 //   底图瓦片     → 独立缓存，命中后不回首；超 2400 片 FIFO 裁剪；开关见设置页
 //   ion 资产接口 → 缓存优先（45 分钟内）+ 后台换新，离线用旧票据
 //   其他请求     → 网络优先，失败回退缓存
@@ -16,8 +17,8 @@
 // ============================================================================
 
 // 版本号必须比已部署过的都大，否则装了更高号缓存的用户不会换缓存。
-// 历史：v31 → v33（远端线）→ v34 合并 → v35 修复 → v36 设置页诊断 → v37 去 importmap → v48
-const CACHE_VERSION = 'v48';
+// 历史：v31 → v33（远端线）→ v34 合并 → v35 修复 → v36 设置页诊断 → v37 去 importmap → v48 → v49 → v50
+const CACHE_VERSION = 'v50';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // 引擎缓存名带版本号，升级后旧缓存在 activate 时淘汰，不在同一缓存里无限累积。
@@ -37,6 +38,16 @@ const TILE_MAX_ENTRIES = 2400;
 const TILE_PRUNE_RATIO = 0.8;
 // 每写入这么多片才检查一次总量。
 const TILE_PRUNE_INTERVAL = 150;
+
+// 地形瓦片（quantized-mesh）缓存。
+// ion 按「流式数据量」计费，地形恰恰是单块最大的一类（几十到两百 KB），
+// 且同一片区域每次重开页面都会重新请求 —— 缓存下来是省配额最直接的一招。
+// 与影像瓦片分开存：两者体积与有效期不同，混在一起会让影像的 FIFO 提前淘汰地形。
+// ⚠️ 同样不带 CACHE_VERSION：地形与代码版本无关，发版不该丢用户的离线地形。
+const TERRAIN_CACHE_NAME = 'locus-earth-terrain-v1';
+// 每块 40–200 KB，800 块约 30–160 MB。比影像瓦片少，因为地形只覆盖用户真正看过的地方。
+const TERRAIN_MAX_ENTRIES = 800;
+const TERRAIN_PRUNE_INTERVAL = 60;
 
 // ----------------------------------------------------------------------------
 // 瓦片缓存开关（由设置页推过来）
@@ -132,6 +143,7 @@ const SHELL_URLS = [
   './js/context-menu.js',
   './js/compass.js',
   './js/time-control.js',
+  './js/globe-light.js',
   './js/utils.js',
   './js/config.js',
   './js/coord-transform.js',
@@ -202,6 +214,25 @@ function isTileRequest(request, requestURL) {
     TILE_PATH_HINT.test(requestURL.pathname) ||
     TILE_QUERY_HINT.test(requestURL.search)
   );
+}
+
+// ----------------------------------------------------------------------------
+// 地形识别
+// ----------------------------------------------------------------------------
+// ion 的地形不走 assets.cesium.com，而是按区域分发到 assets.ion.cesium.com
+// （实测：https://assets.ion.cesium.com/us-east-1/asset_depot/1/CesiumWorldTerrain/v1.2/
+//    layer.json
+//    5/52/23.terrain?extensions=metadata&v=1.2.0  ← 层级/列/行在前，文件名在后）
+// 所以只按「末尾三段数字 + .terrain」和「layer.json 结尾」判断，不依赖前面的资产路径。
+// 同一域名下还有 3D Tiles 的 .b3dm / .glb / tileset.json，体积与更新策略完全不同，不缓存。
+const ION_TERRAIN_HOSTS = ['ion.cesium.com', 'assets.cesium.com'];
+const TERRAIN_TILE_PATH = /\/\d+\/\d+\/\d+\.terrain$/;
+const TERRAIN_LAYER_PATH = /\/layer\.json$/;
+
+function isTerrainRequest(requestURL) {
+  const onIonAssetHost = ION_TERRAIN_HOSTS.some(domain => hostMatches(requestURL.hostname, domain));
+  if (!onIonAssetHost) return false;
+  return TERRAIN_TILE_PATH.test(requestURL.pathname) || TERRAIN_LAYER_PATH.test(requestURL.pathname);
 }
 
 // 缓存键归一化。
@@ -402,7 +433,8 @@ function precacheShell() {
 // ----------------------------------------------------------------------------
 // 入口。开关状态下才进缓存逻辑；关掉时整条请求原样放行 —— 不查缓存、不写缓存，
 // 也不干预 HTTP 缓存（用户要的就是每次都从网络拿，这时替他省流量是违背意愿的）。
-function handleTileRequest(event, request, requestURL) {
+// 影像与地形共用这个入口：开关的语义是「本地存不存地图数据」，没必要拆成两个。
+function handleCachedRequest(event, request, requestURL, serve) {
   return loadTileSwitch().then(() => {
     if (!tileCacheEnabled) {
       // 关掉开关：整条放行，并且**连 HTTP 缓存也不碰**。
@@ -410,18 +442,26 @@ function handleTileRequest(event, request, requestURL) {
       // 存），看起来就像"开关没用"。no-store 的含义正好是"不用缓存也不用存"。
       return fetch(request, { cache: 'no-store' });
     }
-    return serveTile(event, request, requestURL);
+    return serve(event, request, requestURL);
   });
 }
 
-// 缓存优先，命中直接返回、不再回源。外壳资源需要后台回源跟版本；影像瓦片基本不变，
-// 回源只白耗流量，还会把「离线可看」变成「离线看运气」。更新影像走设置页「清除瓦片缓存」。
+function handleTileRequest(event, request, requestURL) {
+  return handleCachedRequest(event, request, requestURL, serveTile);
+}
+
+function handleTerrainRequest(event, request, requestURL) {
+  return handleCachedRequest(event, request, requestURL, serveTerrain);
+}
+
+// 缓存优先，命中直接返回、不再回源。外壳资源需要后台回源跟版本；影像与地形瓦片基本不变，
+// 回源只白耗流量，还会把「离线可看」变成「离线看运气」。更新瓦片走设置页「清除瓦片缓存」。
 // ⚠️ 回源必须带 cache: 'no-store'：否则浏览器在 HTTP 缓存里再存一份，网页查不到也删不掉
 // —— 用户点「清除瓦片缓存」后占用没降，多半就是它。
-function serveTile(event, request, requestURL) {
+function serveCachedTile(event, request, requestURL, cacheName, store) {
   const key = tileCacheKey(requestURL);
 
-  return caches.open(TILE_CACHE_NAME).then(cache =>
+  return caches.open(cacheName).then(cache =>
     cache.match(key).then(cached => {
       // 不透明响应不能回给 cors 模式的请求，浏览器会直接判为网络错误。
       // 现在的写入路径只存 2xx 的可读响应，这里只是兜底。
@@ -431,7 +471,7 @@ function serveTile(event, request, requestURL) {
       return fetch(request, { cache: 'no-store' })
         .then(response => {
           if (response && response.ok) {
-            event.waitUntil(storeTile(cache, key, response.clone()));
+            event.waitUntil(store(cache, key, response.clone()));
           }
           return response;
         })
@@ -444,8 +484,18 @@ function serveTile(event, request, requestURL) {
   );
 }
 
+function serveTile(event, request, requestURL) {
+  return serveCachedTile(event, request, requestURL, TILE_CACHE_NAME, storeTile);
+}
+
+function serveTerrain(event, request, requestURL) {
+  return serveCachedTile(event, request, requestURL, TERRAIN_CACHE_NAME, storeTerrainTile);
+}
+
 let tileWritesSincePrune = 0;
 let tileStoreWarned = false;
+let terrainWritesSincePrune = 0;
+let terrainStoreWarned = false;
 
 function storeTile(cache, key, response) {
   return cache
@@ -454,7 +504,7 @@ function storeTile(cache, key, response) {
       tileWritesSincePrune++;
       if (tileWritesSincePrune < TILE_PRUNE_INTERVAL) return undefined;
       tileWritesSincePrune = 0;
-      return pruneIfNeeded(cache);
+      return pruneIfNeeded(cache, TILE_MAX_ENTRIES);
     })
     .catch(error => {
       // 配额不足（QuotaExceededError）或响应带 Vary: *。前者靠裁剪自救，
@@ -472,15 +522,36 @@ function storeTile(cache, key, response) {
     });
 }
 
+function storeTerrainTile(cache, key, response) {
+  return cache
+    .put(key, response)
+    .then(() => {
+      terrainWritesSincePrune++;
+      if (terrainWritesSincePrune < TERRAIN_PRUNE_INTERVAL) return undefined;
+      terrainWritesSincePrune = 0;
+      return pruneIfNeeded(cache, TERRAIN_MAX_ENTRIES);
+    })
+    .catch(error => {
+      if (!terrainStoreWarned) {
+        terrainStoreWarned = true;
+        console.warn('地形瓦片写入缓存失败，已跳过（可能存储空间不足）:', error);
+      }
+      if (error && error.name === 'QuotaExceededError') {
+        return pruneTo(cache, 0.5);
+      }
+      return undefined;
+    });
+}
+
 // 超过上限时裁到 TILE_PRUNE_RATIO。Cache.keys() 在主流实现里按插入顺序返回，
 // 因此效果是先进先出（FIFO）：先被访问过的区域先被淘汰。没有做真正的 LRU ——
 // 每次命中都重写一遍缓存条目，代价远高于它能省下的那点空间。
-function pruneIfNeeded(cache) {
+function pruneIfNeeded(cache, maxEntries = TILE_MAX_ENTRIES) {
   return cache
     .keys()
     .then(keys => {
-      if (keys.length <= TILE_MAX_ENTRIES) return undefined;
-      const target = Math.floor(TILE_MAX_ENTRIES * TILE_PRUNE_RATIO);
+      if (keys.length <= maxEntries) return undefined;
+      const target = Math.floor(maxEntries * TILE_PRUNE_RATIO);
       const excess = keys.slice(0, keys.length - target);
       return Promise.all(excess.map(key => cache.delete(key)));
     })
@@ -505,7 +576,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  const keep = [APP_CACHE_NAME, CESIUM_CACHE_NAME, TILE_CACHE_NAME, FLAGS_CACHE_NAME];
+  const keep = [APP_CACHE_NAME, CESIUM_CACHE_NAME, TILE_CACHE_NAME, TERRAIN_CACHE_NAME, FLAGS_CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -620,7 +691,16 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // ---- 3. Cesium 引擎资源：缓存优先，缓存名带版本号 ----
+  // ---- 3. 地形瓦片：独立缓存，缓存优先（开关关闭时整条放行）----
+  // ⚠️ 必须排在「Cesium 引擎资源」之前：ion 的地形元数据 layer.json 也长在
+  //    assets.cesium.com 下、且以 .json 结尾，会被 ENGINE_FILE_PATTERN 当成引擎文件
+  //    写进带版本号的引擎缓存 —— 那样它既不随开关走，也会在升级引擎时丢掉。
+  if (isTerrainRequest(requestURL)) {
+    event.respondWith(handleTerrainRequest(event, request, requestURL));
+    return;
+  }
+
+  // ---- 4. Cesium 引擎资源：缓存优先，缓存名带版本号 ----
   if (isCesiumHost(requestURL.hostname) && ENGINE_FILE_PATTERN.test(requestURL.pathname)) {
     event.respondWith(
       caches.match(request).then(cached => {
@@ -639,7 +719,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // ---- 4. Cesium ion 资产接口：网络优先，失败回退缓存 ----
+  // ---- 5. Cesium ion 资产接口：网络优先，失败回退缓存 ----
   // 放在瓦片之前：它的 URL 既不带图片扩展名也不带瓦片参数，本来不会被误判，
   // 但顺序上明确一点更好读，也避免以后放宽瓦片规则时抢走它。
   if (isIonEndpoint(requestURL)) {
@@ -647,13 +727,13 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // ---- 5. 底图瓦片：独立缓存，缓存优先（开关关闭时整条放行）----
+  // ---- 6. 底图瓦片：独立缓存，缓存优先（开关关闭时整条放行）----
   if (isTileRequest(request, requestURL)) {
     event.respondWith(handleTileRequest(event, request, requestURL));
     return;
   }
 
-  // ---- 6. 其他请求：网络优先，失败时回退缓存 ----
+  // ---- 7. 其他请求：网络优先，失败时回退缓存 ----
   // 这里刻意不写入缓存：外壳清单已经覆盖首屏，瓦片另有专属缓存，
   // 无差别写入只会让应用缓存无限膨胀。
   event.respondWith(

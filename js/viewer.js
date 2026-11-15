@@ -1,16 +1,29 @@
 import * as Cesium from './cesium.js';
-import { showToast } from './utils.js';
 import { initCameraFeel } from './camera-feel.js';
 
-export function initViewer(containerId, terrainProvider) {
-    // 默认底图：Sentinel-2（ion 资产 3954）。异步工厂 + ImageryLayer 包装，
-    // 元数据就绪前 Viewer 照常创建。
-    // 离线时可能拿不到 endpoint JSON，图层会空着（界面对、地球全黑）。SW 有缓存时走不到 catch。
-    const baseLayerProvider = Cesium.IonImageryProvider.fromAssetId(3954).catch((error) => {
-        console.warn('默认底图（Sentinel-2）加载失败，可能是离线或 ion 不可达:', error);
-        showToast('底图未能加载：离线时只显示已经缓存过的区域');
-        throw error;
-    });
+// 画质档位：决定 globe 的瓦片细分精度（maximumScreenSpaceError）。
+// 数值越小越清晰、瓦片数越多（流量与 GPU 开销同步上涨）。
+// 省流量档 3 相比引擎默认的 2 约少一半瓦片，近距离放大后照样会细化到高清层。
+export const QUALITY_KEY = 'highQuality';
+
+export function applyRenderQuality(viewer) {
+    const high = localStorage.getItem(QUALITY_KEY) === 'true';
+    viewer.scene.globe.maximumScreenSpaceError = high ? 2 : 3;
+    return high;
+}
+
+/**
+ * @param {string} containerId
+ * @param {object} options
+ * @param {import('./cesium.js').TerrainProvider} options.terrainProvider
+ * @param {Promise<import('./cesium.js').ImageryProvider>} options.baseLayerProvider
+ *        必须由调用方给（imagery.js 的 createInitialBasemap）：底图可能是 ion 资产、
+ *        也可能是天地图/腾讯，viewer 不再自己钉死某一个。
+ */
+export function initViewer(containerId, { terrainProvider, baseLayerProvider } = {}) {
+    if (!baseLayerProvider) {
+        throw new Error('initViewer 需要 baseLayerProvider（见 imagery.js 的 createInitialBasemap）');
+    }
 
     const viewer = new Cesium.Viewer(containerId, {
         terrainProvider: terrainProvider,
@@ -62,7 +75,10 @@ export function initViewer(containerId, terrainProvider) {
     let isLightingEnabled = false;
     viewer.scene.globe.enableLighting = false;
     viewer.imageryLayers.enablePickFeatures = false; 
-    viewer.scene.globe.showWaterEffect = true;
+    // 地形不含水面遮罩（见 terrain.js），水高光没有依据，关掉
+    viewer.scene.globe.showWaterEffect = false;
+
+    applyRenderQuality(viewer);
 
     return viewer;
 }

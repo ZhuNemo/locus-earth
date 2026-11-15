@@ -75,6 +75,7 @@ Want to hack on it? The project is **build-free**; trade-offs, traps and trouble
 
 **Appearance & Interaction**
 - Day/night lighting (sun and moon, with adjustable time) and a white building-model toggle; light/dark themes can follow the system.
+- Space day/night mask: with real lighting off, the space view still draws the day/night terminator for the current time and fades it out as you zoom in (toggle in Settings).
 - Compass, pitch reset, draggable floating toolbar; works on desktop and mobile.
 - Google 3D mode: when Google is reachable, loads Google's 3D Tiles. That asset is a Cesium ion demo and may be rate-limited or taken down.
 
@@ -104,11 +105,12 @@ Want to hack on it? The project is **build-free**; trade-offs, traps and trouble
 
 - **Appearance**: light/dark theme (follow system / manual)
 - **Terrain & overlays**: 3D terrain toggle, road network and place-name overlays
-- **Cache**: "Cache map tiles" switch (on by default), plus clearing app / tile / engine cache, favorites and settings
+- **Image quality**: "High quality" switch (off by default — half the tiles; Cesium ion bills streamed data, so this is pure quota savings)
+- **Cache**: "Cache map tiles" switch (on by default, covers both imagery and terrain), plus clearing app / tile / engine cache, favorites and settings
 - **Compatibility check**: a WebGL 2 / module-loading / engine-init self-test on the current device
 
-**Offline**: imagery tiles for areas you have visited are stored locally and stay viewable without a
-network; terrain, 3D buildings and search still need a connection.
+**Offline**: imagery *and* terrain tiles for areas you have visited are stored locally and stay
+viewable without a network; 3D buildings and search still need a connection.
 
 Cache layers, rendering trade-offs, engine compatibility and troubleshooting are documented in
 **[`docs/dev-notes-en.md`](./docs/dev-notes-en.md)**.

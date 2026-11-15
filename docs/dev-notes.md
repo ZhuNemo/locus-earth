@@ -17,6 +17,7 @@
 
 - 引擎与模块解析
 - 缓存与离线
+- ion 配额策略
 - 渲染与性能
 - 内核兼容
 - 仓库约定
@@ -65,13 +66,14 @@ export * from 'https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js';
 
 ## 缓存与离线
 
-全部由 [`sw.js`](../sw.js) 管，分五层：
+全部由 [`sw.js`](../sw.js) 管，分六层：
 
 | 层 | 缓存名 | 策略 |
 |---|---|---|
 | 应用外壳（HTML / CSS / JS / 图标） | `locus-earth-app-cache-<版本>` | 缓存优先 + 后台更新，重复进入几十毫秒出页面 |
 | Cesium 引擎 | `locus-earth-cesium-<引擎版本>` | 缓存优先，升级引擎时整代淘汰 |
 | ion 资产接口（`/v1/assets/<id>/endpoint`） | 与引擎同一个缓存 | 45 分钟内缓存优先 + 后台换新，过期才网络优先、失败退回旧的那份 |
+| 地形瓦片 | `locus-earth-terrain-v1` | 缓存优先且不再回源；超 800 片按先进先出裁剪。开关与底图瓦片共用 |
 | 底图瓦片 | `locus-earth-tiles-v1` | 缓存优先且命中后**不再回源**，浏览过的区域断网也能看；超 2400 片按先进先出裁剪 |
 | 开关状态 | `locus-earth-flags-v1` | 几十字节，只存「缓存地图瓦片」的开 / 关 |
 
@@ -90,6 +92,32 @@ export * from 'https://unpkg.com/cesium@1.118.2/Build/Cesium/index.js';
    不读缓存、不写缓存、也不碰 HTTP 缓存。
 5. **导航是缓存优先 + 后台更新**（SWR）。换来的代价是：改完 HTML，用户第一次进入仍是旧版，第二次才更新。
    要立刻看到新版，走设置页「清除应用缓存」。
+
+---
+
+## ion 配额策略
+
+社区版 ion 的硬指标是 **15 GB／月 流式数据**（Google 实景另按根瓦片计，每月 1,000 次）。
+这个仓库不靠升套餐，靠少请求、少字节：
+
+| 手段 | 位置 | 省在哪 |
+|---|---|---|
+| 地形瓦片进 Cache Storage | `sw.js` | 同一区域二次进入 0 流量；这是最大的一笔 |
+| 地形不带法线 / 水面遮罩 | `js/terrain.js` | 每块 quantized-mesh 少了两个扩展与一张水面遮罩图 |
+| 瓦片精度默认 3（引擎默认 2） | `js/viewer.js` 的 `applyRenderQuality` | 同视角瓦片数约减半；设置页可切回高清 |
+| 高精度城市 tileset 按需创建 | `js/hd-layers.js` | 启动时的资产初始化从 7 次降到 0 次 |
+| 记住上次选的底图 | `js/imagery.js` | 不再「先建 Sentinel-2 再换掉」 |
+| Google 3D 进入前确认 | `js/google-mode.js` | 提前告知它按根瓦片单独计费 |
+
+三条约束别破坏：
+
+1. **地形分支必须排在「Cesium 引擎资源」之前。** `layer.json` 也以 `.json` 结尾、也在 `assets.ion.cesium.com`（按区域分发）下，
+   顺序一反就会被当成引擎文件塞进带版本号的缓存，既不跟开关走，升级引擎时还会丢。
+2. **`activate` 的 `keep` 数组要含 `locus-earth-terrain-v1`。** 漏了就是每次发版清空用户的离线地形。
+3. **不要做「运行时切地形高保真」的开关。** provider 的请求参数一变，已下载的瓦片全部作废，
+   等于替用户把流量再烧一遍；要改就改 `terrain.js` 里的常量，下次进页面生效。
+
+回归测试：`node tests/terrain-cache.test.mjs`（用 `vm` 直接跑 `sw.js`，验证路由、剪枝、缓存键与清理名单）。
 
 ---
 

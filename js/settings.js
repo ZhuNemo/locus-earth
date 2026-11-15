@@ -11,8 +11,13 @@
     // 瓦片缓存开关。与 js/tile-cache.js 共用同一个键（那边是 ES Module，
     // 本页是普通脚本，无法 import，因此读写逻辑各留一份，改动时两边一起改）。
     const TILE_CACHE_KEY = 'tileCacheEnabled';
-    // 瓦片缓存名前缀，与 sw.js 的 TILE_CACHE_NAME 对应
+    // 瓦片缓存名前缀，与 sw.js 的 TILE_CACHE_NAME / TERRAIN_CACHE_NAME 对应
     const TILE_CACHE_PREFIX = 'locus-earth-tiles';
+    const TERRAIN_CACHE_PREFIX = 'locus-earth-terrain';
+    // 画质档位。主页面用 viewer.js 的 QUALITY_KEY，同样是两边各写一份。
+    const QUALITY_KEY = 'highQuality';
+    // 太空昼夜遮罩。主页面用 js/globe-light.js 的 DAY_NIGHT_MASK_KEY，同样是两边各写一份。
+    const DAY_NIGHT_MASK_KEY = 'dayNightMask';
 
     // =============================================
     // 1. 读取 / 写入设置
@@ -428,6 +433,45 @@
         }
 
 
+    // --- 太空昼夜遮罩（默认关）---
+    // 主页面在 globe-light.js 里读同一个键：关真实光照时按它决定地表要不要画昼夜分界。
+    // 这个开关只作用于「没开真实光照」的情况，真实光照永远有分界。
+    const dayNightMaskToggle = document.getElementById('dayNightMaskToggle');
+    if (dayNightMaskToggle) {
+        dayNightMaskToggle.checked = localStorage.getItem(DAY_NIGHT_MASK_KEY) === 'true';
+
+        dayNightMaskToggle.addEventListener('change', () => {
+            localStorage.setItem(DAY_NIGHT_MASK_KEY, dayNightMaskToggle.checked ? 'true' : 'false');
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: DAY_NIGHT_MASK_KEY,
+                newValue: String(dayNightMaskToggle.checked)
+            }));
+            showToastInternal(dayNightMaskToggle.checked
+                ? '太空视角将显示昼夜遮罩（拉近后淡出）'
+                : '太空视角不再显示昼夜遮罩');
+        });
+    }
+
+
+    // --- 高清画质（默认关 = 省流量）---
+    // 主页面在 viewer.js 里读同一个键改 globe.maximumScreenSpaceError（2 / 3）。
+    const qualityToggle = document.getElementById('qualityToggle');
+    if (qualityToggle) {
+        qualityToggle.checked = localStorage.getItem(QUALITY_KEY) === 'true';
+
+        qualityToggle.addEventListener('change', () => {
+            localStorage.setItem(QUALITY_KEY, qualityToggle.checked ? 'true' : 'false');
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: QUALITY_KEY,
+                newValue: String(qualityToggle.checked)
+            }));
+            showToastInternal(qualityToggle.checked
+                ? '已开启高清画质（瓦片与流量约翻倍）'
+                : '已切回省流量画质');
+        });
+    }
+
+
     // --- 瓦片缓存开关（默认开）---
     // 缓存本身完全由 sw.js 负责（实测它连 XHR 都拦得到），但 SW 读不到
     // localStorage，所以每次改动都要主动把状态推过去。这里内联一份与
@@ -471,6 +515,7 @@
         if (terrainToggle) terrainToggle.checked = localStorage.getItem('terrainEnabled') !== 'false';
         if (overlayToggle) overlayToggle.checked = localStorage.getItem('overlayEnabled') === 'true';
         if (tileCacheToggle) tileCacheToggle.checked = localStorage.getItem(TILE_CACHE_KEY) !== 'false';
+        if (qualityToggle) qualityToggle.checked = localStorage.getItem(QUALITY_KEY) === 'true';
     }
 
 
@@ -505,7 +550,10 @@
     // 在几千条规模下会让弹窗明显卡一下，不划算。
     async function refreshTileCacheSummary() {
         if (!tileCacheDesc) return;
-        const names = await findCaches(TILE_CACHE_PREFIX);
+        const names = [
+            ...(await findCaches(TILE_CACHE_PREFIX)),
+            ...(await findCaches(TERRAIN_CACHE_PREFIX)),
+        ];
         let count = 0;
         for (const name of names) {
             try {
@@ -514,7 +562,7 @@
             } catch {}
         }
         tileCacheDesc.textContent = count > 0
-            ? `(当前已缓存 ${count.toLocaleString()} 块瓦片，清除后这些区域需要重新联网获取)`
+            ? `(当前已缓存 ${count.toLocaleString()} 块瓦片（含地形），清除后这些区域需要重新联网获取)`
             : '(暂无缓存瓦片。离线时能不能看到地图，取决于这里)';
     }
 
@@ -564,9 +612,12 @@
                 shellRepopulated = await requestShellRepopulation();
             }
 
-            // 2. 清除瓦片缓存（离线地图数据）
+            // 2. 清除瓦片缓存（影像 + 地形，离线地图数据）
             if (clearTileCache && clearTileCache.checked) {
-                const tileCaches = await findCaches(TILE_CACHE_PREFIX);
+                const tileCaches = [
+                    ...(await findCaches(TILE_CACHE_PREFIX)),
+                    ...(await findCaches(TERRAIN_CACHE_PREFIX)),
+                ];
                 await Promise.all(tileCaches.map(name => caches.delete(name)));
                 tileCleared = true;
             }
@@ -593,6 +644,7 @@
                 localStorage.setItem('terrainEnabled', 'true');   // 默认开
                 localStorage.setItem('overlayEnabled', 'false');  // 默认关
                 localStorage.setItem(TILE_CACHE_KEY, 'true');     // 默认开
+                localStorage.setItem(QUALITY_KEY, 'false');       // 默认省流量画质
                 localStorage.removeItem(STORAGE_KEY);             // 主题：由 updateAll 重建默认值
                 updateAll();
                 syncExtraToggles();

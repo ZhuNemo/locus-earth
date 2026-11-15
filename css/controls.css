@@ -1,11 +1,22 @@
-/* --- 右下角相机控制面板 --- */
+/* ============================================================================
+   时间与光照控制（js/time-control.js）
+   ----------------------------------------------------------------------------
+   结构：头部（当前时间 + Now）+ 两条独立刻度带（上：时刻 / 下：日期）。
+   刻度带是「无限卷尺」——内容整体平移，正中那条红线只做对齐提示、不可拖动，
+   红线读出的日期与时刻就是地球上正在显示的光照时间。
+
+   ⚠️ 每小时 / 每天的像素宽度只由 --tc-hour-px / --tc-day-px 给出，
+      JS 读同一份变量算位移。别在 JS 里再写一个数字，改一处漏一处必然对不齐。
+   ============================================================================ */
 .time-control {
+    --tc-hour-px: 64px;
+    --tc-day-px: 20px;
     position: absolute;
     left: 50%;
     bottom: 28px;
     z-index: var(--z-panel);
     width: min(760px, calc(100% - 48px));
-    padding: 16px 20px 14px;
+    padding: 14px 20px 10px;
     color: var(--text-on-dark);
     background: var(--glass-dark-bg);
     border: 1px solid var(--glass-dark-border);
@@ -16,12 +27,14 @@
     transform: translateX(-50%);
     pointer-events: none;
     user-select: none;
+    -webkit-user-select: none;
 }
 
 .time-control.is-hidden {
     display: none;
 }
 
+/* ---------- 头部 ---------- */
 .time-control__header,
 .time-control__current,
 .time-control__now {
@@ -32,7 +45,7 @@
 .time-control__header {
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 18px;
+    margin-bottom: 6px;
 }
 
 .time-control__current {
@@ -41,6 +54,7 @@
 }
 
 .time-control__status {
+    flex: 0 0 auto;
     padding: 4px 8px;
     color: #fff;
     background: var(--danger);
@@ -54,8 +68,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
 }
 
 .time-control__now {
@@ -76,86 +91,155 @@
     background: var(--glass-dark-hover);
 }
 
-.time-control__timeline {
+/* ---------- 两条刻度带 ---------- */
+.time-control__strips {
     position: relative;
 }
 
-.time-control__months,
-.time-control__hours {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    color: var(--text-on-dark-muted);
-    font-size: 10px;
-}
-
-.time-control__months {
-    margin-bottom: 8px;
-}
-
-.time-control__months span {
-    text-align: center;
-}
-
-.time-control__track-wrap {
-    position: relative;
-    padding-top: 20px;
-}
-
-.time-control__hours {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-}
-
-.time-control__hours span {
-    text-align: center;
-}
-
-.time-control__track {
-    position: relative;
-    height: 18px;
-    border-top: 1px solid var(--glass-dark-border);
-}
-
+/* 固定游标：只表示「正中那一格」，本身不可拖动（拖的是刻度带） */
 .time-control__cursor {
     position: absolute;
-    top: -7px;
+    top: -3px;
+    bottom: -3px;
     left: 50%;
+    z-index: 3;
     width: 2px;
-    height: 25px;
+    margin-left: -1px;
     background: var(--danger);
-    box-shadow: var(--shadow-sm);
+    border-radius: 1px;
+    box-shadow: 0 0 8px rgba(229, 72, 77, 0.45);
     pointer-events: none;
 }
 
-.time-control__slider {
-    position: absolute;
-    top: -10px;
-    left: 0;
-    width: 100%;
-    height: 24px;
-    margin: 0;
-    opacity: 0;
-    cursor: ew-resize;
+.time-control__strip {
+    position: relative;
+    height: 48px;
+    overflow: hidden;
+    cursor: grab;
     pointer-events: auto;
+    /* 拖动刻度带时不要让浏览器把手势当成滚动/缩放，否则 pointermove 会被 cancel */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+    /* 左右渐隐：暗示卷尺还在两侧延伸 */
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 34px,
+        #000 calc(100% - 34px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 34px,
+        #000 calc(100% - 34px), transparent 100%);
+}
+
+.time-control__strip:active,
+.time-control__strip.is-dragging {
+    cursor: grabbing;
+}
+
+.time-control__strip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    border-radius: var(--radius-sm);
+}
+
+/* 两条带之间一条极淡的分隔线 */
+.time-control__strip + .time-control__strip {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ---------- 刻度带内部：整体平移的那一层 ---------- */
+.time-control__scale {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    will-change: transform;
+    background-repeat: repeat-x;
+    /* 刻度画在底部往上 10px 处，给下面的滑块把手让位 */
+    background-position: 0 calc(100% - 10px);
+}
+
+/* 时刻：整点长刻度 + 半点短刻度，一层背景渐变铺满，不必逐根建 DOM */
+.time-control__scale--time {
+    background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.34) 0 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.13) 0 1px, transparent 1px);
+    background-size: var(--tc-hour-px) 12px, calc(var(--tc-hour-px) / 2) 6px;
+}
+
+/* 日期：每天一根等长刻度，月份靠标签区分 */
+.time-control__scale--date {
+    background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.30) 0 1px, transparent 1px);
+    background-size: var(--tc-day-px) 9px;
+}
+
+/* 刻度标签：压在刻度正上方，left 由 JS 给出 */
+.time-control__label {
+    position: absolute;
+    top: 4px;
+    transform: translateX(-50%);
+    color: rgba(245, 247, 250, 0.72);
+    font-size: 10px;
+    line-height: 14px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.time-control__label--month {
+    color: var(--text-on-dark-muted);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+/* 月份起点刻度：比日刻度高一截。手机上一个月的宽度可能超过条形本身，
+   月标签全被挤出视野时全靠它标出边界在哪。 */
+.time-control__month-rule {
+    position: absolute;
+    bottom: 10px;
+    width: 1px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.45);
+    pointer-events: none;
+}
+
+/* 滑块把手：坐在红线底端，暗示这条带是可以拖的 */
+.time-control__thumb {
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    width: 46px;
+    height: 3px;
+    margin-left: -23px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 2px;
+    pointer-events: none;
+    transition: background 0.15s ease;
+}
+
+.time-control__strip:hover .time-control__thumb,
+.time-control__strip.is-dragging .time-control__thumb {
+    background: rgba(255, 255, 255, 0.42);
 }
 
 @media (max-width: 600px) {
     .time-control {
+        --tc-hour-px: 46px;
+        /* 一天 10px ⇒ 一个月约 300px，窄于手机上的条形宽度：
+           保证任意时刻两侧至少有一个月份刻度落在视野内 */
+        --tc-day-px: 10px;
         bottom: 68px;
         width: calc(100% - 24px);
-        padding: 14px 14px 12px;
+        padding: 12px 14px 8px;
     }
 
     .time-control__header {
-        margin-bottom: 16px;
+        margin-bottom: 4px;
     }
 
-    .time-control__months,
-    .time-control__hours {
-        font-size: 9px;
+    .time-control__strip {
+        height: 44px;
+    }
+
+    .time-control__current time {
+        font-size: 14px;
     }
 }
 
