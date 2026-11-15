@@ -1,38 +1,26 @@
 // ============================================================================
-// 地球光照：真实光照 / 太空昼夜遮罩 / 均匀受光
+// 地球光照：真实光照开 / 关
 // ----------------------------------------------------------------------------
-// 状态只有两个来源：真实光照开关（UI 上的月亮按钮）与设置页的「太空昼夜遮罩」。
-// 落到引擎上则是两条互相独立的线：
+// 界面上的开关只有一个：主页面的「真实光照」（月亮按钮，ui.js 的 switchLighting）。
+// 它落到引擎上是两条互相独立的线：
 //
-//   ① globe.enableLighting —— 地表（含地形、大气）有没有昼夜分界
+//   ① globe.enableLighting —— 地表（含地形）有没有昼夜分界
 //   ② scene.light          —— 所有受光几何体（地表、建筑、3D Tiles）用哪盏灯
 //
-//   真实光照 ON             → ① true  ② 太阳   （分界任何高度都在）
-//   真实光照 OFF + 遮罩 ON  → ① true  ② 太阳   （同上；模型也跟着太阳）
-//   真实光照 OFF + 遮罩 OFF → ① false ② 机头灯 整球均匀受光，模型不被单向照黑
+//   开 → ① true  ② 太阳
+//   关 → ① false ② 机头灯：整球均匀受光，模型不被单向照黑
 //
 // ⚠️ 昼夜分界不是直接取太阳方向，而是取 scene.light 的漫反射
 //    （GlobeFS：`diffuseIntensity = clamp(czm_getLambertDiffuse(czm_lightDirectionEC, n) * 5 + 0.3, 0, 1)`）。
-//    所以「假遮罩」也必须留着太阳当灯，不能换成机头灯 —— 换了就没有分界了。
 //
-// ⚠️ 关真实光照时必须换 ②：只关 ① 的话太阳方向照旧打在建筑 / 3D Tiles 上，
-//    朝向太阳的反面一片黑。scene.light = undefined 也没用 ——
-//    UniformState 会退回到内置的 SunLight（`frameState.light ?? defaultLight`）。
+// ⚠️ 关光照时必须换 ②：只关 ① 的话太阳方向照旧打在建筑 / 3D Tiles 上，朝向太阳的反面一片黑。
+//    `scene.light = undefined` 没用 —— UniformState 是 `frameState.light ?? defaultLight`，
+//    会退回到内置的 SunLight。
 //
-// ⚠️ 分界要「任何高度都在」，只能把淡出距离顶死（fadeOut = -1 / fadeIn = 0 ⇒ fade = dist + 1 ≥ 1），
-//    但 `fade` 同一个量还控制「地面大气」分支（`mix(finalColor, finalAtmosphereColor, fade)`，
-//    里面还有一道 `1-exp(-x)` 色调重映射）。顶死 fade 而不动大气，近地整幅图会被洗亮掉色：
-//    1000 km 同机位实测 RGB 70/77/59、饱和度 41% → 110/127/118、24%。
-//    所以开光照 / 遮罩时连 `globe.showGroundAtmosphere` 一起关掉，地表只剩
-//    「影像 × 灯色 × 漫反射」，与关光照时颜色一致（实测完全复原）；行星边缘的蓝色光晕
-//    来自 scene.atmosphere，不受影响。
-//    ⚠️ 关光照时必须把淡出距离与大气开关都还原，否则默认模式自己在近地也会被洗白。
+// ⚠️ 淡出距离与地面大气必须成对改动，见 apply()。
 // ============================================================================
 
 import { Cartesian3, DirectionalLight } from './cesium.js';
-
-/** 设置页的键；settings.html 的普通脚本里另存了一份字面量，改动时两边一起改 */
-export const DAY_NIGHT_MASK_KEY = 'dayNightMask';
 
 let viewerRef = null;
 let scene = null;
@@ -48,36 +36,39 @@ let defaultFadeIn = null;
 let defaultGroundAtmosphere = null;
 
 let realLighting = false;
-let maskEnabled = false;
 
-/** 真实光照开关（ui.js 的 switchLighting 调用） */
+/**
+ * 真实光照开关（ui.js 的 switchLighting 调用）。
+ * @param {object} viewer Cesium Viewer
+ * @param {boolean} enabled
+ */
 export function setRealLighting(viewer, enabled) {
     realLighting = !!enabled;
     apply();
-}
-
-/** 当前是否开着真实光照 */
-export function isRealLighting() {
-    return realLighting;
 }
 
 function setSceneLight(light) {
     if (scene.light !== light) scene.light = light;
 }
 
-/** 按 (真实光照, 遮罩) 把最终状态写进引擎。任何一项变化都走这里。 */
+/** 把当前开关状态写进引擎。任何变化都走这里。 */
 function apply() {
     if (!scene) return;
 
     const globe = scene.globe;
-    const maskActive = !realLighting && maskEnabled;
 
     // ① 地表昼夜分界
-    globe.enableLighting = realLighting || maskActive;
+    globe.enableLighting = realLighting;
 
-    // ①b 淡出距离 + 地面大气成对处理，理由见文件头：
-    //     顶死 fade 保证分界任何高度都在；同时关掉地面大气，避免近地被大气分支洗白。
-    if (globe.enableLighting) {
+    // ② 淡出距离 + 地面大气成对处理：
+    //    引擎默认 1e7 / 2e7 米，相机低于一万公里时分界就被拉平成「全亮」。
+    //    这里顶死 fade（fadeOut = -1、fadeIn = 0 ⇒ fade = 距离 + 1 ≥ 1），让分界任何高度都在。
+    //    ⚠️ 但 `fade` 同一个量还控制「地面大气」分支（`mix(finalColor, finalAtmosphereColor, fade)`，
+    //    里面还有一道 1-exp(-x) 色调重映射）。只顶死 fade 不关大气，近地整幅图会被洗亮掉色：
+    //    1000 km 同机位实测 RGB 70/77/59、饱和度 41% → 110/127/118、24%。
+    //    所以顶死的同时必须把 `showGroundAtmosphere` 关掉，地表只剩「影像 × 灯色 × 漫反射」，
+    //    与关光照时逐像素一致。行星边缘的蓝色光晕来自 scene.atmosphere，不受影响。
+    if (realLighting) {
         globe.lightingFadeOutDistance = -1;
         globe.lightingFadeInDistance = 0;
         globe.showGroundAtmosphere = false;
@@ -87,14 +78,11 @@ function apply() {
         globe.showGroundAtmosphere = defaultGroundAtmosphere;
     }
 
-    // ② 模型的灯。⚠️ 遮罩模式必须用太阳：分界就是这盏灯的漫反射，换成机头灯
-    //    等于「每个可见面都是正对光源」，近地立刻没有明暗分界。
-    //    代价是遮罩打开时模型也跟太阳走 —— 只有「遮罩关 + 光照关」才是干净的头灯。
-    setSceneLight(globe.enableLighting ? sunLight : headlight);
+    // ③ 模型的灯
+    setSceneLight(realLighting ? sunLight : headlight);
 
-    // ③ 分界要跟着真实时间走，否则页面开久了会停在打开那一刻。
-    //    真实光照与遮罩都需要；两者都关时冻结时钟，省掉每分钟一次的界面刷新。
-    viewerRef.clock.shouldAnimate = globe.enableLighting;
+    // ④ 分界要跟着真实时间走，否则页面开久了会停在打开那一刻
+    viewerRef.clock.shouldAnimate = realLighting;
 }
 
 /**
@@ -124,29 +112,19 @@ export function initGlobeLighting(viewer) {
         intensity: sunLight.intensity
     });
 
-    // 每帧：机头灯跟随相机（只有「遮罩关 + 光照关」时才用它）
+    // 每帧：机头灯跟随相机（只有关光照时才用它）
     scene.preRender.addEventListener(() => {
-        if (!realLighting && !maskEnabled) {
+        if (!realLighting) {
             Cartesian3.clone(scene.camera.directionWC, headlight.direction);
         }
     });
 
-    maskEnabled = localStorage.getItem(DAY_NIGHT_MASK_KEY) === 'true';
     apply();
-
-    // 设置页在另一个标签页里改完会派发 storage（同页派发的那份收不到也不影响，
-    // 设置页是整页跳转打开的，下次进来自然读新值）
-    window.addEventListener('storage', (event) => {
-        if (event.key !== DAY_NIGHT_MASK_KEY) return;
-        maskEnabled = localStorage.getItem(DAY_NIGHT_MASK_KEY) === 'true';
-        apply();
-    });
 
     // 调试句柄：自动化测试读光照终态（与 camera-feel.js 的 __locusCameraView 同一套路）。
     // 只读，不提供改状态的入口。
     window.__locusGlobeLight = () => ({
         realLighting,
-        maskEnabled,
         globeLighting: scene.globe.enableLighting,
         light: scene.light === sunLight ? 'sun' : 'headlight',
         // 机头灯方向应与相机朝向一致（着色器取的是它的反方向）。

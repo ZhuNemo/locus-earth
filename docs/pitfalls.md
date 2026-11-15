@@ -125,7 +125,8 @@ window.addEventListener('pointerup', () => {
 `fade = clamp((cameraDist - fadeOut) / (fadeIn - fadeOut), 0, 1)`，再
 `diffuseIntensity = mix(1.0, diffuseIntensity, fade)`，所以低于约一万公里 `fade = 0`、分界被拉平成全亮。
 
-要「怎么缩放都不淡出」就把 `fade` 顶死在 1：取 `fadeOut = -1`、`fadeIn = 0` ⇒ `fade = cameraDist + 1 ≥ 1`。
+本项目把它顶死了（`js/globe-light.js` 的 `apply()`），让真实光照「任何高度都有分界」：
+取 `fadeOut = -1`、`fadeIn = 0` ⇒ `fade = cameraDist + 1 ≥ 1`。
 
 **但 `fade` 不是只管分界。** 同一个量还控制「地面大气」那条渲染分支：
 
@@ -138,17 +139,16 @@ finalColor.rgb = mix(finalColor.rgb, finalAtmosphereColor.rgb, fade);
 ```
 
 只顶死 `fade` 而不动大气，近地整幅图会被洗亮掉色 —— 1000 km 同机位实测：
-RGB `70/77/59`、饱和度 `41%` → `110/127/118`、`24%`，看起来发灰发白。
+RGB `70/77/59`、饱和度 `41%` → `110/127/118`、`24%`，肉眼就是「发白发灰」。
 
-所以这两个开关必须**成对**处理（`js/globe-light.js` 的 `apply()`）：
+所以这两个开关必须**成对**处理：
 
-- 开光照 / 遮罩：`fadeOut = -1`、`fadeIn = 0`（分界任何高度都在）**且** `globe.showGroundAtmosphere = false`
-  （避开上面那条分支）。地表只剩「影像 × 灯色 × 漫反射」，实测与关光照时逐像素一致。
+- 开光照：`fadeOut = -1`、`fadeIn = 0` **且** `globe.showGroundAtmosphere = false`。
+  地表只剩「影像 × 灯色 × 漫反射」，实测与关光照时逐像素一致。
 - 关光照：两个都还原成引擎默认，否则默认模式自己在近地也会被洗白。
 
-代价两条，都是有意的：① 开光照时行星表面不再叠「近地面大气雾」（边缘的蓝色光晕来自
-`scene.atmosphere`，仍在）；② 遮罩模式必须用太阳当灯（分界就是这盏灯的漫反射，换机头灯等于
-「每个可见面都正对光源」，近地立刻没有分界），所以遮罩打开时模型也跟太阳走。
+代价：开真实光照时行星表面不再叠「近地面大气雾」（边缘的蓝色光晕来自 `scene.atmosphere`，仍在），
+且夜面拉近是真的暗（`diffuseIntensity` 下限 0.3）。
 
 ---
 

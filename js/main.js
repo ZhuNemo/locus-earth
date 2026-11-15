@@ -179,7 +179,7 @@ import { initTerrain, applyTerrainSetting } from './terrain.js';
         // 地图对象右键 / 长按菜单：删除标记、轨迹、图形
         // （要放在上面两个 init 之后，业务模块已经登记好各自的删除回调）
         initMapContextMenu(viewer);
-        // 光照落到地球 / 模型的方式（含设置页的「太空昼夜遮罩」）必须在 initUI 之前挂好：
+        // 光照落到地球 / 模型的方式必须在 initUI 之前挂好：
         // initUI 末尾会立刻 switchLighting(false)。
         initGlobeLighting(viewer);
         const timeControl = initTimeControl(viewer);
