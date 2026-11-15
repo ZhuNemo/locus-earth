@@ -306,7 +306,8 @@
 
     <div id="cesiumContainer"></div>
 
-    <!-- 自定义时间与光照控制，逻辑由后续模块接入 -->
+    <!-- 时间与光照控制：两条独立刻度带（时刻 / 日期）。
+         刻度内容由 js/time-control.js 生成为「卷尺」，中间红线只是对齐提示、不可拖动。 -->
     <section id="time-control" class="time-control" aria-label="时间与光照控制">
         <div class="time-control__header">
             <div class="time-control__current">
@@ -322,18 +323,19 @@
             </button>
         </div>
 
-        <div class="time-control__timeline">
-            <div class="time-control__months">
-                <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span>
+        <div class="time-control__strips">
+            <span class="time-control__cursor" aria-hidden="true"></span>
+
+            <div id="time-strip" class="time-control__strip" role="slider" tabindex="0"
+                 aria-label="调整时间" aria-valuemin="0" aria-valuemax="1439" aria-valuenow="0">
+                <div id="time-scale" class="time-control__scale time-control__scale--time"></div>
+                <span class="time-control__thumb" aria-hidden="true"></span>
             </div>
-            <div class="time-control__track-wrap">
-                <div class="time-control__hours">
-                    <span>06:00</span><span>07:00</span><span>08:00</span><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span><span>13:00</span>
-                </div>
-                <div class="time-control__track">
-                    <span class="time-control__cursor" aria-hidden="true"></span>
-                    <input id="time-slider" class="time-control__slider" type="range" min="0" max="100" value="50" aria-label="调整时间">
-                </div>
+
+            <div id="date-strip" class="time-control__strip" role="slider" tabindex="0"
+                 aria-label="调整日期" aria-valuemin="0" aria-valuemax="146097" aria-valuenow="0">
+                <div id="date-scale" class="time-control__scale time-control__scale--date"></div>
+                <span class="time-control__thumb" aria-hidden="true"></span>
             </div>
         </div>
     </section>

@@ -7,12 +7,11 @@ document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
 import {
             Cartesian3,
             Ion,
-            CesiumTerrainProvider,
             EllipsoidTerrainProvider, 
         } from './cesium.js';
 
-import { initViewer } from './viewer.js';
-import { initImagery } from './imagery.js';
+import { initViewer, applyRenderQuality, QUALITY_KEY } from './viewer.js';
+import { initImagery, createInitialBasemap } from './imagery.js';
 import { initBasemapPicker } from './basemap-picker.js';
 import { initSearch } from './search.js';
 import { initUI } from './ui.js';
@@ -25,9 +24,11 @@ import { initMeasureTools } from './measure.js';
 import { initMeasureUI } from './measure-ui.js'
 import { initMapContextMenu } from './context-menu.js';
 import { initTimeControl } from './time-control.js';
+import { initGlobeLighting } from './globe-light.js';
 import { initStreetView } from './streetview.js';
 import { CONFIG } from './config.js';
 import { initTileCacheSwitch } from './tile-cache.js';
+import { initTerrain, applyTerrainSetting } from './terrain.js';
 
         Ion.defaultAccessToken = CONFIG.cesiumToken;
 
@@ -90,7 +91,12 @@ import { initTileCacheSwitch } from './tile-cache.js';
             } catch (e) {}
         }
 
-        const viewer = initViewer('cesiumContainer', new EllipsoidTerrainProvider());
+        const viewer = initViewer('cesiumContainer', {
+            // 先给椭球体，ion 地形异步换上（见下方 initTerrain）
+            terrainProvider: new EllipsoidTerrainProvider(),
+            // 底图由 imagery.js 决定：上次选的是天地图/腾讯就不会去建 ion 的 Sentinel-2
+            baseLayerProvider: createInitialBasemap(),
+        });
         const loadingOverlay = document.getElementById('loadingOverlay');
 
         // 底图管理：叠加层联动 + 自定义底图选择器（右下角控件列顶部）
@@ -101,28 +107,12 @@ import { initTileCacheSwitch } from './tile-cache.js';
         initSearch(viewer);
 
 
-        function applyTerrainSetting(enabled) {
-            if (enabled) {
-                CesiumTerrainProvider.fromIonAssetId(1, {
-                    requestVertexNormals: true,
-                    requestWaterMask: true
-                }).then(provider => {
-                    if (localStorage.getItem('terrainEnabled') !== 'false') {
-                        viewer.terrainProvider = provider;
-                    } else {
-                        viewer.terrainProvider = new EllipsoidTerrainProvider();
-                    }
-                }).catch(e => console.warn('地形加载失败，保持平滑球体', e));
-            } else {
-                viewer.terrainProvider = new EllipsoidTerrainProvider();
-                viewer.scene.requestRender();
-            }
-        }
-
         window.addEventListener('storage', (e) => {
             if (e.key === 'terrainEnabled') {
-                const enabled = e.newValue === 'true';
-                applyTerrainSetting(enabled);
+                applyTerrainSetting(e.newValue === 'true');
+            }
+            if (e.key === QUALITY_KEY) {
+                applyRenderQuality(viewer);
             }
         });
 
@@ -155,22 +145,8 @@ import { initTileCacheSwitch } from './tile-cache.js';
             }
         });
 
-        // 在初始化时读取用户设置
-        const terrainEnabled = localStorage.getItem('terrainEnabled') !== 'false';
-        if (terrainEnabled) {
-            CesiumTerrainProvider.fromIonAssetId(1, {
-                requestVertexNormals: true,
-                requestWaterMask: true
-            }).then(provider => {
-                if (localStorage.getItem('terrainEnabled') !== 'false') {
-                    viewer.terrainProvider = provider;
-                }
-            }).catch(e => {
-                console.warn('地形加载失败，已继续使用默认椭球体地形', e);
-            });
-        } else {
-            viewer.terrainProvider = new EllipsoidTerrainProvider();
-        }
+        // 在初始化时读取用户设置：地形由 terrain.js 统一创建（省流量参数 + 实例复用）
+        initTerrain(viewer);
 
         console.log('Locus Earth 启动成功！');
         console.log('高精度联动已启用：进入丹佛/华盛顿DC/华盛顿州/悉尼/波士顿区域自动切换。');
@@ -203,6 +179,9 @@ import { initTileCacheSwitch } from './tile-cache.js';
         // 地图对象右键 / 长按菜单：删除标记、轨迹、图形
         // （要放在上面两个 init 之后，业务模块已经登记好各自的删除回调）
         initMapContextMenu(viewer);
+        // 光照落到地球 / 模型的方式（含设置页的「太空昼夜遮罩」）必须在 initUI 之前挂好：
+        // initUI 末尾会立刻 switchLighting(false)。
+        initGlobeLighting(viewer);
         const timeControl = initTimeControl(viewer);
 
         // 街景：进入中国境内显示按钮，点击后取点跳转腾讯街景

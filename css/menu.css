@@ -188,8 +188,8 @@
            ----------------------------------------------------------------------------
            · 挂在 body 上、position: fixed：地图容器有 overflow/transform 时
              不会再被裁切。
-           · 表面走 --surface-raised：深色主题下 --glass-bg-strong 做浮层会
-             透出底图与下层文字。
+           · 表面走 --glass-bg-strong + blur(--blur-md)：与底图选择器、搜索下拉同一套
+             毛玻璃（--glass-bg 直接铺在地图上时文字对比度不够，这里提一档不透明度）。
            · 只放破坏性操作，所以唯一的条目样式是 is-danger。
            ============================================================================ */
         .context-menu {
@@ -199,16 +199,17 @@
             z-index: var(--z-menu);
             min-width: 172px;
             padding: 6px;
-            border-radius: var(--radius-md);
-            background: var(--surface-raised);
-            backdrop-filter: blur(var(--blur-md)) saturate(150%);
-            -webkit-backdrop-filter: blur(var(--blur-md)) saturate(150%);
+            border-radius: var(--radius-lg);
+            background: var(--glass-bg);
+            backdrop-filter: blur(var(--blur-md)) saturate(160%);
+            -webkit-backdrop-filter: blur(var(--blur-md)) saturate(160%);
             border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-md), var(--glass-highlight);
+            box-shadow: var(--shadow-glass), var(--glass-highlight);
             font-family: var(--font-ui);
             opacity: 0;
             visibility: hidden;
             transform: scale(0.94);
+            /* 由 JS 把原点设到点击处，展开方向永远从「按下的那一点」长出来 */
             transform-origin: top left;
             transition: opacity 0.14s ease, transform 0.14s ease,
                         visibility 0.14s var(--window-transition-timing);
@@ -227,7 +228,8 @@
             width: 100%;
             padding: 10px 12px;
             border: none;
-            border-radius: var(--radius-sm);
+            /* 内圆角 = 外圆角 - 内边距，视觉上同心 */
+            border-radius: 10px;
             background: none;
             color: var(--text-primary);
             font-family: inherit;

@@ -1,6 +1,7 @@
 import { Cartesian3, EllipsoidTerrainProvider, Cesium3DTileset } from './cesium.js';
 import { restoreDefaultBasemap } from './imagery.js';
 import { setBasemapPickerVisible } from './basemap-picker.js';
+import { askConfirm } from './dialogs.js';
 
 export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
 
@@ -11,7 +12,17 @@ export function initGoogleMode(viewer, showToast, closeInfo, closeIterlog) {
         document.getElementById('activateGoogle3D').addEventListener('click', async function(e) {
             e.preventDefault();
 
-            // --- 0. 网络预检：通过加载 Google 的 favicon 检测连通性---
+            // --- 0. 配额预检 ---
+            // 这是全项目最贵的一项：ion 的 Google 实景瓦片按「根瓦片」单独计费
+            // （社区版每月仅 1,000 次），单次流量也远超常规底图。先讲清楚再进。
+            const ok = await askConfirm(
+                '谷歌 3D 地球使用 Cesium ion 的演示资产：社区版每月只有 1,000 次根瓦片加载，' +
+                '且实景瓦片流量远大于常规底图。建议只在需要时短暂查看，看完点「退出 Google 地球」。',
+                { title: '进入 Google 3D 地球', icon: '#i-globe', okText: '继续', cancelText: '取消' }
+            );
+            if (!ok) return;
+
+            // --- 0.1 网络预检：通过加载 Google 的 favicon 检测连通性---
             try {
                 console.log('正在检测 Google 网络连通性...');
                 const img = new Image();

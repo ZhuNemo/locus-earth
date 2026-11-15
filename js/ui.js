@@ -1,4 +1,5 @@
 import { Cartesian3, Math as CesiumMath } from './cesium.js';
+import { setRealLighting } from './globe-light.js';
 
 // =============================================
 // 面板收起工具（模块级导出）
@@ -254,10 +255,12 @@ export function initUI(viewer, {
     // 又不会让控制条与主面板同屏压叠。
     function switchLighting(enableLighting, { deferTimeControl = false } = {}) {
         isLightingEnabled = enableLighting;
-        viewer.scene.globe.enableLighting = enableLighting;
+        // enableLighting / scene.light / 淡出距离 / 时钟跟随全在 globe-light.js：
+        // 关光照时只关 globe.enableLighting 会让太阳照旧打在建筑上（一侧全黑），
+        // 那份耦合逻辑集中在一处，这里只管太阳月亮贴图与界面状态。
+        setRealLighting(viewer, enableLighting);
         viewer.scene.sun.show = enableLighting;
         viewer.scene.moon.show = enableLighting;
-        viewer.clock.shouldAnimate = enableLighting;
         if (!deferTimeControl) timeControl?.setVisible(enableLighting);
         if (enableLighting) {
             modeToggle.classList.add('active');

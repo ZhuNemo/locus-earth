@@ -17,6 +17,7 @@
 
 - Engine entry & module resolution
 - Caching & offline
+- ion quota strategy
 - Rendering & performance
 - Engine compatibility
 - Repository conventions
@@ -70,13 +71,14 @@ matcher first, so a broken guard fails loudly instead of passing silently.
 
 ## Caching & offline
 
-Everything is handled by [`sw.js`](../sw.js), in five layers:
+Everything is handled by [`sw.js`](../sw.js), in six layers:
 
 | Layer | Cache name | Strategy |
 |---|---|---|
 | App shell (HTML / CSS / JS / icons) | `locus-earth-app-cache-<version>` | Cache-first + background revalidate; repeat visits paint in tens of ms |
 | Cesium engine | `locus-earth-cesium-<engine version>` | Cache-first, dropped as a whole when the engine is upgraded |
 | ion asset endpoint (`/v1/assets/<id>/endpoint`) | same as engine | Cache-first for 45 minutes + background refresh, network-first after that with stale fallback |
+| Terrain tiles | `locus-earth-terrain-v1` | Cache-first, never revalidated on a hit; FIFO-trimmed past 800 tiles. Shares the switch with basemap tiles |
 | Basemap tiles | `locus-earth-tiles-v1` | Cache-first and **never revalidated on a hit**, so visited areas stay viewable offline; FIFO-trimmed past 2400 tiles |
 | Switch state | `locus-earth-flags-v1` | A few dozen bytes, holding only the on/off flag for "cache map tiles" |
 
@@ -101,6 +103,37 @@ Traps worth remembering:
 5. **Navigation is cache-first + background update** (SWR). The cost: after changing the HTML, the
    first visit still gets the old version and the second one updates. To see a new build immediately,
    use "Clear app cache" in settings.
+
+---
+
+## ion quota strategy
+
+The Community plan caps **streamed data at 15 GB per month** (Google Photorealistic 3D Tiles are
+metered separately, 1,000 root tiles per month). This repository does not buy its way out of that;
+it asks for fewer things and fewer bytes:
+
+| Lever | Where | What it saves |
+|---|---|---|
+| Terrain tiles in Cache Storage | `sw.js` | A second visit to the same area costs zero bytes — the biggest single win |
+| No normals / water mask on terrain | `js/terrain.js` | Each quantized-mesh tile drops two extensions and a water-mask image |
+| Tile detail 3 by default (engine default is 2) | `applyRenderQuality` in `js/viewer.js` | Roughly halves the tile count per view; settings can restore the sharper preset |
+| City tilesets created on demand | `js/hd-layers.js` | Asset initialisation at boot: 7 → 0 |
+| Remember the last basemap | `js/imagery.js` | No more "build Sentinel-2, then throw it away" |
+| Confirmation before Google 3D | `js/google-mode.js` | Tells the user it is billed per root tile |
+
+Three constraints not to break:
+
+1. **The terrain branch must come before "Cesium engine resources".** `layer.json` also ends in `.json`
+   and also lives on `assets.ion.cesium.com` (a region-split host); reverse the order and it lands in the versioned engine cache —
+   ignoring the switch and vanishing on every engine upgrade.
+2. **Keep `locus-earth-terrain-v1` in the `keep` array of `activate`.** Miss it and every release wipes
+   the user's offline terrain.
+3. **Do not add a runtime "terrain high fidelity" switch.** Changing the provider's request options
+   invalidates every downloaded tile — the user pays for the same bytes twice. Change the constants in
+   `terrain.js` instead, effective on the next page load.
+
+Regression test: `node tests/terrain-cache.test.mjs` (runs `sw.js` inside `vm` and checks routing,
+pruning, cache keys and the cleanup list).
 
 ---
 
