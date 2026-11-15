@@ -59,7 +59,7 @@
         </button>
         <div class="settings-title">
             <h1><svg class="ui-icon"><use href="#i-gear"/></svg>设置</h1>
-            <p>若设置项未生效，重新开关即可恢复</p>
+            <p>若设置项未生效，重新开关并刷新主页即可恢复</p>
         </div>
     </header>
 
@@ -118,20 +118,6 @@
                 </label>
             </div>
 
-            <!-- 太空昼夜遮罩：不打开真实光照时也画昼夜分界，任何高度都生效。
-                 实现上要同时关掉地面大气（两者共用引擎的 fade），否则近地会被大气分支洗白；
-                 真实光照不受此开关影响。 -->
-            <div class="setting-item">
-                <div class="setting-info">
-                    <span class="setting-label">太空昼夜遮罩</span>
-                    <span class="setting-desc">不开真实光照时也按当前时刻显示昼夜分界，近处同样生效；开启时会关闭地表大气的白雾</span>
-                </div>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="dayNightMaskToggle" />
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            
             <!-- 画质档位：直接改 globe.maximumScreenSpaceError。
                  默认「省流量」= 3，比引擎默认的 2 少约一半瓦片请求；ion 按流式数据计费，
                  地景细节越多烧得越快，所以默认偏省。 -->
@@ -161,7 +147,7 @@
             <div class="setting-item">
                 <div class="setting-info">
                     <span class="setting-label">缓存地图瓦片</span>
-                    <span class="setting-desc">浏览过的区域影像与地形存到本地，断网仍能看到。占用空间随浏览范围增长</span>
+                    <span class="setting-desc">浏览过的区域影像与地形存到本地，断网仍能看到，占用空间随浏览范围增长</span>
                 </div>
                 <label class="toggle-switch">
                     <input type="checkbox" id="tileCacheToggle" checked />

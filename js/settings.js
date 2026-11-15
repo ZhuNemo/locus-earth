@@ -16,8 +16,6 @@
     const TERRAIN_CACHE_PREFIX = 'locus-earth-terrain';
     // 画质档位。主页面用 viewer.js 的 QUALITY_KEY，同样是两边各写一份。
     const QUALITY_KEY = 'highQuality';
-    // 太空昼夜遮罩。主页面用 js/globe-light.js 的 DAY_NIGHT_MASK_KEY，同样是两边各写一份。
-    const DAY_NIGHT_MASK_KEY = 'dayNightMask';
 
     // =============================================
     // 1. 读取 / 写入设置
@@ -431,26 +429,6 @@
                 showToastInternal(overlayToggle.checked ? '📍 叠加层已开启' : '📍 叠加层已关闭');
             });
         }
-
-
-    // --- 太空昼夜遮罩（默认关）---
-    // 主页面在 globe-light.js 里读同一个键：关真实光照时按它决定地表要不要画昼夜分界。
-    // 这个开关只作用于「没开真实光照」的情况，真实光照永远有分界。
-    const dayNightMaskToggle = document.getElementById('dayNightMaskToggle');
-    if (dayNightMaskToggle) {
-        dayNightMaskToggle.checked = localStorage.getItem(DAY_NIGHT_MASK_KEY) === 'true';
-
-        dayNightMaskToggle.addEventListener('change', () => {
-            localStorage.setItem(DAY_NIGHT_MASK_KEY, dayNightMaskToggle.checked ? 'true' : 'false');
-            window.dispatchEvent(new StorageEvent('storage', {
-                key: DAY_NIGHT_MASK_KEY,
-                newValue: String(dayNightMaskToggle.checked)
-            }));
-            showToastInternal(dayNightMaskToggle.checked
-                ? '太空视角将显示昼夜遮罩（拉近后淡出）'
-                : '太空视角不再显示昼夜遮罩');
-        });
-    }
 
 
     // --- 高清画质（默认关 = 省流量）---

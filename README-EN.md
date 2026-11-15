@@ -75,7 +75,6 @@ Want to hack on it? The project is **build-free**; trade-offs, traps and trouble
 
 **Appearance & Interaction**
 - Day/night lighting (sun and moon, with adjustable time) and a white building-model toggle; light/dark themes can follow the system.
-- Space day/night mask: with real lighting off, the space view still draws the day/night terminator for the current time and fades it out as you zoom in (toggle in Settings).
 - Compass, pitch reset, draggable floating toolbar; works on desktop and mobile.
 - Google 3D mode: when Google is reachable, loads Google's 3D Tiles. That asset is a Cesium ion demo and may be rate-limited or taken down.
 

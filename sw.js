@@ -17,8 +17,8 @@
 // ============================================================================
 
 // 版本号必须比已部署过的都大，否则装了更高号缓存的用户不会换缓存。
-// 历史：v31 → v33（远端线）→ v34 合并 → v35 修复 → v36 设置页诊断 → v37 去 importmap → v48 → v49 → v50
-const CACHE_VERSION = 'v50';
+// 历史：v31 → v33（远端线）→ v34 合并 → v35 修复 → v36 设置页诊断 → v37 去 importmap → v48 → v49 → v50 → v51
+const CACHE_VERSION = 'v51';
 const APP_CACHE_NAME = `locus-earth-app-cache-${CACHE_VERSION}`;
 
 // 引擎缓存名带版本号，升级后旧缓存在 activate 时淘汰，不在同一缓存里无限累积。
